@@ -1,0 +1,49 @@
+# Publishes parladesigns.com.
+# Runs every time something is added or changed on the main branch:
+#   1. lists the project folders into projects.json (scripts/build.py)
+#   2. uploads the whole site to GitHub Pages
+name: Publish parladesigns.com
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # full history so build.py can read project dates
+
+      - name: List projects into projects.json
+        run: python3 scripts/build.py
+
+      - name: Tidy up files that should not be published
+        run: rm -rf scripts
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
