@@ -1157,7 +1157,13 @@ const PIN_SUFFIX = '::ensemble-pin';
     ['#locTabs','#locTabsG','#locTabsM'].forEach(sel => {
       const el = $(sel); if (!el) return;
       el.innerHTML = html;
-      el.closest('.section')?.classList.toggle('hidden', locs().length < 2);
+      const oneLocation = locs().length < 2;
+      const locationPicker = sel === '#locTabs'
+        ? $('#youLocSection')
+        : sel === '#locTabsG'
+          ? el.closest('.section')
+          : el.parentElement;
+      locationPicker?.classList.toggle('hidden', oneLocation);
       el.querySelectorAll('button').forEach(b => b.onclick = () => { loc = +b.dataset.i; renderLocTabs(); renderGrids(); if (!$('#manualPane').classList.contains('hidden')) renderManualGrid(); });
     });
     const multi = locs().length > 1;
