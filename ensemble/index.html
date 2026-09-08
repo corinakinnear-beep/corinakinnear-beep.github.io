@@ -1,0 +1,1833 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ensemble — find a time that works for everyone</title>
+<meta name="description" content="Rehearse together: everyone paints the times they can make, and the overlap shows up as a heatmap.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --paper:#FBFAF6; --ink:#17181F; --ink-2:#5B5D66; --line:#DEDCD3;
+    --propose:#7ED39A; --you:#FFD24D;
+    --h0:#EEF1F8; --h1:#C5D0F2; --h2:#8FA4E8; --h3:#5470DD; --h4:#1E3FD6;
+    --radius:10px; --cell:26px; --timecol:64px;
+    /* type scale */
+    --fs-micro:12px; --fs-cap:14px; --fs-body:16px; --fs-lead:18px; --fs-h3:22px; --fs-h2:27px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:var(--fs-body);line-height:1.55;-webkit-font-smoothing:antialiased}
+  button,input,select,textarea{font:inherit;color:inherit}
+  .wrap{max-width:1140px;margin:0 auto;padding:24px 18px 130px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:48px;flex-wrap:wrap}
+  .brand{font-weight:700;font-size:var(--fs-h3);letter-spacing:-.01em;text-decoration:none;color:inherit}
+  .brand small{font-weight:400;color:var(--ink-2);margin-left:10px;font-size:var(--fs-body)}
+  @media (max-width:600px){.brand small{display:none}}
+  h1{font-size:clamp(32px,5.5vw,50px);font-weight:600;letter-spacing:-.03em;line-height:1.06;margin:0 0 14px;max-width:19ch;font-variation-settings:"opsz" 96}
+  .lede{font-size:var(--fs-lead);color:var(--ink-2);max-width:52ch;margin:0 0 30px}
+  h2{font-size:var(--fs-h2);font-weight:600;letter-spacing:-.02em;margin:0 0 6px;line-height:1.2}
+  h3.sec{font-size:var(--fs-body);font-weight:600;margin:26px 0 10px}
+  .sub{color:var(--ink-2);margin:0 0 18px}
+
+  .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px 24px;margin-bottom:18px;align-items:end}
+  .field{display:flex;flex-direction:column;gap:6px;min-width:0}
+  .field.wide{grid-column:1/-1}
+  label{font-size:var(--fs-cap);color:var(--ink-2)}
+  input[type=text],input[type=email],input[type=password],input[type=date],select,textarea{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:11px 12px;outline:none;width:100%;font-size:var(--fs-body);font-family:inherit}
+  textarea{resize:vertical;min-height:76px;line-height:1.5}
+  input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible{outline:3px solid var(--h2);outline-offset:2px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{background:var(--ink);color:#fff;border:0;border-radius:999px;padding:12px 22px;cursor:pointer;font-weight:600;min-height:44px}
+  .btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);font-weight:500}
+  .btn.small{padding:8px 14px;font-size:var(--fs-body);min-height:40px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .actions{margin-top:20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .hint{font-size:var(--fs-cap);color:var(--ink-2)}
+  .notice{background:#FFF4D6;border:1.5px solid #F2DA96;border-radius:var(--radius);padding:12px 14px;font-size:var(--fs-body);margin-bottom:20px}
+  .notice code{font-family:ui-monospace,monospace;font-size:var(--fs-cap)}
+
+  .auth{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:var(--fs-body)}
+  .auth .me{color:var(--ink-2)}
+  .card{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:22px;max-width:430px}
+  .card h2{font-size:var(--fs-h3)}
+  .card .form{grid-template-columns:1fr;gap:12px;margin-bottom:6px}
+  .err{color:#7A2E2E;font-size:var(--fs-cap);min-height:1.2em}
+  input.pin{letter-spacing:.5em;font-size:26px;text-align:center;padding:12px;max-width:170px}
+
+  /* help / instructions */
+  .help{background:#fff;border:1px solid var(--line);border-radius:14px;padding:clamp(14px,2.4vw,22px);margin-bottom:22px;font-size:clamp(14px,1.35vw,16px)}
+  .help .eyebrow{font-size:var(--fs-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);font-weight:600;margin:0 0 4px}
+  .help h4{font-size:clamp(17px,2vw,22px);font-weight:600;letter-spacing:-.02em;margin:0 0 clamp(10px,1.6vw,16px)}
+  .help ol{list-style:none;margin:0;padding:0;display:grid;gap:clamp(9px,1.4vw,14px);grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+  .help li{display:grid;grid-template-columns:12px 1fr;gap:11px;align-items:start;font-size:inherit;line-height:1.4}
+  .help li .num{width:7px;height:7px;border-radius:50%;background:var(--h3);margin-top:7px}
+  .help li strong{display:block;font-weight:600}
+  .help li span{color:var(--ink-2)}
+  .help .foot{margin:clamp(10px,1.6vw,16px) 0 0;padding-top:clamp(10px,1.4vw,14px);border-top:1px solid var(--line);font-size:var(--fs-cap);color:var(--ink-2)}
+  kbd{display:inline-block;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:var(--fs-cap);font-family:inherit;font-weight:600;color:var(--ink);background:var(--paper)}
+  @media (max-width:600px){.help .eyebrow{margin-bottom:2px}.help li{line-height:1.35}}
+
+  /* top menu */
+  .menu{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .menu .mbtn{border:0;background:transparent;border-radius:999px;padding:9px 16px;cursor:pointer;font-size:var(--fs-cap);font-weight:600;color:var(--ink-2);min-height:42px}
+  .menu .mbtn:hover{background:#F1EFE8;color:var(--ink)}
+  .menu .who-me{font-size:var(--fs-cap);color:var(--ink-2);padding-right:6px;border-right:1px solid var(--line);margin-right:6px}
+
+  /* alert pill */
+
+  .quickfill{margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
+  .qf-title{margin:0 0 12px;font-size:var(--fs-cap);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+  .qf-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  #copyMineBlock,#manualCopyBlock{flex-wrap:nowrap;overflow-x:auto}
+  #copyMineBlock .btn,#manualCopyBlock .btn{flex:none;white-space:nowrap}
+  #copyMineBlock select,#manualCopyBlock select{flex:none}
+  .qf-row:last-child{margin-bottom:0}
+  .qf-label{font-size:var(--fs-cap);color:var(--ink-2)}
+  .qf-row select{width:auto;min-width:150px;padding:8px 10px;font-size:var(--fs-cap)}
+  .share{border-color:var(--h2);background:linear-gradient(#fff,#F7F9FE)}
+  .linkbox{margin:14px 0 0;font-size:var(--fs-cap);color:var(--ink-2);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow-wrap:anywhere}
+
+  /* sign-in pitch */
+  .pitch{margin:44px 0 0;max-width:960px}
+  .pitch h2{font-size:clamp(26px,3.6vw,36px);letter-spacing:-.03em;margin:0 0 12px;max-width:20ch}
+  .pitch .lede{margin-bottom:28px}
+  .sell{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+  .sellcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+  .sellcard h4{font-size:var(--fs-body);font-weight:700;margin:0 0 8px;letter-spacing:-.01em}
+  .sellcard p{margin:0;font-size:var(--fs-cap);color:var(--ink-2);line-height:1.55}
+  .pitch .closer{margin:26px 0 0;font-size:var(--fs-body);color:var(--ink-2)}
+
+  /* header facts */
+  .ehead{margin:0 0 32px}
+  .ehead h2{margin:0 0 18px;font-size:var(--fs-h2)}
+  .facts{display:grid;grid-template-columns:auto 1fr;gap:8px 22px;margin:0;align-items:baseline}
+  .facts dt{font-size:var(--fs-cap);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:700;white-space:nowrap}
+  .facts dd{margin:0;font-size:var(--fs-body)}
+  @media (max-width:560px){.facts{grid-template-columns:1fr;gap:2px 0}.facts dd{margin-bottom:10px}}
+  .bigtitle{font-size:var(--fs-h2);font-weight:600;letter-spacing:-.02em;margin:44px 0 18px}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .stacklist{list-style:none;margin:0;padding:0}
+  .stacklist li{padding:11px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:var(--fs-body)}
+  .stacklist li:first-child{border-top:0}
+  .stacklist .n{font-weight:600}
+  .stacklist .n small{display:block;font-weight:400;color:var(--ink-2);font-size:var(--fs-cap)}
+  .stacklist .c{color:var(--ink-2);white-space:nowrap}
+
+  /* steps inside a section */
+  .steps{list-style:none;margin:0;padding:0;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .steps li{display:grid;grid-template-columns:26px 1fr;gap:12px;align-items:start;line-height:1.5}
+  .steps li .ico{font-size:19px;line-height:1.25;text-align:center}
+  .steps li strong{display:block;font-weight:600;margin-bottom:2px}
+  .steps li span{color:var(--ink-2)}
+  .stepfoot{margin:20px 0 0;padding-top:16px;border-top:1px solid var(--line);color:var(--ink-2);font-size:var(--fs-body)}
+
+  /* dropdown menu */
+  .menuwrap{position:relative}
+  .menutrigger{display:flex;align-items:center;gap:9px;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 16px;cursor:pointer;font-size:var(--fs-cap);font-weight:600;min-height:44px}
+  .menutrigger .av{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:var(--fs-cap);font-weight:700}
+  .menutrigger .car{color:var(--ink-2)}
+  .menupanel{position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 34px rgba(23,24,31,.16);min-width:230px;padding:8px;z-index:20;display:none}
+  .menupanel.open{display:block}
+  .menupanel .mhead{padding:10px 12px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+  .menupanel .mhead b{display:block;font-size:var(--fs-body)}
+  .menupanel .mhead span{font-size:var(--fs-cap);color:var(--ink-2);word-break:break-all}
+  .menupanel button{display:block;width:100%;text-align:left;border:0;background:transparent;border-radius:9px;padding:12px;cursor:pointer;font-size:var(--fs-body);min-height:46px}
+  .menupanel button:hover{background:#F4F2EC}
+
+  /* uniform sections */
+  .section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:clamp(20px,2.4vw,28px);margin-bottom:22px;overflow-wrap:anywhere}
+  .section > .shead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 16px}
+  .section > .shead h3{font-size:var(--fs-lead);font-weight:600;letter-spacing:-.02em;margin:0}
+  .section > .cap:first-of-type{margin-top:0}
+  .section > .shead p{margin:0;font-size:var(--fs-cap);color:var(--ink-2)}
+  .section .help{border:0;padding:0;margin:0 0 18px;background:transparent}
+  .section .toggle{margin:0 0 16px}
+  .section:last-child{margin-bottom:0}
+
+  /* pane separation */
+  .moderow{margin:0 0 22px}
+  .modebar{display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:4px;background:#F1EFE8;border-radius:999px;max-width:100%;overflow:auto}
+  .modebar button{border:0;background:transparent;border-radius:999px;padding:9px 16px;cursor:pointer;font-size:var(--fs-cap);font-weight:600;color:var(--ink-2);white-space:nowrap;min-height:40px}
+  .modebar button[aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(23,24,31,.14)}
+  .panehead p{margin:0;color:var(--ink-2);font-size:var(--fs-cap)}
+
+  /* dashboard */
+  .evlist{display:grid;gap:14px;margin-bottom:32px}
+  .evcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start}
+  .evcard h4{margin:0 0 3px;font-size:var(--fs-h3);font-weight:600;letter-spacing:-.02em}
+  .evcard .meta{font-size:var(--fs-cap);color:var(--ink-2);margin:0}
+  .evcard .stamps{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:4px;font-size:var(--fs-cap);color:var(--ink-2)}
+  .evcard .stamps b{font-weight:600;color:var(--ink)}
+  .evcard .acts{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+  .tag{display:inline-block;font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;font-weight:700;border-radius:999px;padding:3px 10px;margin-bottom:8px}
+  .tag.host{background:#E8EDFB;color:var(--h4)}
+  .tag.guest{background:#F0EFE9;color:var(--ink-2)}
+  .tag.past{background:#F3E4E4;color:#7A2E2E}
+  .tag.new{background:var(--you);color:var(--you-ink,#4A3A00)}
+  .toggle{display:flex;align-items:center;gap:10px;font-size:var(--fs-body);background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:18px;max-width:620px}
+  .toggle input{width:20px;height:20px;accent-color:var(--h4);flex:none}
+  .toggle span{color:var(--ink-2);font-size:var(--fs-cap);display:block}
+  @media (max-width:600px){.evcard{grid-template-columns:1fr}.evcard .acts{flex-direction:row;align-items:center}}
+
+  .planhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .tabs{display:inline-flex;border:1.5px solid var(--line);border-radius:999px;padding:3px;background:#fff;max-width:100%;overflow:auto}
+  .tabs button{border:0;background:transparent;border-radius:999px;padding:8px 16px;cursor:pointer;white-space:nowrap;min-height:38px}
+  .tabs button[aria-selected=true]{background:var(--ink);color:#fff}
+  .tabs.loc button[aria-selected=true]{background:var(--h4)}
+  .closed{display:inline-block;background:#F3E4E4;color:#7A2E2E;border-radius:999px;padding:5px 12px;font-size:var(--fs-cap)}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-cap);color:var(--ink-2)}
+  .live i{width:8px;height:8px;border-radius:50%;background:#3BB273;display:inline-block}
+
+  .layout{display:block}
+
+  /* grid */
+  .gridwrap{overflow-x:auto;padding-bottom:6px;user-select:none;-webkit-user-select:none;touch-action:pan-x pan-y;position:relative}
+  .gridwrap.painting{touch-action:none}
+  table.grid{border-collapse:separate;border-spacing:3px;min-width:100%}
+  table.grid th{font-weight:500;font-size:var(--fs-cap);color:var(--ink-2);padding:0 4px 6px;white-space:nowrap}
+  table.grid th.day{cursor:pointer;border-radius:8px}
+  table.grid th.day b{display:block;color:var(--ink);font-weight:600;font-size:var(--fs-body)}
+  table.grid th.day:active{background:var(--h0)}
+  table.grid th.time,table.grid th.corner{position:sticky;left:0;z-index:3;background:var(--paper);width:var(--timecol);min-width:var(--timecol)}
+  table.grid th.time{text-align:right;vertical-align:top;font-size:var(--fs-cap);padding-right:10px;line-height:1;transform:translateY(-6px)}
+  table.grid td{height:var(--cell);min-width:52px;border-radius:5px;background:var(--h0);cursor:pointer;box-shadow:inset 0 0 0 1px rgba(30,63,214,.12)}
+  table.grid td.q15{height:calc(var(--cell) * .6)}
+  table.grid td.dayslot{height:calc(var(--cell) * 2)}
+  table.grid td.on{background:var(--you);box-shadow:none}
+  .propose table.grid td.on{background:var(--propose);box-shadow:none}
+  table.grid td.na{background:repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(91,93,102,.11) 4px,rgba(91,93,102,.11) 5px);cursor:default;box-shadow:none;opacity:.65}
+  table.grid td.l1{background:var(--h1)} table.grid td.l2{background:var(--h2)}
+  table.grid td.l3{background:var(--h3)} table.grid td.l4{background:var(--h4)}
+  .heat table.grid td{cursor:default}
+  .heat table.grid td.sel{outline:2px solid var(--ink)}
+  .legend{font-size:var(--fs-cap);color:var(--ink-2);margin-top:12px;line-height:1.7}
+  .legend i{display:inline-block;width:16px;height:13px;border-radius:3px;vertical-align:-1px;margin:0 3px}
+  @media (pointer:coarse){ :root{--cell:40px;--timecol:58px} table.grid td{min-width:44px} table.grid th.day{padding-bottom:8px} }
+
+  .savebar{position:fixed;left:0;right:0;bottom:0;display:none;z-index:6;background:rgba(251,250,246,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:14px 18px;justify-content:center}
+  .savebar.on{display:flex}
+  .savebar .inner{width:100%;max-width:1140px;display:flex;align-items:center;gap:14px;justify-content:flex-end;flex-wrap:wrap}
+  .savebar .state{font-size:var(--fs-body);color:var(--ink-2);margin-right:auto}
+  .savebar .state.dirty{color:var(--ink);font-weight:600}
+  .savebar .btn{padding:14px 30px;font-size:var(--fs-body);min-height:52px}
+  body.hasbar{padding-bottom:92px}
+  body.hasbar .paintbar{bottom:104px}
+  .paintbar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:none;gap:6px;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:6px;box-shadow:0 8px 30px rgba(23,24,31,.18);z-index:5;align-items:center}
+  .paintbar button{border:0;background:transparent;border-radius:999px;padding:16px 34px;min-height:58px;font-size:var(--fs-lead);font-weight:600}
+  .paintbar button[aria-pressed=true]{background:var(--ink);color:#fff}
+  @media (pointer:coarse){.paintbar.avail{display:inline-flex}}
+
+  .sideold h3{font-size:var(--fs-body);font-weight:600;margin:0 0 8px;color:var(--ink-2)}
+  .side ul{list-style:none;margin:0 0 22px;padding:0}
+  .side li{padding:9px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;font-size:var(--fs-body);align-items:baseline}
+  .side li:last-child{border-bottom:1px solid var(--line)}
+  .side li .n{font-weight:600}
+  .side li .n small{display:block;font-weight:400;color:var(--ink-2)}
+  .side li .c{color:var(--ink-2);white-space:nowrap}
+  .who{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;font-size:var(--fs-body);overflow-wrap:anywhere}
+  .who b{display:block;margin-bottom:4px}
+  .who .none{color:var(--ink-2)}
+  .who .free{margin:0;padding-left:18px}
+  .who .miss{color:var(--ink-2);margin-top:6px;font-size:var(--fs-cap)}
+
+  /* participant filter */
+  .filter{border:1.5px solid var(--line);border-radius:var(--radius);background:#fff;padding:12px 14px;margin-bottom:16px}
+  .filter .fhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .filter .fhead b{font-size:var(--fs-body)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1.5px solid var(--line);background:transparent;border-radius:999px;padding:9px 15px;cursor:pointer;font-size:var(--fs-cap);min-height:42px;max-width:100%;overflow-wrap:anywhere;text-align:left}
+  .chip[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .chip .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ink-2);margin-right:7px;vertical-align:middle}
+  .chip[aria-pressed=true] .dot{background:var(--you)}
+  .notebox{margin-top:22px;max-width:620px}
+  .notebox h4{font-size:var(--fs-body);font-weight:600;margin:0 0 2px}
+  .notebox p.cap{font-size:var(--fs-cap);color:var(--ink-2);margin:0 0 14px}
+  .notebox .saved{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:var(--fs-body);white-space:pre-wrap}
+  .notebox .saved.blank{color:var(--ink-2)}
+  .notes{margin-top:20px}
+  .notes .note{border-top:1px solid var(--line);padding:9px 0;font-size:var(--fs-body)}
+  .notes .note b{display:block}
+  .notes .note span{color:var(--ink-2)}
+
+  .empty{color:var(--ink-2);font-size:var(--fs-body);padding:10px 0}
+  .savestate{font-size:var(--fs-cap);color:var(--ink-2)}
+  .askList{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .askList li{display:grid;gap:1px;font-size:var(--fs-cap);line-height:1.45}
+  .askList li b{font-weight:600;color:var(--ink)}
+  .askList li span{color:var(--ink-2)}
+  .rev{border-top:1px solid var(--line);padding:12px 0}
+  .rev:last-child{border-bottom:1px solid var(--line)}
+  .rev summary{cursor:pointer;font-size:var(--fs-body);list-style:none}
+  .rev summary::-webkit-details-marker{display:none}
+  .rev summary::after{content:' ▸';color:var(--ink-2)}
+  .rev[open] summary::after{content:' ▾'}
+  .modalwrap{position:fixed;inset:0;background:rgba(23,24,31,.45);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+  .modalwrap.open{display:flex}
+  .modal{background:#fff;border-radius:16px;padding:26px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(23,24,31,.28)}
+  .modal h3{margin:0 0 8px;font-size:var(--fs-h3);font-weight:600;letter-spacing:-.02em}
+  .modal p{margin:0;color:var(--ink-2);font-size:var(--fs-body)}
+  .toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;opacity:0;transition:.25s;pointer-events:none;font-size:var(--fs-body);z-index:6;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+  .hidden{display:none!important}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#">Ensemble <small>find a time that works for everyone</small></a>
+    <nav class="menu" id="authbar"></nav>
+  </header>
+
+  <div class="notice hidden" id="cfgNotice">Not connected yet: paste your Supabase <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> near the top of the script in this file.</div>
+
+  <!-- ===== SIGN IN ===== -->
+  <section id="signin" class="hidden">
+    <div class="card">
+      <h2 id="signinTitle">Sign in to mark your availability</h2>
+      <p class="sub" style="margin-bottom:14px">Just your name and a 4-digit PIN. No email, nothing to verify — you're in straight away.</p>
+      <div class="form">
+        <div class="field"><label for="sName">Your name (shown to the group)</label><input type="text" id="sName" maxlength="40" autocomplete="name"></div>
+        <div class="field"><label for="sPin">4-digit PIN</label><input type="text" id="sPin" class="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off"></div>
+        <div class="field" id="pin2Field"><label for="sPin2">Type your PIN again</label><input type="text" id="sPin2" class="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off"></div>
+      </div>
+      <div class="err" id="sErr"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="sGo">Create account</button>
+        <button class="btn ghost" id="sSwitch">I already have one</button>
+      </div>
+      <p class="hint" style="margin-top:14px">Come back to this link any time, sign in with the same name and PIN, and your availability will be there to change.</p>
+    </div>
+
+    <div class="pitch">
+      <h2>Stop chasing everyone for their schedule.</h2>
+      <p class="lede">Ensemble finds the time your whole group can actually make &mdash; and, when you&rsquo;re weighing two spaces across town, tells you which one gets more of you in the room.</p>
+
+      <div class="sell">
+        <div class="sellcard">
+          <h4>Propose, don&rsquo;t negotiate</h4>
+          <p>Paint the times that could work, add up to five possible locations, and send one link. Everyone marks what works for them on the same grid.</p>
+        </div>
+        <div class="sellcard">
+          <h4>See exactly who can come</h4>
+          <p>A heat map shows where availability stacks up. Tap any slot for the names &mdash; who&rsquo;s in, who isn&rsquo;t. Narrow it to two people to find just their overlap.</p>
+        </div>
+        <div class="sellcard">
+          <h4>Two places, fairly compared</h4>
+          <p>Each location gets its own calendar, so someone coming from across town can say yes to one and no to the other. You&rsquo;ll see which place wins.</p>
+        </div>
+        <div class="sellcard">
+          <h4>No account anyone will forget</h4>
+          <p>A name and a four-digit PIN. No email required, nothing to verify, no app to install. Works the same on a phone as on a laptop.</p>
+        </div>
+        <div class="sellcard">
+          <h4>Answers stay changeable</h4>
+          <p>Plans shift. Anyone can sign back in and update their times, and you can enter availability yourself for a space or someone who texted you theirs.</p>
+        </div>
+        <div class="sellcard">
+          <h4>Free, and quiet</h4>
+          <p>No cost, no ads, no notifications you didn&rsquo;t ask for. Switch on an email alert only if you want to hear the moment someone updates.</p>
+        </div>
+      </div>
+
+      <p class="closer">About a minute to set up your first event. Pick a name and a PIN above and try it.</p>
+    </div>
+  </section>
+
+  <!-- ===== DASHBOARD ===== -->
+  <section id="dash" class="hidden">
+    <div id="eventsBlock">
+    <h1 id="dashHi">Your events</h1>
+    <p class="lede">Everything you're hosting or have been invited to.</p>
+    <div class="row" style="margin-bottom:26px">
+      <button class="btn" id="dashNew">Create new event</button>
+      <button class="btn ghost" id="dashClearPast">Remove past events</button>
+    </div>
+    <div class="evlist" id="evlist"></div>
+    </div>
+
+    <div id="acctBlock" class="hidden">
+    <h1 id="acctTitle">Manage your account</h1>
+    <p class="lede">Your sign-in details.</p>
+    <div class="btnrow" style="margin-bottom:26px"><button class="btn ghost" id="acctBack">&larr; Back to my events</button></div>
+
+
+    <section class="section" id="acctSection">
+      <div class="shead"><h3>Change your PIN</h3></div>
+      <p class="cap">Signed in as <b id="acctName"></b>. Your PIN is how you get back in, so pick something you'll remember.</p>
+      <div class="form" style="max-width:520px;margin:16px 0 0">
+        <div class="field"><label for="newPin">New 4-digit PIN</label><input type="password" id="newPin" class="pin" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+        <div class="field"><label for="newPin2">Type it again</label><input type="password" id="newPin2" class="pin" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+      </div>
+      <div class="btnrow" style="margin-top:14px">
+        <button class="btn" id="savePin">Update PIN</button>
+        <span class="savestate" id="pinState"></span>
+      </div>
+    </section>
+    </div>
+  </section>
+
+  <!-- ===== CREATE / EDIT ===== -->
+  <section id="home" class="hidden">
+    <div id="createIntro">
+      <h1>Find the time — and the place — where the most of you can meet.</h1>
+      <p class="lede">Paint the times you're proposing at each location. Everyone marks when they can make it, and you'll see exactly who's free for each slot.</p>
+    </div>
+    <div id="editIntro" class="hidden">
+      <h2>Edit event</h2>
+      <p class="sub">Add or remove proposed times, rename locations, or extend the dates. Everyone's existing answers are kept — anything that falls outside the new proposal is simply hidden.</p>
+    </div>
+
+    <div class="form">
+      <div class="field wide"><label for="title">Event name</label><input type="text" id="title" placeholder="Team meeting, game night, group dinner…" maxlength="80"></div>
+      <div class="field"><label for="start">First day</label><input type="date" id="start"></div>
+      <div class="field"><label for="ndays">Days shown</label><select id="ndays"></select></div>
+      <div class="field"><label for="from">From</label><select id="from"></select></div>
+      <div class="field"><label for="to">To</label><select id="to"></select></div>
+      <div class="field"><label for="step">Schedule by</label>
+        <select id="step"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60" selected>Hour</option><option value="1440">Whole day</option></select></div>
+    </div>
+
+    <h3 class="sec">Location options <span class="hint">(up to 5 — each gets its own calendar)</span></h3>
+    <div class="form" id="locFields"></div>
+    <div class="row" style="margin-bottom:20px"><button class="btn ghost small" id="addLoc">+ Add a location</button></div>
+
+    <h3 class="sec">Propose your times</h3>
+    <div class="help">
+      <h4>Marking times on the grid</h4>
+      <ol class="steps">
+        <li><span class="ico">🖐️</span><div><strong>Drag across the times you'd offer</strong><span>Click again to remove one.</span></div></li>
+        <li><span class="ico">📅</span><div><strong>Tap a date to take the whole day</strong><span>Tap it again to clear it.</span></div></li>
+        <li><span class="ico">📱</span><div><strong>On a phone, use the bar at the bottom</strong><span><kbd>Scroll</kbd> taps one slot; <kbd>Paint</kbd> drags across many.</span></div></li>
+      </ol>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <div class="tabs loc" id="proposeTabs" role="tablist"></div>
+      <select id="copyProposeTo" class="hidden" style="width:auto"></select>
+      <button class="btn ghost small hidden" id="copyPropose">Copy times to…</button>
+    </div>
+    <div class="gridwrap propose" id="proposeGrid"></div>
+    <div class="legend"><i style="background:var(--propose)"></i> = proposed. At least two slots per location.</div>
+
+    <div class="actions">
+      <button class="btn" id="createBtn" disabled>Create event</button>
+      <button class="btn ghost hidden" id="cancelEdit">Cancel</button>
+      <span class="hint" id="createHint"></span>
+    </div>
+
+      <section class="section hidden" id="addDaysSection" style="margin-top:32px">
+        <div class="shead"><h3>Add more days</h3></div>
+        <p class="cap">Extend the event further into the future. New days start with nothing proposed &mdash; paint them on the grid above once added. Existing answers are kept.</p>
+        <div class="qf-row" style="margin-top:12px">
+          <button class="btn ghost small" id="addDays">Add</button>
+          <input type="number" id="addDaysN" min="1" max="60" value="30" style="width:88px">
+          <span class="qf-label">more days (1&ndash;60)</span>
+        </div>
+      </section>
+
+    <section class="section hidden" id="dangerZone" style="margin-top:32px;border-color:#E3C9C9">
+      <div class="shead"><h3>Delete this event</h3></div>
+      <p class="cap">Removes the event, everyone's answers, and any manual entries for good. The invite link will stop working. This can't be undone.</p>
+      <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="deleteEvent" style="border-color:#D9A7A7;color:#7A2E2E">Delete event permanently</button></div>
+    </section>
+  </section>
+
+  <!-- ===== EVENT ===== -->
+  <section id="plan" class="hidden">
+
+    <header class="ehead">
+      <h2 id="pTitle"></h2>
+      <dl class="facts">
+        <dt>Dates / Times</dt><dd id="pDates"></dd>
+        <dt>Location options</dt><dd id="pLocs"></dd>
+      </dl>
+      <p id="pClosed" class="hidden" style="margin:10px 0 0"><span class="closed">Closed to changes</span></p>
+    </header>
+
+    <section class="section share" id="shareSection">
+      <div class="shead"><h3>Share this event</h3></div>
+      <p class="cap">This link will allow others to add their availability.</p>
+      <div class="btnrow" style="margin-top:14px">
+        <button class="btn" id="copyBtn">Copy invite link</button>
+        <span class="cap" id="copyState"></span>
+      </div>
+    </section>
+
+    <!-- 2. Event options (coordinator) -->
+    <section class="section" id="optsSection">
+      <div class="shead"><h3>Event options</h3><span class="live" id="live"><i></i>Live</span></div>
+      <div class="btnrow">
+        <button class="btn ghost hidden" id="editBtn">Edit event</button>
+        <button class="btn ghost hidden" id="closeBtn">Close event</button>
+      </div>
+      <div class="quickfill">
+        <p class="qf-title">Add availability manually</p>
+        <p class="cap">For a space, for someone who told you their times another way, or for your own availability.</p>
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn ghost" id="goManual">Add / edit an entry</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== MY AVAILABILITY ===== -->
+    <div id="youPane" class="hidden">
+      <div class="btnrow hidden" id="backFromYouRow" style="margin-bottom:8px"><button class="btn ghost small backlink" id="backFromYou">&larr; Back to everyone&rsquo;s answers</button></div>
+      <h3 class="bigtitle" style="margin-top:12px">Add your availability</h3>
+
+      <section class="section">
+        <div class="shead"><h3>Mark the times you can make, then save</h3></div>
+        <ol class="steps">
+          <li><span class="ico">📍</span><div><strong>Pick a location first</strong><span>Answer each place separately.</span></div></li>
+          <li><span class="ico">🖐️</span><div><strong>Drag across the times you can make</strong><span>Click again to remove. Hatched slots weren't offered.</span></div></li>
+          <li><span class="ico">📅</span><div><strong>Tap a date to take the whole day</strong><span>Tap it again to clear it.</span></div></li>
+          <li><span class="ico">📱</span><div><strong>On a phone, use the bar at the bottom</strong><span><kbd>Scroll</kbd> taps one slot; <kbd>Paint</kbd> drags across many.</span></div></li>
+        </ol>
+        <p class="stepfoot"><em>When you&rsquo;re done, press <b>Save changes</b> at the bottom of the page. You can sign back in with the same name and PIN, on any device, to change your answer any time.</em></p>
+      </section>
+
+      <section class="section">
+        <div class="shead"><h3>Your times</h3></div>
+        <div id="youLocSection" style="margin-bottom:18px">
+          <p class="qf-title" style="margin-bottom:10px">Choose location</p>
+          <div class="tabs loc" id="locTabs" role="tablist"></div>
+        </div>
+        <p class="legend" style="margin:0 0 14px"><i style="background:var(--you)"></i> = you can make it here. Hatched slots weren&rsquo;t proposed.</p>
+        <div class="gridwrap" id="youGrid"></div>
+        <div class="quickfill">
+          <p class="qf-title">Quick fill options</p>
+          <div class="qf-row hidden" id="copyMineBlock">
+            <button class="btn ghost small" id="copyMine">Copy my times to</button>
+            <select id="copyMineTo"></select>
+          </div>
+          <button id="clearMine" class="hidden"></button>
+        </div>
+      </section>
+
+      <section class="section notebox">
+        <div class="shead"><h3>A note about your availability</h3></div>
+        <p class="cap">Optional. Anything the grid can&rsquo;t say &mdash; travel time, a soft maybe, a hard stop.</p>
+        <div id="noteEdit">
+          <textarea id="noteBox" maxlength="400" placeholder="e.g. Tuesdays I can only stay for the first hour, and I&rsquo;d need 45 minutes to get to Pasadena after work."></textarea>
+          <p class="cap" style="margin:10px 0 0">Your note and the availability you provided above are sent when you press <b>Save changes</b> at the bottom of the page.</p>
+        </div>
+        <div id="noteView" class="hidden">
+          <div class="saved" id="noteText"></div>
+          <p class="cap" id="noteStamp" style="margin:8px 0 0"></p>
+          <div class="btnrow" style="margin-top:12px"><button class="btn ghost small" id="noteEditBtn">Edit note</button></div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ===== EVERYONE'S ANSWERS ===== -->
+    <div id="groupPane">
+      <h3 class="bigtitle">Everyone&rsquo;s answers</h3>
+
+      <section class="section">
+        <div class="shead"><h3>Choose location</h3></div>
+        <div class="tabs loc" id="locTabsG" role="tablist"></div>
+      </section>
+
+      <section class="section">
+        <div class="shead"><h3>Whose availability am I looking at?</h3></div>
+        <p class="cap" style="margin:0 0 14px">Tap names to show overlap.</p>
+        <div class="chips" id="peopleChips"></div>
+        <p class="cap" id="filterHint" style="margin:12px 0 0"></p>
+      </section>
+
+      <section class="section">
+        <div class="shead"><h3>When everyone can make it</h3></div>
+        <p class="legend" style="margin:0 0 14px">Fewer free <i style="background:var(--h0)"></i><i style="background:var(--h1)"></i><i style="background:var(--h2)"></i><i style="background:var(--h3)"></i><i style="background:var(--h4)"></i> More free</p>
+        <div class="gridwrap heat" id="groupGrid"></div>
+        <div class="quickfill">
+          <p class="qf-title">Tap slot to see who can make it</p>
+          <div class="who" id="who"><span class="none">Tap any slot on the grid to see who can and can&rsquo;t make it.</span></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shead"><h3>Notes from the group</h3></div>
+        <div class="notes" id="noteList"></div>
+      </section>
+
+      <h3 class="bigtitle">Additional tools</h3>
+      <div class="btnrow" style="margin:-4px 0 18px"><button class="btn ghost" id="toolsToggle">Show additional tools</button></div>
+      <div id="toolsWrap" class="hidden">
+
+      <section class="section">
+        <div class="shead"><h3>Best times</h3></div>
+        <p id="bestSummary" class="cap" style="margin:0"></p>
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn ghost small" id="bestToggle">Show the full list</button>
+        </div>
+        <ul id="best" class="stacklist hidden" style="margin-top:14px"></ul>
+      </section>
+
+      <section class="section">
+        <div class="shead"><h3>Search availability</h3></div>
+        <p class="cap">Ask in plain words and Ensemble searches everyone&rsquo;s answers.</p>
+        <div class="field" style="margin-top:14px;max-width:640px">
+          <textarea id="findBox" maxlength="240" placeholder="e.g. I want 3 evenings everyone can make, for as long as possible"></textarea>
+        </div>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn" id="findGo">Find times</button>
+          <button class="btn ghost small" id="findHelpToggle">What can I ask?</button>
+        </div>
+        <div id="findHelp" class="hidden" style="margin-top:16px">
+          <p class="qf-title" style="margin-bottom:10px">Things it understands</p>
+          <ul class="askList">
+            <li><b>How many and how long</b><span>&ldquo;two 2-hour sessions&rdquo; &middot; &ldquo;90 minutes&rdquo;</span></li>
+            <li><b>Or just the biggest overlap</b><span>&ldquo;as long as possible&rdquo; &middot; &ldquo;as much time as we all overlap&rdquo; &middot; &ldquo;the biggest block everyone shares&rdquo;</span></li>
+            <li><b>Several at once</b><span>&ldquo;2 one-hour sessions and one 4-hour session&rdquo;</span></li>
+            <li><b>Part of the day</b><span>&ldquo;3 evenings&rdquo; &middot; &ldquo;two mornings&rdquo; &middot; &ldquo;an afternoon&rdquo;</span></li>
+            <li><b>Days of the week</b><span>&ldquo;not Mondays&rdquo; &middot; &ldquo;Tuesdays and Thursdays only&rdquo; &middot; &ldquo;weekends&rdquo;</span></li>
+            <li><b>Clock times</b><span>&ldquo;after 6pm&rdquo; &middot; &ldquo;before noon&rdquo; &middot; &ldquo;between 10 and 2&rdquo;</span></li>
+            <li><b>Who needs to be there</b><span>&ldquo;everyone&rdquo; &middot; &ldquo;at least 4&rdquo; &middot; &ldquo;must include Dana&rdquo; &middot; &ldquo;without Sam&rdquo;</span></li>
+            <li><b>A location</b><span>Name it and it only searches there</span></li>
+          </ul>
+          <p class="qf-title" style="margin:18px 0 10px">Try one</p>
+          <div class="btnrow">
+            <button class="btn ghost small" data-find="3 evenings everyone can make for as long as possible">3 evenings, as long as possible</button>
+            <button class="btn ghost small" data-find="2 one-hour sessions and one 4-hour session">2×1hr + 1×4hr</button>
+            <button class="btn ghost small" data-find="one 2 hour session after 6pm, not Mondays">2hr after 6pm, not Mondays</button>
+          </div>
+        </div>
+        <div id="findOut" style="margin-top:18px"></div>
+        <ul id="people" class="stacklist hidden"></ul>
+        <span id="count" class="hidden"></span>
+      </section>
+
+      <section class="section">
+        <div class="shead"><h3>Schedule change history</h3></div>
+        <p class="cap">Every save is kept, so you can look back at what someone&rsquo;s availability was before they changed it.</p>
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn ghost" id="histToggle">Show schedule change history</button>
+          <span class="savestate" id="histState"></span>
+        </div>
+        <div id="histList" class="hidden" style="margin-top:16px"></div>
+      </section>
+
+
+
+      </div>
+    </div>
+
+    <!-- ===== MANUAL ENTRY ===== -->
+    <div id="manualPane" class="hidden">
+      <div class="btnrow" style="margin-bottom:8px"><button class="btn ghost small backlink" id="backFromManual">&larr; Back to everyone&rsquo;s answers</button></div>
+      <h3 class="bigtitle" style="margin-top:12px">Manually add availability</h3>
+
+      <section class="section">
+        <div class="shead"><h3>Your entries</h3>
+          <div class="btnrow"><button class="btn small" id="manualNew">+ Add another entry</button></div>
+        </div>
+        <p class="cap">Add as many as you like &mdash; a space, or anyone who told you their times another way.</p>
+        <ul class="stacklist" id="manualList" style="margin-top:16px"></ul>
+        <div class="form" style="max-width:640px;margin:18px 0 0">
+          <div class="field"><label for="manualName">Name for this entry</label><input type="text" id="manualName" maxlength="40" placeholder="e.g. Studio B, or Dana (told me by text)"></div>
+          <div class="field wide"><label for="manualNote">Note <span class="hint">(optional &mdash; anything they told you)</span></label><textarea id="manualNote" maxlength="400" placeholder="e.g. Dana can only stay an hour on Tuesdays."></textarea></div>
+        </div>
+        <select id="manualPick" class="hidden"></select>
+      </section>
+
+      <section class="section">
+        <div class="shead"><h3>Their times</h3></div>
+        <div style="margin-bottom:18px">
+          <p class="qf-title" style="margin-bottom:10px">Choose location</p>
+          <div class="tabs loc" id="locTabsM" role="tablist"></div>
+        </div>
+        <div class="gridwrap" id="manualGrid"></div>
+        <div class="quickfill">
+          <p class="qf-title">Quick fill options</p>
+          <div class="qf-row">
+            <button class="btn ghost small" id="manualAll">Select all proposed times</button>
+          </div>
+          <div class="qf-row hidden" id="manualCopyBlock">
+            <button class="btn ghost small" id="manualCopy">Copy these times to</button>
+            <select id="manualCopyTo"></select>
+          </div>
+          <button id="manualClear" class="hidden"></button>
+        </div>
+        <div class="quickfill">
+          <p class="qf-title">Save this entry</p>
+          <div class="btnrow">
+            <button class="btn" id="manualSave">Save entry</button>
+            <button class="btn ghost hidden" id="manualDiscard">Discard changes</button>
+            <button class="btn ghost hidden" id="manualDelete">Delete entry</button>
+            <span class="savestate" id="manualState"></span>
+          </div>
+        </div>
+      </section>
+
+      <div class="btnrow" style="margin:4px 0 8px"><button class="btn ghost small backlink" id="backFromManual2">&larr; Back to everyone&rsquo;s answers</button></div>
+    </div>
+
+    <section class="section" id="guestNew" style="margin-top:44px">
+      <div class="shead"><h3 id="newEventTitle">Running something of your own?</h3></div>
+      <p class="cap" id="newEventBlurb">Ensemble is free to use for your own events too. Starting one lets you propose times and locations, and everyone you invite marks what works for them.</p>
+      <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="newBtn2">Create a new event</button></div>
+    </section>
+
+  </section>
+</div>
+
+<div class="savebar" id="savebar"><div class="inner">
+  <span class="state" id="saveState">All changes saved</span>
+  <button class="btn ghost" id="discardBtn">Discard changes</button>
+  <button class="btn" id="saveAllBtn">Save changes</button>
+</div></div>
+<div class="paintbar" id="paintbar">
+  <button id="modeScroll" aria-pressed="true">Scroll</button>
+  <button id="modePaint" aria-pressed="false">Paint</button>
+</div>
+<div class="modalwrap" id="modalWrap">
+  <div class="modal">
+    <h3 id="modalTitle">Unsaved changes</h3>
+    <p id="modalBody">You haven&rsquo;t saved this entry yet.</p>
+    <div class="btnrow" style="margin-top:20px;justify-content:flex-end">
+      <button class="btn ghost" id="modalCancel">Keep editing</button>
+      <button class="btn ghost" id="modalDiscard">Discard changes</button>
+      <button class="btn" id="modalSave">Save changes</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   Supabase project details
+   ========================================================= */
+const SUPABASE_URL = 'https://mkdauihycnsmyewwytxh.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_CGlDGpmkYAWINK3YAp5e_Q_nVJEu4IW';
+/* A 4-digit PIN is shorter than Supabase's 6-character minimum, so the app
+   extends it with this fixed suffix before sending. People only ever see 4 digits. */
+const PIN_SUFFIX = '::ensemble-pin';
+/* ========================================================= */
+
+(() => {
+  const $ = s => document.querySelector(s);
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MAXLOC = 5;
+  const fmtHour = h => { const m = Math.round((h % 1) * 60), hh = Math.floor(h); return (hh % 12 || 12) + (m ? ':' + String(m).padStart(2,'0') : '') + (hh < 12 || hh === 24 ? 'am' : 'pm'); };
+  const fmtDate = iso => new Date(iso + 'T00:00').toLocaleDateString(undefined, {month:'short', day:'numeric'});
+  const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const toast = msg => { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2400); };
+  const coarse = matchMedia('(pointer:coarse)').matches;
+
+  const configured = !SUPABASE_URL.startsWith('PASTE') && !SUPABASE_ANON_KEY.startsWith('PASTE');
+  $('#cfgNotice').classList.toggle('hidden', configured);
+  const sb = configured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  /* ---------- grid helpers ---------- */
+  const spd = cfg => cfg.g >= 1440 ? 1 : (cfg.e - cfg.s) * 60 / cfg.g;
+  const slotLabel = (cfg, i) => {
+    const n = spd(cfg), day = Math.floor(i / n), k = i % n;
+    if (!cfg.d[day]) return 'a removed time';
+    const dname = `${DOW[new Date(cfg.d[day]+'T00:00').getDay()]} ${fmtDate(cfg.d[day])}`;
+    return cfg.g >= 1440 ? dname : `${dname}, ${fmtHour(cfg.s + k*cfg.g/60)}`;
+  };
+  function buildGrid(container, cfg, proposed) {
+    const n = spd(cfg), cls = cfg.g >= 1440 ? 'dayslot' : cfg.g === 15 ? 'q15' : '';
+    let html = '<table class="grid"><thead><tr><th class="corner"></th>';
+    cfg.d.forEach((iso, day) => { const d = new Date(iso+'T00:00'); html += `<th class="day" data-day="${day}">${DOW[d.getDay()]}<b>${fmtDate(iso)}</b></th>`; });
+    html += '</tr></thead><tbody>';
+    for (let k = 0; k < n; k++) {
+      const h = cfg.s + k*cfg.g/60;
+      html += `<tr><th class="time">${cfg.g >= 1440 ? 'All day' : (h % 1 === 0 ? fmtHour(h) : '')}</th>`;
+      cfg.d.forEach((_, day) => { const idx = day*n + k; const na = proposed && !proposed.has(idx); html += `<td class="${cls}${na ? ' na' : ''}" data-i="${idx}" data-day="${day}"></td>`; });
+      html += '</tr>';
+    }
+    if (cfg.g < 1440) html += `<tr><th class="time">${fmtHour(cfg.e)}</th></tr>`;
+    container.innerHTML = html + '</tbody></table>';
+  }
+  const paintSet = (grid, set) => grid.querySelectorAll('td').forEach(td => td.classList.toggle('on', set.has(+td.dataset.i)));
+
+  let paintMode = !coarse;
+  function makePainter(grid, getSet, canPaint) {
+    let mode = null, downAt = null, moved = false;
+    const cellAt = (x,y) => { const el = document.elementFromPoint(x,y); return el && el.tagName === 'TD' && grid.contains(el) && !el.classList.contains('na') ? el : null; };
+    const apply = td => { const i = +td.dataset.i; mode === 'on' ? getSet().add(i) : getSet().delete(i); td.classList.toggle('on', mode === 'on'); };
+    const done = () => { if (mode) grid.dispatchEvent(new Event('painted')); mode = null; downAt = null; };
+    grid.addEventListener('pointerdown', e => {
+      if (!canPaint()) return;
+      const th = e.target.closest('th.day');
+      if (th) {
+        const cells = [...grid.querySelectorAll(`td[data-day="${th.dataset.day}"]:not(.na)`)];
+        if (!cells.length) return;
+        const allOn = cells.every(td => getSet().has(+td.dataset.i));
+        mode = allOn ? 'off' : 'on'; cells.forEach(apply); done(); return;
+      }
+      const td = cellAt(e.clientX, e.clientY); if (!td) return;
+      const drag = e.pointerType === 'mouse' || paintMode;
+      downAt = [e.clientX, e.clientY]; moved = false;
+      if (drag) { mode = getSet().has(+td.dataset.i) ? 'off' : 'on'; apply(td); e.preventDefault(); }
+    });
+    grid.addEventListener('pointermove', e => {
+      if (!downAt) return;
+      if (Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 8) moved = true;
+      if (!mode) return; const td = cellAt(e.clientX, e.clientY); if (td) apply(td);
+    });
+    grid.addEventListener('pointerup', e => {
+      if (downAt && !mode && !moved) { const td = cellAt(e.clientX, e.clientY); if (td) { mode = getSet().has(+td.dataset.i) ? 'off' : 'on'; apply(td); } }
+      done();
+    });
+    grid.addEventListener('pointercancel', done);
+  }
+  function setPaintMode(on) {
+    paintMode = on;
+    $('#modePaint').setAttribute('aria-pressed', on); $('#modeScroll').setAttribute('aria-pressed', !on);
+    document.querySelectorAll('.gridwrap').forEach(g => g.classList.toggle('painting', on));
+  }
+  $('#modePaint').onclick = () => setPaintMode(true); $('#modeScroll').onclick = () => setPaintMode(false);
+
+  /* ---------- auth (email + 4-digit PIN) ---------- */
+  let user = null, profileName = '';
+  let signupMode = true;
+  const pinToPassword = pin => pin + PIN_SUFFIX;
+  const nameToLogin = name => name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'.').replace(/^\.|\.$/g,'') + '@ensemble.local';
+  function renderAuth() {
+    const nm = profileName || user?.email || '';
+    $('#authbar').innerHTML = user
+      ? `<div class="menuwrap">
+           <button class="menutrigger" id="menuBtn" aria-expanded="false"><span class="av">${esc(nm.trim().charAt(0).toUpperCase() || '?')}</span>Menu<span class="car">&#9662;</span></button>
+           <div class="menupanel" id="menuPanel">
+             <div class="mhead"><b>${esc(profileName || 'Signed in')}</b><span>${esc(user.user_metadata?.alert_email || 'No alert email set')}</span></div>
+             <button id="mDash">My events</button>
+             <button id="mAccount">Manage account</button>
+             <button id="mNew">Create new event</button>
+             <button id="signout">Sign out</button>
+           </div>
+         </div>`
+      : '';
+    if (user) {
+      const panel = $('#menuPanel'), btn = $('#menuBtn');
+      const close = () => { panel.classList.remove('open'); btn.setAttribute('aria-expanded','false'); };
+      btn.onclick = e => { e.stopPropagation(); const open = panel.classList.toggle('open'); btn.setAttribute('aria-expanded', open); };
+      document.addEventListener('click', e => { if (!panel.contains(e.target) && e.target !== btn) close(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+      $('#mAccount').onclick = () => {
+        close();
+        if (dirty && !confirm('Are you sure you want to leave without saving your changes?')) return;
+        dirty = false; editing = false; creating = false; showAccount = true; location.hash = ''; render();
+      };
+      $('#mNew').onclick = () => { close(); if (dirty && !confirm('Are you sure you want to leave without saving your changes?')) return; dirty = false; editing = false; creating = true; location.hash = ''; render(); };
+      panel.querySelectorAll('button').forEach(b => b.addEventListener('click', () => setTimeout(close, 0)));
+      $('#mDash').onclick = () => { if (dirty && !confirm('You have unsaved changes. Leave without saving?')) return; dirty = false; editing = false; creating = false; location.hash = ''; render(); };
+      $('#signout').onclick = async () => { if (dirty && !confirm('You have unsaved changes. Sign out without saving?')) return; dirty = false; await sb.auth.signOut(); };
+    }
+  }
+  $('#sSwitch').onclick = () => {
+    signupMode = !signupMode;
+    $('#pin2Field').classList.toggle('hidden', !signupMode);
+    $('#sPin').type = signupMode ? 'text' : 'password';
+    $('#sGo').textContent = signupMode ? 'Create account' : 'Sign in';
+    $('#sSwitch').textContent = signupMode ? 'I already have one' : 'Make a new account';
+    $('#sErr').textContent = '';
+  };
+  ['#sPin','#sPin2'].forEach(sel => $(sel).addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g,'').slice(0,4); }));
+  $('#sGo').onclick = async () => {
+    if (!sb) return;
+    const name = $('#sName').value.trim(), pin = $('#sPin').value;
+    $('#sErr').textContent = '';
+    if (!name) return $('#sErr').textContent = 'Add the name the group should see.';
+    if (!/^\d{4}$/.test(pin)) return $('#sErr').textContent = 'Your PIN needs to be exactly 4 digits.';
+    if (signupMode && pin !== $('#sPin2').value) return $('#sErr').textContent = 'The two PINs don\'t match — check them and try again.';
+    const email = nameToLogin(name), password = pinToPassword(pin);
+    if (email.startsWith('@')) return $('#sErr').textContent = 'Please use letters or numbers in your name.';
+    const { error } = signupMode
+      ? await sb.auth.signUp({ email, password, options: { data: { name } } })
+      : await sb.auth.signInWithPassword({ email, password });
+    if (!error) return;
+    if (/already registered|already exists/i.test(error.message))
+      $('#sErr').textContent = 'Someone already uses that name. Try adding a last initial, or press “I already have one” if it\'s you.';
+    else if (/invalid login/i.test(error.message))
+      $('#sErr').textContent = 'That name and PIN don\'t match an account. Check the PIN, or create a new account.';
+    else $('#sErr').textContent = error.message;
+  };
+  ['#sPin','#sPin2'].forEach(sel => $(sel).addEventListener('keydown', e => { if (e.key === 'Enter') $('#sGo').click(); }));
+
+  /* ---------- routing ---------- */
+  let eventId = null, plan = null, responses = [], channel = null;
+  let showAccount = false, justCreated = false, curTab = 'group', loc = 0, mine = {}, myNote = '', myNoteAt = null, dirty = false, editing = false, creating = false, isOwner = false;
+  let selected = null; // Set of user_ids being viewed, null = everyone
+  const route = () => { const m = location.hash.match(/^#e\/([0-9a-f-]{36})/); eventId = m ? m[1] : null; };
+
+  async function render() {
+    route();
+    const show = id => ['#signin','#dash','#home','#plan'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+    if (!eventId || !user) { $('#savebar').classList.remove('on'); document.body.classList.remove('hasbar'); }
+    if (!user) { $('#signinTitle').textContent = eventId ? 'Sign in to mark your availability' : 'Sign in to create an event'; show('#signin'); $('#paintbar').classList.remove('avail'); return; }
+    if (editing) { show('#home'); $('#paintbar').classList.add('avail'); return; }
+    if (creating) { show('#home'); $('#paintbar').classList.add('avail'); startCreate(); return; }
+    if (!eventId) { show('#dash'); $('#paintbar').classList.remove('avail'); await loadDash(); return; }
+    show('#plan'); await loadEvent();
+  }
+
+  /* ---------- dashboard ---------- */
+  const fmtStamp = iso => { if (!iso) return null; const d = new Date(iso); return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' at ' + d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); };
+  const lastSeenKey = id => 'ens_seen_' + id;
+  const eventEnd = ev => new Date(ev.config.d.at(-1) + 'T23:59');
+  let dashRows = [];
+
+  async function loadDash() {
+    $('#dashHi').textContent = profileName ? `Welcome back, ${profileName}` : 'Your events';
+    renderAccount();
+    $('#acctBlock').classList.toggle('hidden', !showAccount);
+    $('#eventsBlock').classList.toggle('hidden', showAccount);
+    window.scrollTo(0, 0);
+    $('#evlist').innerHTML = '<p class="empty">Loading…</p>';
+    const { data: mineR } = await sb.from('responses').select('event_id,updated_at,dismissed').eq('user_id', user.id);
+    const ids = (mineR || []).filter(r => !r.dismissed).map(r => r.event_id);
+    const { data: owned } = await sb.from('events').select('*').eq('owner', user.id);
+    let invited = [];
+    if (ids.length) { const { data } = await sb.from('events').select('*').in('id', ids); invited = data || []; }
+    const seen = new Map();
+    [...(owned||[]), ...invited].forEach(e => seen.set(e.id, e));
+    const events = [...seen.values()];
+    // Latest activity: owners can read every response, guests only their own.
+    const { data: allR } = await sb.from('responses').select('event_id,user_id,name,updated_at').in('event_id', events.map(e => e.id).length ? events.map(e => e.id) : ['00000000-0000-0000-0000-000000000000']);
+    dashRows = events.map(ev => {
+      const rs = (allR || []).filter(r => r.event_id === ev.id);
+      const own = rs.find(r => r.user_id === user.id);
+      const others = rs.filter(r => r.user_id !== user.id).sort((a,b) => (b.updated_at||'').localeCompare(a.updated_at||''));
+      const lastSeen = localStorage.getItem(lastSeenKey(ev.id)) || '';
+      const fresh = others.filter(r => (r.updated_at||'') > lastSeen).length;
+      return { ev, mineAt: own?.updated_at, other: others[0], others: others.length, fresh, past: eventEnd(ev) < new Date(), host: ev.owner === user.id };
+    }).sort((a,b) => (a.past - b.past) || (b.ev.config.d[0] || '').localeCompare(a.ev.config.d[0] || ''));
+    renderDash();
+  }
+  function renderDash() {
+    if (!dashRows.length) { $('#evlist').innerHTML = '<p class="empty">No events yet. Create one, or open an invite link someone sent you.</p>'; $('#dashClearPast').classList.add('hidden'); return; }
+    $('#dashClearPast').classList.toggle('hidden', !dashRows.some(r => r.past));
+    $('#evlist').innerHTML = dashRows.map(r => {
+      const c = r.ev.config;
+      const stamps = r.host
+        ? `<li>${r.others ? `Last edit: <b>${esc(r.other.name)}</b>, ${fmtStamp(r.other.updated_at)}` : 'No one else has answered yet'}</li>`
+        : '';
+      return `<div class="evcard">
+        <div>
+          <span class="tag ${r.host ? 'host' : 'guest'}">${r.host ? 'You’re hosting' : 'Invited'}</span>
+          ${r.past ? '<span class="tag past">Past</span>' : ''}
+          ${r.fresh ? `<span class="tag new">${r.fresh} new</span>` : ''}
+          <h4>${esc(r.ev.title)}</h4>
+          <p class="meta">${fmtDate(c.d[0])} – ${fmtDate(c.d.at(-1))} · ${c.locations.map(l => esc(l.name)).join(' or ')}${r.ev.closed ? ' · Closed' : ''}</p>
+          <ul class="stamps">${stamps}</ul>
+        </div>
+        <div class="acts">
+          <button class="btn small" data-open="${r.ev.id}">Open</button>
+          <button class="btn ghost small" data-remove="${r.ev.id}">Remove</button>
+        </div>
+      </div>`;
+    }).join('');
+    $('#evlist').querySelectorAll('[data-open]').forEach(b => b.onclick = () => { location.hash = '#e/' + b.dataset.open; });
+    $('#evlist').querySelectorAll('[data-remove]').forEach(b => b.onclick = () => removeEvent(b.dataset.remove));
+  }
+  async function removeEvent(id) {
+    const row = dashRows.find(r => r.ev.id === id); if (!row) return;
+    const msg = row.host
+      ? `Delete “${row.ev.title}” for everyone? This removes the event and all its answers permanently.`
+      : `Remove “${row.ev.title}” from your list? Your answers stay with the coordinator.`;
+    if (!confirm(msg)) return;
+    const { error } = row.host
+      ? await sb.from('events').delete().eq('id', id)
+      : await sb.from('responses').update({ dismissed: true }).eq('event_id', id).eq('user_id', user.id);
+    if (error) return toast(error.message);
+    toast(row.host ? 'Event deleted' : 'Removed from your list');
+    loadDash();
+  }
+  $('#dashClearPast').onclick = async () => {
+    const past = dashRows.filter(r => r.past);
+    if (!past.length) return;
+    if (!confirm(`Remove ${past.length} past event${past.length > 1 ? 's' : ''}? Ones you host will be deleted for everyone.`)) return;
+    for (const r of past) {
+      if (r.host) await sb.from('events').delete().eq('id', r.ev.id);
+      else await sb.from('responses').update({ dismissed: true }).eq('event_id', r.ev.id).eq('user_id', user.id);
+    }
+    toast('Past events removed'); loadDash();
+  };
+  $('#dashNew').onclick = () => { creating = true; render(); };
+  $('#acctBack').onclick = () => { showAccount = false; render(); };
+
+  function renderAccount() {
+    $('#acctName').textContent = profileName || 'you';
+  }
+  ['#newPin','#newPin2'].forEach(sel => $(sel).addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g,'').slice(0,4); }));
+  $('#savePin').onclick = async () => {
+    const a = $('#newPin').value, b = $('#newPin2').value;
+    if (!/^\d{4}$/.test(a)) return toast('Your PIN needs to be exactly 4 digits');
+    if (a !== b) return toast('The two PINs don\'t match');
+    $('#pinState').textContent = 'Saving…';
+    const { error } = await sb.auth.updateUser({ password: pinToPassword(a) });
+    if (error) { $('#pinState').textContent = 'Not saved — ' + error.message; return; }
+    $('#newPin').value = ''; $('#newPin2').value = '';
+    $('#pinState').textContent = 'PIN updated';
+    setTimeout(() => { if ($('#pinState').textContent === 'PIN updated') $('#pinState').textContent = ''; }, 2200);
+    toast('Your PIN has been changed — use it next time you sign in');
+  };
+
+  /* ---------- create / edit form ---------- */
+  const today = new Date(); today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+  $('#start').value = today.toISOString().slice(0,10);
+  [3,5,7,10,14,21,30,45,60].forEach(n => $('#ndays').add(new Option(n + ' days', n)));
+  $('#ndays').value = 7;
+  for (let h = 0; h <= 24; h++) { $('#from').add(new Option(fmtHour(h), h)); $('#to').add(new Option(fmtHour(h), h)); }
+  $('#from').value = 9; $('#to').value = 21;
+
+  let draft = null, proposed = [], pLoc = 0, locCount = 2;
+  const locNames = () => {
+    const out = [];
+    for (let i = 0; i < locCount; i++) {
+      const el = $('#locName' + i); if (!el) continue;
+      const v = el.value.trim();
+      if (i === 0) out.push(v || 'Location 1'); else if (v) out.push(v);
+    }
+    return out.length ? out : ['Location 1'];
+  };
+  function renderLocFields(values) {
+    let html = '';
+    for (let i = 0; i < locCount; i++) {
+      const v = values && values[i] ? esc(values[i]) : '';
+      html += `<div class="field"><label for="locName${i}">Location ${i+1}${i ? ' <span class="hint">(optional)</span>' : ''}</label><input type="text" id="locName${i}" maxlength="40" value="${v}" placeholder="${i ? 'e.g. Pasadena' : 'e.g. Santa Monica'}"></div>`;
+    }
+    $('#locFields').innerHTML = html;
+    for (let i = 0; i < locCount; i++) $('#locName' + i).addEventListener('input', () => { renderProposeTabs(); updateCreate(); });
+    $('#addLoc').classList.toggle('hidden', locCount >= MAXLOC);
+  }
+  $('#addLoc').onclick = () => { if (locCount >= MAXLOC) return; const vals = [...Array(locCount)].map((_, i) => $('#locName'+i).value); locCount++; renderLocFields(vals); renderProposeTabs(); updateCreate(); };
+
+  function draftConfig() {
+    const start = new Date($('#start').value + 'T00:00'), n = +$('#ndays').value, d = [];
+    for (let i = 0; i < n; i++) { const x = new Date(start); x.setDate(x.getDate()+i); d.push(x.toISOString().slice(0,10)); }
+    return { d, s: +$('#from').value, e: +$('#to').value, g: +$('#step').value };
+  }
+  function renderProposeTabs() {
+    const names = locNames();
+    if (pLoc >= names.length) pLoc = 0;
+    $('#proposeTabs').innerHTML = names.map((n, i) => `<button role="tab" data-i="${i}" aria-selected="${i === pLoc}">${esc(n)}</button>`).join('');
+    $('#proposeTabs').querySelectorAll('button').forEach(b => b.onclick = () => { pLoc = +b.dataset.i; renderProposeTabs(); paintSet($('#proposeGrid'), proposed[pLoc] ||= new Set()); });
+    const multi = names.length > 1;
+    $('#copyPropose').classList.toggle('hidden', !multi); $('#copyProposeTo').classList.toggle('hidden', !multi);
+    $('#copyProposeTo').innerHTML = names.map((n, i) => i === pLoc ? '' : `<option value="${i}">${esc(n)}</option>`).join('');
+  }
+  function rebuildGridOnly() {
+    draft = draftConfig();
+    $('#from').disabled = $('#to').disabled = draft.g >= 1440;
+    if (draft.g < 1440 && draft.e <= draft.s) { $('#proposeGrid').innerHTML = '<p class="empty">"To" needs to be later than "From".</p>'; updateCreate(); return; }
+    buildGrid($('#proposeGrid'), draft, null); setPaintMode(paintMode); paintSet($('#proposeGrid'), proposed[pLoc] ||= new Set()); updateCreate();
+  }
+  function updateCreate() {
+    const names = locNames(), counts = names.map((_, i) => (proposed[i] || new Set()).size);
+    const short = names.filter((n, i) => counts[i] < 2);
+    $('#createBtn').disabled = short.length > 0;
+    const tally = names.map((n, i) => `${n}: ${counts[i]}`).join(' · ') + ' slots proposed';
+    $('#createHint').textContent = short.length
+      ? `${tally}. Every location needs at least 2 proposed slots before you can create the event — still to do: ${short.join(', ')}. Use the tabs above the grid to switch between locations.`
+      : tally;
+  }
+  ['#start','#ndays','#from','#to','#step'].forEach(s => $(s).addEventListener('change', () => { proposed = proposed.map(() => new Set()); rebuildGridOnly(); }));
+  makePainter($('#proposeGrid'), () => proposed[pLoc] ||= new Set(), () => true);
+  $('#proposeGrid').addEventListener('painted', updateCreate);
+  $('#copyPropose').onclick = () => { const to = +$('#copyProposeTo').value; proposed[to] = new Set(proposed[pLoc]); updateCreate(); toast(`Copied to ${locNames()[to]}`); };
+
+  function startCreate() {
+    editing = false;
+    $('#createIntro').classList.remove('hidden'); $('#editIntro').classList.add('hidden');
+    $('#createBtn').textContent = 'Create event'; $('#cancelEdit').classList.add('hidden'); $('#dangerZone').classList.add('hidden'); $('#addDaysSection').classList.add('hidden');
+    locCount = 2; renderLocFields(null); proposed = [new Set(), new Set()]; pLoc = 0;
+    renderProposeTabs(); rebuildGridOnly();
+  }
+  function startEdit() {
+    editing = true;
+    const c = plan.config;
+    $('#createIntro').classList.add('hidden'); $('#editIntro').classList.remove('hidden');
+    $('#createBtn').textContent = 'Save changes'; $('#cancelEdit').classList.remove('hidden'); $('#dangerZone').classList.remove('hidden'); $('#addDaysSection').classList.remove('hidden');
+    $('#title').value = plan.title;
+    $('#start').value = c.d[0]; $('#step').value = c.g; $('#from').value = c.s; $('#to').value = c.e;
+    const nOpt = [...$('#ndays').options].find(o => +o.value >= c.d.length); $('#ndays').value = nOpt ? nOpt.value : 60;
+    locCount = Math.max(2, c.locations.length); renderLocFields(c.locations.map(l => l.name));
+    proposed = c.locations.map(l => new Set(l.proposed)); pLoc = 0;
+    renderProposeTabs(); rebuildDraftKeepingSlots(c);
+    $('#home').classList.remove('hidden'); $('#plan').classList.add('hidden'); $('#signin').classList.add('hidden');
+    window.scrollTo(0,0);
+  }
+  function rebuildDraftKeepingSlots(c) {
+    draft = draftConfig();
+    if (draft.d.length < c.d.length) { $('#ndays').value = 60; draft = draftConfig(); }
+    buildGrid($('#proposeGrid'), draft, null); setPaintMode(paintMode); paintSet($('#proposeGrid'), proposed[pLoc]); updateCreate();
+  }
+  $('#deleteEvent').onclick = async () => {
+    if (!plan) return;
+    if (!confirm(`Delete “${plan.title}” for everyone? This removes the event and all its answers permanently.`)) return;
+    const { error } = await sb.from('events').delete().eq('id', eventId);
+    if (error) return toast(error.message);
+    editing = false; dirty = false; location.hash = ''; render(); toast('Event deleted');
+  };
+  $('#cancelEdit').onclick = () => { editing = false; creating = false; if (!eventId) location.hash = ''; render(); };
+
+  $('#createBtn').onclick = async () => {
+    const names = locNames();
+    const config = { ...draft, locations: names.map((name, i) => ({ name, proposed: [...(proposed[i] || [])].sort((a,b)=>a-b) })) };
+    const title = $('#title').value.trim() || 'Untitled event';
+    $('#createBtn').disabled = true;
+    if (editing) {
+      const { error } = await sb.from('events').update({ title, config }).eq('id', eventId);
+      $('#createBtn').disabled = false;
+      if (error) return toast('Could not save: ' + error.message);
+      editing = false; render(); toast('Event updated');
+    } else {
+      const { data, error } = await sb.from('events').insert({ owner: user.id, title, config }).select('id').single();
+      if (error) { toast('Could not create event: ' + error.message); $('#createBtn').disabled = false; return; }
+      creating = false; justCreated = true; location.hash = '#e/' + data.id;
+      toast('Event created — copy the invite link to share it');
+    }
+  };
+
+  /* ---------- event ---------- */
+  let loadSeq = 0;
+  async function loadEvent() {
+    const seq = ++loadSeq;
+    logPane('loadEvent:start', { seq });
+    const { data: ev, error } = await sb.from('events').select('*').eq('id', eventId).single();
+    if (seq !== loadSeq) { logPane('loadEvent:abandoned-stale', { seq, latest: loadSeq }); return; }
+    if (error || !ev) { $('#plan').innerHTML = '<p class="empty">That event link doesn\'t exist any more.</p>'; return; }
+    plan = ev; if (loc >= plan.config.locations.length) loc = 0;
+    const isOwnerOf = e => e.owner === user.id;
+    const { data: rs } = await sb.from('responses').select('*').eq('event_id', eventId).order('name');
+    responses = rs || [];
+    const own = responses.find(r => r.user_id === user.id);
+    mine = {}; plan.config.locations.forEach((_, i) => mine[i] = new Set(own?.availability?.[i] || []));
+    const firstVisit = isOwnerOf(ev) && !own;
+    if (firstVisit) { plan.config.locations.forEach((l, i) => mine[i] = new Set(l.proposed)); }
+    myNote = own?.note || ''; myNoteAt = own?.note_at || null; $('#noteBox').value = myNote;
+    selected = null;
+    $('#pTitle').textContent = plan.title;
+    isOwner = plan.owner === user.id;
+    $('#closeBtn').classList.toggle('hidden', !isOwner); $('#editBtn').classList.toggle('hidden', !isOwner);
+    $('#optsSection').classList.toggle('hidden', !isOwner);
+    $('#newEventTitle').textContent = isOwner ? 'Create a new event' : 'Running something of your own?';
+    $('#newEventBlurb').textContent = isOwner
+      ? 'Propose times and locations for another event.'
+      : 'Ensemble is free to use for your own events too. Starting one lets you propose times and locations, and everyone you invite marks what works for them.';
+    $('#newBtn2').textContent = isOwner ? 'Create a new event' : 'Create a new event';
+    $('#copyBtn').classList.toggle('hidden', !isOwner);
+    $('#paintbar').classList.add('avail');
+    if (isOwner) localStorage.setItem(lastSeenKey(eventId), new Date().toISOString());
+    dirty = false;
+    renderNote();
+    renderSaveBar();
+    $('#shareSection').classList.toggle('hidden', !isOwner);
+    $('#backFromYouRow').classList.toggle('hidden', !isOwner);
+    renderLocTabs(); renderMeta(); renderGrids();
+    if (justCreated) { justCreated = false; setTimeout(() => { $('#shareSection').scrollIntoView({ behavior: 'smooth', block: 'center' }); toast('Your event is live — copy the invite link and send it to your group'); }, 400); }
+    showTab(isOwner ? 'group' : 'you', 'loadEvent:landing');
+    if (firstVisit) { await saveMine(); showTab('group', 'loadEvent:afterFirstSave'); toast('You\'re marked available at every proposed time — adjust under “My availability” if not'); }
+    logPane('loadEvent:done', { seq, owner: plan.owner === user.id, hasOwnResponse: !!own });
+    if (isOwner) { renderManualPick(); }
+    // belt and braces: a slow save or a double render must never strand the host on their own grid
+    setTimeout(() => {
+      if (plan && isOwner && curTab === 'you' && !justCreated) { logPane('SAFETY-NET-FIRED', {}); showTab('group', 'safetyNet'); }
+    }, 50);
+    subscribe();
+  }
+  function subscribe() {
+    if (channel) sb.removeChannel(channel);
+    channel = sb.channel('event-' + eventId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'responses', filter: 'event_id=eq.' + eventId }, async () => {
+        const before = new Map(responses.map(r => [r.user_id, r.updated_at]));
+        const { data } = await sb.from('responses').select('*').eq('event_id', eventId).order('name');
+        responses = data || []; paintHeat();
+        localStorage.setItem(lastSeenKey(eventId), new Date().toISOString());
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'events', filter: 'id=eq.' + eventId }, p => { plan = p.new; renderLocTabs(); renderMeta(); renderGrids(); })
+      .subscribe(status => $('#live').style.opacity = status === 'SUBSCRIBED' ? 1 : .4);
+  }
+  const locs = () => plan.config.locations;
+  const manuals = () => (plan.config.manual ||= []);
+  const manualRows = () => manuals().map(m => ({ user_id: 'm:' + m.id, name: m.name, availability: m.availability || {}, note: m.note || '', note_at: m.updated_at, updated_at: m.updated_at, manual: true }));
+  const allRows = () => [...responses, ...manualRows()];
+  function renderLocTabs() {
+    const html = locs().map((l, i) => `<button role="tab" data-i="${i}" aria-selected="${i === loc}">${esc(l.name)}</button>`).join('');
+    ['#locTabs','#locTabsG','#locTabsM'].forEach(sel => {
+      const el = $(sel); if (!el) return;
+      el.innerHTML = html;
+      el.closest('.section')?.classList.toggle('hidden', locs().length < 2);
+      el.querySelectorAll('button').forEach(b => b.onclick = () => { loc = +b.dataset.i; renderLocTabs(); renderGrids(); if (!$('#manualPane').classList.contains('hidden')) renderManualGrid(); });
+    });
+    const multi = locs().length > 1;
+    $('#copyMineBlock').classList.toggle('hidden', !multi);
+    if (multi) $('#copyMineTo').innerHTML = locs().map((l, i) => i === loc ? '' : `<option value="${i}">${esc(l.name)}</option>`).join('');
+  }
+  function renderMeta() {
+    const c = plan.config, when = c.g >= 1440 ? 'all day' : `${fmtHour(c.s)} – ${fmtHour(c.e)}`;
+    $('#pDates').textContent = `${fmtDate(c.d[0])} – ${fmtDate(c.d.at(-1))} · ${when}`;
+    $('#pLocs').textContent = locs().map(l => l.name).join(' · ');
+    $('#pClosed').classList.toggle('hidden', !plan.closed);
+    $('#closeBtn').textContent = plan.closed ? 'Reopen event' : 'Close event';
+  }
+  function renderGrids() {
+    const pset = new Set(locs()[loc].proposed);
+    buildGrid($('#youGrid'), plan.config, pset); buildGrid($('#groupGrid'), plan.config, pset);
+    setPaintMode(paintMode); paintSet($('#youGrid'), mine[loc] ||= new Set()); paintHeat();
+  }
+  makePainter($('#youGrid'), () => mine[loc] ||= new Set(), () => { if (plan.closed) { toast('This event is closed to changes'); return false; } return true; });
+  $('#youGrid').addEventListener('painted', markDirty);
+  $('#copyMine').onclick = () => {
+    const o = +$('#copyMineTo').value;
+    mine[o] = new Set([...mine[loc]].filter(i => locs()[o].proposed.includes(i)));
+    markDirty(); toast(`Copied to ${locs()[o].name} — only times proposed there`);
+  };
+  $('#clearMine').onclick = () => { mine[loc].clear(); paintSet($('#youGrid'), mine[loc]); markDirty(); };
+  function renderNote(edit) {
+    const has = !!(myNote && myNote.trim());
+    const showEdit = edit !== undefined ? edit : !has;
+    $('#noteEdit').classList.toggle('hidden', !showEdit);
+    $('#noteView').classList.toggle('hidden', showEdit);
+    if (showEdit) $('#noteBox').value = myNote || '';
+    else {
+      const el = $('#noteText'); el.textContent = has ? myNote : 'No note yet.'; el.classList.toggle('blank', !has);
+      $('#noteStamp').textContent = has && myNoteAt ? 'Sent ' + fmtStamp(myNoteAt) : '';
+    }
+  }
+  $('#noteEditBtn').onclick = () => renderNote(true);
+  $('#noteBox').addEventListener('input', markDirty);
+
+  function markDirty() { dirty = true; renderSaveBar(); }
+  function renderSaveBar() {
+    const show = !!plan && !plan.closed && curTab === 'you';
+    $('#savebar').classList.toggle('on', show);
+    document.body.classList.toggle('hasbar', show);
+    $('#saveState').textContent = dirty ? 'You have unsaved changes' : 'All changes saved';
+    $('#saveState').classList.toggle('dirty', dirty);
+    $('#saveAllBtn').disabled = !dirty;
+    $('#discardBtn').classList.toggle('hidden', !dirty);
+  }
+  $('#saveAllBtn').onclick = async () => {
+    if (plan.closed) return toast('This event is closed to changes');
+    const text = $('#noteEdit').classList.contains('hidden') ? myNote : $('#noteBox').value.trim();
+    if (text !== myNote) { myNote = text; myNoteAt = myNote ? new Date().toISOString() : null; }
+    $('#saveAllBtn').disabled = true; $('#saveState').textContent = 'Saving…';
+    const err = await saveMine();
+    if (err) { $('#saveAllBtn').disabled = false; return; }
+    dirty = false; renderNote(false); renderSaveBar();
+    // reflect my own change immediately instead of waiting for the realtime echo
+    const meRow = responses.find(r => r.user_id === user.id);
+    const availNow = {}; Object.keys(mine).forEach(k => availNow[k] = [...mine[k]].sort((a,b)=>a-b));
+    if (meRow) Object.assign(meRow, { note: myNote, note_at: myNoteAt, availability: availNow, updated_at: new Date().toISOString() });
+    else responses.push({ event_id: eventId, user_id: user.id, name: profileName || 'Someone', note: myNote, note_at: myNoteAt, availability: availNow, updated_at: new Date().toISOString() });
+    paintHeat();
+    toast('Saved — your availability and note are in');
+  };
+  $('#discardBtn').onclick = () => { if (!confirm('Discard your unsaved changes?')) return; dirty = false; loadEvent(); };
+  window.addEventListener('beforeunload', e => {
+    if (!dirty) return;
+    e.preventDefault();
+    e.returnValue = 'Are you sure you want to close this page without saving your changes?';
+    return e.returnValue;
+  });
+  async function saveMine() {
+    const availability = {}; Object.keys(mine).forEach(k => availability[k] = [...mine[k]].sort((a,b)=>a-b));
+    const { error } = await sb.from('responses').upsert({ event_id: eventId, user_id: user.id, name: profileName || 'Someone', availability, note: myNote, note_at: myNoteAt, updated_at: new Date().toISOString() }, { onConflict: 'event_id,user_id' });
+    if (error) { $('#saveState').textContent = 'Not saved — ' + error.message; $('#saveState').classList.add('dirty'); }
+    return error;
+  }
+
+  /* ---------- who's free / filtering ---------- */
+  const isSel = r => !selected || selected.has(r.user_id);
+  const shown = () => allRows().filter(isSel);
+  function renderChips() {
+    const rows = allRows();
+    $('#peopleChips').innerHTML = rows.length
+      ? rows.map(r => `<button class="chip" data-u="${r.user_id}" aria-pressed="${isSel(r)}"><span class="dot"></span>${esc(r.name)}${r.manual ? ' *' : ''}</button>`).join('')
+      : '<span class="hint">Nobody has answered yet.</span>';
+    $('#peopleChips').querySelectorAll('.chip').forEach(b => b.onclick = () => {
+      if (!selected) selected = new Set(allRows().map(r => r.user_id));
+      const u = b.dataset.u; selected.has(u) ? selected.delete(u) : selected.add(u);
+      if (selected.size === allRows().length) selected = null;
+      paintHeat();
+    });
+    const n = shown().length;
+    $('#filterHint').textContent = !rows.length ? ''
+      : selected === null ? `Showing everyone (${n}).`
+      : n === 0 ? 'Nobody selected — tap a name to show them again.'
+      : n === 1 ? 'Showing one person on their own.' : `Showing where these ${n} overlap.`;
+  }
+
+  function paintHeat() {
+    if (!plan || !isOwner) return;
+    renderChips();
+    const view = shown(), max = view.length || 1;
+    const per = locs().map((l, li) => {
+      const counts = {}, names = {};
+      view.forEach(r => (r.availability?.[li] || []).forEach(i => { counts[i] = (counts[i]||0)+1; (names[i] ||= []).push(r.name); }));
+      return { counts, names };
+    });
+    const cur = per[loc] || { counts:{}, names:{} };
+    $('#groupGrid').querySelectorAll('td:not(.na)').forEach(td => {
+      const c = cur.counts[td.dataset.i] || 0;
+      td.classList.remove('l1','l2','l3','l4'); if (c) td.classList.add('l' + Math.max(1, Math.ceil(c / max * 4)));
+      td.dataset.c = c; td.dataset.names = (cur.names[td.dataset.i] || []).join(', ');
+    });
+    // Merge consecutive equally-attended slots into ranges (9–10, 9–12 …)
+    const n = spd(plan.config);
+    const runs = [];
+    per.forEach((pp, li) => {
+      const keys = Object.keys(pp.counts).map(Number).sort((a,b) => a-b);
+      let cur = null;
+      keys.forEach(i => {
+        const c = pp.counts[i];
+        if (cur && cur.li === li && cur.c === c && i === cur.end + 1 && Math.floor(i / n) === Math.floor(cur.start / n)) { cur.end = i; }
+        else { if (cur) runs.push(cur); cur = { start: i, end: i, c, li }; }
+      });
+      if (cur) runs.push(cur);
+    });
+    runs.sort((a, b) => b.c - a.c || (b.end - b.start) - (a.end - a.start) || a.start - b.start);
+    const rangeLabel = r => {
+      const cfg = plan.config;
+      if (cfg.g >= 1440) return slotLabel(cfg, r.start);
+      const day = Math.floor(r.start / n);
+      const dname = `${DOW[new Date(cfg.d[day]+'T00:00').getDay()]} ${fmtDate(cfg.d[day])}`;
+      const from = cfg.s + (r.start % n) * cfg.g / 60;
+      const to = cfg.s + ((r.end % n) + 1) * cfg.g / 60;
+      return `${dname}, ${fmtHour(from)}–${fmtHour(to)}`;
+    };
+    const top = runs.slice(0, 6);
+    const whoFree = r => view.filter(p => (p.availability?.[r.li] || []).includes(r.start)).map(p => p.name);
+    $('#best').innerHTML = top.length
+      ? top.map(r => `<li><span class="n">${rangeLabel(r)}<small>${esc(locs()[r.li].name)} · ${esc(whoFree(r).join(', '))}</small></span><span class="c">${r.c} of ${view.length}</span></li>`).join('')
+      : '<li><span class="cap" style="white-space:normal">No availability to show yet.</span></li>';
+    $('#bestToggle').classList.toggle('hidden', !top.length);
+    if (!$('#best').classList.contains('hidden')) $('#bestToggle').textContent = 'Hide the full list';
+
+    // One- or two-sentence read on the results
+    const best = runs[0];
+    if (!view.length) $('#bestSummary').textContent = 'Nobody has answered yet, so there is nothing to summarise. Share the invite link to get times coming in.';
+    else if (!best) $('#bestSummary').textContent = `${view.length} ${view.length === 1 ? 'person has' : 'people have'} answered, but nobody has marked a time that works yet.`;
+    else {
+      const allCanMake = best.c === view.length;
+      const mins = (best.end - best.start + 1) * plan.config.g;
+      const dur = plan.config.g >= 1440 ? 'the whole day' : mins >= 60 ? `${(mins/60) % 1 ? (mins/60).toFixed(1) : mins/60} hour${mins > 60 ? 's' : ''}` : `${mins} minutes`;
+      const missing = view.filter(r => !(r.availability?.[best.li] || []).includes(best.start)).map(r => r.name);
+      $('#bestSummary').textContent =
+        `Out of ${view.length} ${view.length === 1 ? 'answer' : 'answers'}, the strongest window is ${rangeLabel(best)} at ${locs()[best.li].name} — ${dur} that ${allCanMake ? 'everyone' : `${best.c} of you`} can make.`
+        + (allCanMake ? '' : ` ${missing.slice(0,3).join(', ')}${missing.length > 3 ? ` and ${missing.length - 3} more` : ''} can't make that one.`);
+    }
+    $('#noteList').innerHTML = allRows().filter(r => r.note && r.note.trim()).map(r => `<div class="note"><b>${esc(r.name)}<small style="font-weight:400;color:var(--ink-2)"> · ${fmtStamp(r.note_at || r.updated_at) || ''}${r.manual ? ' · added by you' : ''}</small></b><span>${esc(r.note)}</span></div>`).join('') || '<p class="cap">No notes yet.</p>';
+  }
+  $('#groupGrid').addEventListener('pointerdown', e => {
+    const td = e.target.closest('td'); if (!td || td.classList.contains('na')) return;
+    $('#groupGrid').querySelectorAll('td.sel').forEach(x => x.classList.remove('sel')); td.classList.add('sel');
+    const i = +td.dataset.i, view = shown();
+    const free = view.filter(r => (r.availability?.[loc] || []).includes(i)).map(r => r.name);
+    const busy = view.filter(r => !(r.availability?.[loc] || []).includes(i)).map(r => r.name);
+    $('#who').innerHTML = `<b>${slotLabel(plan.config, i)} · ${esc(locs()[loc].name)}</b>`
+      + (free.length ? `<ul class="free">${free.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '<span class="none">Nobody here yet.</span>')
+      + (busy.length ? `<p class="miss">Can't make it: ${esc(busy.join(', '))}</p>` : '');
+  });
+
+  $('#copyBtn').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      $('#copyState').textContent = 'Copied — now paste it to your group';
+      setTimeout(() => { if ($('#copyState').textContent.startsWith('Copied')) $('#copyState').textContent = ''; }, 4000);
+      toast('Invite link copied');
+    } catch { prompt('Copy this link:', location.href); }
+  };
+  $('#editBtn').onclick = () => startEdit();
+  $('#addDays').onclick = async () => {
+    const add = Math.max(1, Math.min(60, Math.round(+$('#addDaysN').value || 0)));
+    if (!add) return toast('Enter a number between 1 and 60');
+    const c = plan.config, last = new Date(c.d.at(-1) + 'T00:00');
+    const extra = [];
+    for (let i = 1; i <= add; i++) { const x = new Date(last); x.setDate(x.getDate() + i); extra.push(x.toISOString().slice(0,10)); }
+    if (!confirm(`Add ${add} more days, running through ${fmtDate(extra.at(-1))}? Existing answers are kept exactly as they are.`)) return;
+    const config = { ...c, d: [...c.d, ...extra] };
+    const { error } = await sb.from('events').update({ config }).eq('id', eventId);
+    if (error) return toast(error.message);
+    plan.config = config;
+    toast(`${add} days added — propose times on them above`);
+    startEdit();
+  };
+  $('#closeBtn').onclick = async () => { const { error } = await sb.from('events').update({ closed: !plan.closed }).eq('id', eventId); if (error) return toast(error.message); plan.closed = !plan.closed; renderMeta(); toast(plan.closed ? 'Event closed' : 'Event reopened'); };
+  const paneLog = [];
+  const logPane = (what, extra) => {
+    const e = { t: new Date().toISOString().slice(11,23), what, curTab, isOwner, eventId: eventId ? eventId.slice(0,8) : null, ...extra };
+    paneLog.push(e); if (paneLog.length > 60) paneLog.shift();
+    try { sessionStorage.setItem('ens_panelog', JSON.stringify(paneLog)); } catch {}
+  };
+  function showTab(w, why) {
+    logPane('showTab', { to: w, why: why || 'unspecified' });
+    curTab = w;
+    $('#youPane').classList.toggle('hidden', w !== 'you');
+    $('#groupPane').classList.toggle('hidden', w !== 'group');
+    $('#manualPane').classList.toggle('hidden', w !== 'manual');
+    $('#guestNew').classList.toggle('hidden', w === 'manual');
+    if (w === 'manual') { loadManual(mEntry ? mEntry.id : ''); }
+    if (w === 'group' && plan && isOwner) paintHeat();
+    $('#savebar').classList.toggle('on', w === 'you' && !!plan && !plan.closed);
+    document.body.classList.toggle('hasbar', w === 'you' && !!plan && !plan.closed);
+    $('#paintbar').classList.toggle('avail', w === 'you' || w === 'manual');
+  }
+  const leaveOk = () => !dirty || confirm('Are you sure you want to leave without saving your changes?');
+  $('#goManual').onclick = () => showTab('manual', 'button:goManual');
+  $('#backFromYou').onclick = () => { if (leaveOk()) { dirty = false; showTab('group', 'button:backFromYou'); window.scrollTo(0,0); } };
+  const backToGroup = () => { showTab('group', 'button:backFromManual'); window.scrollTo(0,0); };
+  const backFromManual = async () => { if (await manualLeaveOk()) backToGroup(); };
+  $('#backFromManual').onclick = backFromManual;
+  $('#backFromManual2').onclick = backFromManual;
+  $('#newBtn2').onclick = () => { if (dirty && !confirm('Are you sure you want to leave without saving your changes?')) return; dirty = false; creating = true; location.hash = ''; render(); };
+
+  /* ---------- "help me find" ---------- */
+  const WORDNUM = { one:1, a:1, an:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, couple:2, few:3 };
+  const numOf = w => (WORDNUM[w] !== undefined ? WORDNUM[w] : parseFloat(w));
+  const DAYWORDS = { sunday:0, sun:0, monday:1, mon:1, tuesday:2, tue:2, tues:2, wednesday:3, wed:3, thursday:4, thu:4, thurs:4, friday:5, fri:5, saturday:6, sat:6 };
+
+  // "6pm" / "18:30" / "noon" -> hours as a number
+  function clockToHours(str) {
+    if (!str) return null;
+    str = str.trim();
+    if (/^noon|midday$/.test(str)) return 12;
+    if (/^midnight$/.test(str)) return 24;
+    const m = str.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
+    if (!m) return null;
+    let h = +m[1] + (m[2] ? +m[2] / 60 : 0);
+    const ap = m[3];
+    if (ap === 'pm' && h < 12) h += 12;
+    if (ap === 'am' && h >= 12) h -= 12;
+    if (!ap && h <= 7) h += 12; // "after 6" almost always means evening
+    return h;
+  }
+
+  function parseWish(text, names) {
+    const clean = ' ' + text.toLowerCase().replace(/[^a-z0-9:.\s-]/g, ' ').replace(/\s+/g, ' ') + ' ';
+    const p = {
+      evening: /evening|night|after work|tonight/.test(clean),
+      morning: /morning|early/.test(clean),
+      weekend: /weekend|saturday|sunday/.test(clean),
+      weekday: /weekday|during the week/.test(clean),
+      include: new Set(), exclude: new Set(),
+      after: null, before: null,
+      everyone: /\beveryone\b|\ball of us\b|\bwhole (group|band|team)\b|\bfull (group|turnout|band)\b/.test(clean),
+      longest: /as long as possible|as much as possible|as much time|longest|long as we can|max(imum)?( length| time| overlap)?|biggest block|most time|whatever (time )?(we|they) (all )?(overlap|share)|common ?denominator|where (do )?(we|they) overlap|most overlap|widest|overlap the most|slot .* (are|is) free|time .* (are|is) (free|available)/.test(clean),
+      mostPeople: /most people|the most (of us|people)|highest turnout|best turn ?out|as many (people )?as possible|biggest group|where most/.test(clean),
+      mustHave: [], without: [], minPeople: null,
+      locIndex: null, sameDay: /same day|back to back|back-to-back|both on/.test(clean)
+    };
+
+    // days of the week, with "not Thursdays" / "except Fridays" handled
+    Object.keys(DAYWORDS).forEach(w => {
+      const re = new RegExp('(no|not|never|except|avoid|apart from|other than)?\\s*\\b' + w + 's?\\b');
+      const m = clean.match(re);
+      if (!m) return;
+      (m[1] ? p.exclude : p.include).add(DAYWORDS[w]);
+    });
+    p.include.forEach(d => p.exclude.delete(d));
+
+    // time-of-day bounds
+    let m = clean.match(/\bbetween\s+([0-9:apm.]+|noon)\s*(?:and|-|to|until|till)\s*([0-9:apm.]+|noon|midnight)/);
+    if (m) { p.after = clockToHours(m[1]); p.before = clockToHours(m[2]); }
+    m = clean.match(/\b(?:after|from|no earlier than|not before|later than)\s+([0-9:apm.]+|noon)/);
+    if (m) p.after = clockToHours(m[1]);
+    m = clean.match(/\b(?:before|by|no later than|not after|earlier than|until|till|ending by)\s+([0-9:apm.]+|noon|midnight)/);
+    if (m) p.before = clockToHours(m[1]);
+
+    // people: "must include Dana", "without Sam", "at least 4 people"
+    (names || []).forEach(nm => {
+      const first = nm.toLowerCase().split(/\s+/)[0].replace(/[^a-z0-9]/g, '');
+      if (!first || first.length < 2) return;
+      const re = new RegExp('(without|not|no|minus|except|excluding)?\\s*\\b' + first + '\\b');
+      const mm = clean.match(re);
+      if (!mm) return;
+      (mm[1] ? p.without : p.mustHave).push(nm);
+    });
+    m = clean.match(/at least (\d+|one|two|three|four|five|six|seven|eight)\s*(?:people|of us|players|members)?/);
+    if (m) p.minPeople = numOf(m[1]);
+    // "one person can make", "anyone", "at least one" -> just needs somebody
+    if (/\b(one|a single|any ?one|anybody|somebody|someone) (person )?(can|could|is|are)?\s*(make|do|free|available)/.test(clean)) p.minPeople = p.minPeople || 1;
+    // "the longest slot 2 people are free" / "when 3 of us are available"
+    m = clean.match(/(\d+|one|two|three|four|five|six|seven|eight)\s*(?:people|of us|persons?)?\s*(?:are|is|can)\s*(?:free|available|make)/);
+    if (m) p.minPeople = p.minPeople || numOf(m[1]);
+    if (p.mostPeople) p.longest = true;
+
+    // location by name
+    (plan ? locs() : []).forEach((l, i) => {
+      const key = l.name.toLowerCase().split(/[^a-z0-9]+/).filter(x => x.length > 2)[0];
+      if (key && clean.includes(' ' + key)) p.locIndex = i;
+    });
+
+    // "3 evenings", "two mornings", "a few afternoons" — a count with a time-of-day baked in
+    const partWord = clean.match(/(\d+|one|two|three|four|five|six|couple|few)\s*(evenings?|nights?|mornings?|afternoons?|days?|sessions?|times?|meetings?)/);
+    // one or more "N × H hours" asks
+    const chunks = clean.split(/\band\b|,|;|\+|\balso\b|\bplus\b/).map(c => c.trim()).filter(Boolean);
+    const asks = [];
+    chunks.forEach(c => {
+      let hours = null;
+      const hm = c.match(/(\d+(?:\.\d+)?|one|two|three|four|five|six|couple|few)\s*-?\s*(?:hour|hr)/);
+      if (hm) hours = numOf(hm[1]);
+      const mm2 = c.match(/(\d+)\s*-?\s*(?:min|minute)/);
+      if (mm2) hours = (hours || 0) + (+mm2[1]) / 60;
+      if (/half\s*(an\s*)?hour/.test(c)) hours = hours || 0.5;
+      if (!hours) return;
+      let count = 1;
+      const cm = c.match(/(\d+|one|two|three|four|five|six|couple|few)\s*(?:x\b|times|meetings?|sessions?|blocks?|days?|slots?)/);
+      if (cm) count = numOf(cm[1]);
+      else {
+        // a leading number is only a count if it isn't the duration we just read
+        const lead = c.match(/^\s*(\d+|one|two|three|four|five|six|couple|few)\b/);
+        const dur = hm || mm2;
+        if (lead && (!dur || lead.index !== dur.index)) count = numOf(lead[1]);
+      }
+      asks.push({ hours, count: Math.max(1, Math.min(count, 7)) });
+    });
+    if (!asks.length) {
+      asks.push({ hours: null, count: partWord ? numOf(partWord[1]) : 1 });
+    }
+    if (partWord) {
+      const unit = partWord[2];
+      if (/evening|night/.test(unit)) p.evening = true;
+      if (/morning/.test(unit)) p.morning = true;
+      if (/afternoon/.test(unit)) p.afternoon = true;
+      // "3 evenings ... as long as possible" — the 3 is the count, not a duration
+      if (p.longest) asks.length = 0, asks.push({ hours: null, count: numOf(partWord[1]) });
+    }
+    return { asks, prefs: p };
+  }
+
+  function runFind() {
+    const text = $('#findBox').value.trim();
+    if (!text) { $('#findOut').innerHTML = '<p class="cap">Tell me what you\'re looking for — how many times you want to meet, for how long, and anything that matters (evenings, not Mondays, must include a particular person).</p>'; return; }
+    let view = shown();
+    if (!view.length) { $('#findOut').innerHTML = '<p class="cap">There are no answers to search yet.</p>'; return; }
+
+    const { asks, prefs } = parseWish(text, view.map(v => v.name));
+    if (prefs.without.length) view = view.filter(v => !prefs.without.includes(v.name));
+    if (!view.length) { $('#findOut').innerHTML = '<p class="cap">That leaves nobody to search. Try excluding fewer people.</p>'; return; }
+
+    const cfg = plan.config, n = spd(cfg), slotH = cfg.g / 60;
+    const relaxed = [];
+
+    const windowsFor = (need, loose) => {
+      const out = [];
+      locs().forEach((l, li) => {
+        if (!loose && prefs.locIndex !== null && li !== prefs.locIndex) return;
+        const ok = new Set(l.proposed);
+        cfg.d.forEach((iso, day) => {
+          const dow = new Date(iso + 'T00:00').getDay();
+          if (!loose) {
+            if (prefs.include.size && !prefs.include.has(dow)) return;
+            if (prefs.exclude.has(dow)) return;
+            if (prefs.weekend && !(dow === 0 || dow === 6)) return;
+            if (prefs.weekday && (dow === 0 || dow === 6)) return;
+          }
+          for (let k = 0; k + need <= n; k++) {
+            const slots = [...Array(need)].map((_, x) => day * n + k + x);
+            if (!slots.every(i => ok.has(i))) continue;
+            const startH = cfg.s + k * slotH, endH = startH + need * slotH;
+            if (!loose) {
+              if (prefs.after !== null && startH < prefs.after) continue;
+              if (prefs.before !== null && endH > prefs.before) continue;
+            }
+            const who = view.filter(pp => slots.every(i => (pp.availability?.[li] || []).includes(i))).map(pp => pp.name);
+            if (!who.length) continue;
+            if (!loose) {
+              if (prefs.everyone && who.length < view.length) continue;
+              if (prefs.minPeople && who.length < prefs.minPeople) continue;
+              if (prefs.mustHave.length && !prefs.mustHave.every(nm => who.includes(nm))) continue;
+            }
+            let fit = 0;
+            if (prefs.evening && startH >= 17) fit++;
+            if (prefs.morning && startH < 12) fit++;
+            if (prefs.afternoon && startH >= 12 && startH < 17) fit++;
+            out.push({ li, day, k, need, who, c: who.length, fit, startH, iso });
+          }
+        });
+      });
+      return out.sort((a, b) => b.c - a.c || b.fit - a.fit || a.day - b.day || a.k - b.k);
+    };
+
+    const label = win => {
+      const dname = `${DOW[new Date(win.iso + 'T00:00').getDay()]} ${fmtDate(win.iso)}`;
+      if (cfg.g >= 1440) return dname;
+      return `${dname}, ${fmtHour(win.startH)}–${fmtHour(win.startH + win.need * slotH)}`;
+    };
+    const durLabel = need => cfg.g >= 1440 ? 'all day'
+      : `${(need * slotH) % 1 ? (need * slotH).toFixed(1) : need * slotH} hour${need * slotH > 1 ? 's' : ''}`;
+
+    const ordered = asks.map((a, i) => ({ ...a, i })).sort((x, y) => (y.hours || 0) - (x.hours || 0));
+    const usedDays = new Set(), usedSlots = new Set();
+    const results = [];
+    ordered.forEach(ask => {
+      // "as long as possible": try the longest block first and walk down until something fits
+      if (prefs.longest && !ask.hours) {
+        const picks = [];
+        // gather every length, then order by what they actually asked for
+        let pool = [];
+        for (let need = n; need >= 1; need--) pool = pool.concat(windowsFor(need, false));
+        if (!pool.length) for (let need = n; need >= 1; need--) pool = pool.concat(windowsFor(need, true));
+        pool.sort((a, b) => prefs.mostPeople
+          ? (b.c - a.c) || (b.need - a.need) || b.fit - a.fit
+          : (b.need - a.need) || (b.c - a.c) || b.fit - a.fit);
+        {
+          for (const win of pool) {
+            if (picks.length >= ask.count) break;
+            if (!prefs.sameDay && usedDays.has(win.day)) continue;
+            const slots = [...Array(win.need)].map((_, x) => win.day * n + win.k + x);
+            if (slots.some(i => usedSlots.has(win.li + ':' + i))) continue;
+            picks.push(win); usedDays.add(win.day);
+            slots.forEach(i => usedSlots.add(win.li + ':' + i));
+          }
+        }
+        results.push({ ask, need: null, picks, loosened: false, longest: true });
+        return;
+      }
+      const need = cfg.g >= 1440 ? 1 : Math.max(1, Math.round((ask.hours || 1) / slotH));
+      let pool = windowsFor(need, false);
+      let loosened = false;
+      if (!pool.length) { pool = windowsFor(need, true); loosened = pool.length > 0; }
+      const picks = [];
+      for (const win of pool) {
+        if (picks.length >= ask.count) break;
+        if (!prefs.sameDay && usedDays.has(win.day)) continue;
+        const slots = [...Array(win.need)].map((_, x) => win.day * n + win.k + x);
+        if (slots.some(i => usedSlots.has(win.li + ':' + i))) continue;
+        picks.push(win); usedDays.add(win.day);
+        slots.forEach(i => usedSlots.add(win.li + ':' + i));
+      }
+      if (loosened && picks.length) relaxed.push(durLabel(need));
+      results.push({ ask, need, picks, loosened });
+    });
+    results.sort((a, b) => a.ask.i - b.ask.i);
+
+    // say back what was understood, so a misread is obvious
+    const read = [];
+    read.push(results.map(r => r.longest ? `${r.ask.count} × as long as possible` : `${r.ask.count} × ${durLabel(r.need)}`).join(' and '));
+    if (prefs.include.size) read.push('only ' + [...prefs.include].map(d => DOW[d]).join('/'));
+    if (prefs.exclude.size) read.push('not ' + [...prefs.exclude].map(d => DOW[d]).join('/'));
+    if (prefs.weekend) read.push('weekends');
+    if (prefs.weekday) read.push('weekdays');
+    if (prefs.after !== null) read.push('starting after ' + fmtHour(prefs.after));
+    if (prefs.before !== null) read.push('finished by ' + fmtHour(prefs.before));
+    if (prefs.evening) read.push('evenings preferred');
+    if (prefs.morning) read.push('mornings preferred');
+    if (prefs.afternoon) read.push('afternoons preferred');
+    if (prefs.longest) read.push(prefs.mostPeople ? 'as many people as possible, then as long as possible' : 'as long as possible');
+    if (prefs.everyone) read.push('everyone must be free');
+    if (prefs.minPeople) read.push('at least ' + prefs.minPeople + ' people');
+    if (prefs.mustHave.length) read.push('must include ' + prefs.mustHave.join(', '));
+    if (prefs.without.length) read.push('ignoring ' + prefs.without.join(', '));
+    if (prefs.locIndex !== null) read.push('at ' + locs()[prefs.locIndex].name);
+    if (prefs.sameDay) read.push('same day is fine');
+
+    const found = results.reduce((t, r) => t + r.picks.length, 0);
+    let html = `<p class="cap" style="margin-bottom:6px"><b>I read that as:</b> ${esc(read.join(' · '))}.</p>`;
+    html += found
+      ? `<p style="margin:0 0 14px;font-weight:600">I found ${found} ${found === 1 ? 'option' : 'options'} for you.</p>`
+      : `<p style="margin:0 0 14px;font-weight:600">I couldn&rsquo;t find anything that fits.</p>`;
+
+    results.forEach(r => {
+      const head = r.longest
+        ? `${r.ask.count} × as long as possible`
+        : `${r.ask.count} × ${durLabel(r.need)}`;
+      if (results.length > 1) html += `<p class="qf-title" style="margin:18px 0 8px">${esc(head)}</p>`;
+      if (!r.picks.length) {
+        html += `<p class="cap">Nothing that long works for anyone, even ignoring your other conditions. Try a shorter session.</p>`;
+        return;
+      }
+      if (r.loosened) html += `<p class="cap" style="margin-bottom:8px">Nothing matched all your conditions for this one, so here&rsquo;s the closest fit instead.</p>`;
+      html += '<ul class="stacklist">' + r.picks.map(win =>
+        `<li><span class="n">${label(win)}<small>${durLabel(win.need)} · ${esc(locs()[win.li].name)} · ${esc(win.who.join(', '))}</small></span><span class="c">${win.c} of ${view.length}</span></li>`
+      ).join('') + '</ul>';
+      if (r.picks.length < r.ask.count) html += `<p class="cap" style="margin-top:8px">Only ${r.picks.length} of the ${r.ask.count} you asked for fit on separate days.</p>`;
+    });
+    html += `<div class="btnrow" style="margin-top:18px"><button class="btn ghost small" id="findHide">Hide these results</button></div>`;
+    $('#findOut').innerHTML = html;
+    $('#findHide').onclick = () => { $('#findOut').innerHTML = ''; };
+  }
+  $('#findGo').onclick = runFind;
+  $('#findHelpToggle').onclick = () => {
+    const open = $('#findHelp').classList.toggle('hidden') === false;
+    $('#findHelpToggle').textContent = open ? 'Hide examples' : 'What can I ask?';
+  };
+  $('#toolsToggle').onclick = () => {
+    const open = $('#toolsWrap').classList.toggle('hidden') === false;
+    $('#toolsToggle').textContent = open ? 'Hide additional tools' : 'Show additional tools';
+  };
+  $('#bestToggle').onclick = () => {
+    const open = $('#best').classList.toggle('hidden') === false;
+    $('#bestToggle').textContent = open ? 'Hide the full list' : 'Show the full list';
+  };
+  document.querySelectorAll('[data-find]').forEach(b => b.onclick = () => { $('#findBox').value = b.dataset.find; runFind(); });
+
+  /* ---------- manual entries (coordinator adds availability for others) ---------- */
+  let mEntry = null, mSel = {};
+  function renderManualPick() {
+    const list = manuals();
+    $('#manualPick').innerHTML = '<option value="">+ New entry</option>' + list.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('');
+    $('#manualPick').value = mEntry ? mEntry.id : '';
+    $('#manualDelete').classList.toggle('hidden', !mEntry);
+    $('#manualName').value = mEntry ? mEntry.name : '';
+    const multi = locs().length > 1;
+    $('#manualCopyBlock').classList.toggle('hidden', !multi);
+    if (multi) $('#manualCopyTo').innerHTML = locs().map((l, i) => i === loc ? '' : `<option value="${i}">${esc(l.name)}</option>`).join('');
+  }
+  function loadManual(id) {
+    mEntry = manuals().find(m => m.id === id) || null;
+    mSel = {}; locs().forEach((_, i) => mSel[i] = new Set(mEntry?.availability?.[i] || []));
+    $('#manualNote').value = mEntry?.note || '';
+    renderManualPick(); renderManualList(); renderManualGrid();
+    $('#manualDiscard').classList.toggle('hidden', !mEntry);
+  }
+  function renderManualGrid() {
+    buildGrid($('#manualGrid'), plan.config, new Set(locs()[loc].proposed));
+    setPaintMode(paintMode); paintSet($('#manualGrid'), mSel[loc] ||= new Set());
+  }
+  makePainter($('#manualGrid'), () => mSel[loc] ||= new Set(), () => true);
+  const manualDirty = () => {
+    if (!mEntry && !$('#manualName').value.trim() && !Object.values(mSel).some(x => x.size)) return false;
+    const saved = mEntry || { name: '', note: '', availability: {} };
+    if ($('#manualName').value.trim() !== (saved.name || '')) return true;
+    if ($('#manualNote').value.trim() !== (saved.note || '')) return true;
+    return locs().some((l, i) => {
+      const a = [...(mSel[i] || [])].sort((x,y)=>x-y).join(',');
+      const b = (saved.availability?.[i] || []).slice().sort((x,y)=>x-y).join(',');
+      return a !== b;
+    });
+  };
+  function askSaveDiscard(body) {
+    return new Promise(resolve => {
+      $('#modalBody').textContent = body;
+      $('#modalWrap').classList.add('open');
+      const done = choice => { $('#modalWrap').classList.remove('open'); resolve(choice); };
+      $('#modalSave').onclick = () => done('save');
+      $('#modalDiscard').onclick = () => done('discard');
+      $('#modalCancel').onclick = () => done('cancel');
+      $('#modalWrap').onclick = e => { if (e.target === $('#modalWrap')) done('cancel'); };
+    });
+  }
+  async function manualLeaveOk() {
+    if (!manualDirty()) return true;
+    const choice = await askSaveDiscard('You haven\'t saved this entry yet. Save your changes, or discard them?');
+    if (choice === 'cancel') return false;
+    if (choice === 'save') { const ok = await saveManual(); return ok; }
+    return true;
+  }
+  $('#manualPick').onchange = async e => { if (await manualLeaveOk()) loadManual(e.target.value); else renderManualPick(); };
+  $('#manualDiscard').onclick = () => { if (confirm('Discard your unsaved changes to this entry?')) loadManual(mEntry ? mEntry.id : ''); };
+  $('#manualNew').onclick = async () => { if (await manualLeaveOk()) { loadManual(''); $('#manualName').focus(); } };
+  function renderManualList() {
+    const list = manuals();
+    $('#manualList').innerHTML = list.length
+      ? list.map(m => `<li><span class="n">${esc(m.name)}<small>${locs().map((l, i) => (m.availability?.[i] || []).length).join(' / ')} slots${m.updated_at ? ' · ' + fmtStamp(m.updated_at) : ''}</small></span><span class="c"><button class="btn ghost small" data-edit="${m.id}">${mEntry && mEntry.id === m.id ? 'Editing' : 'Edit'}</button></span></li>`).join('')
+      : '<li><span class="cap" style="white-space:normal">No entries yet — name one below and paint their times.</span></li>';
+    $('#manualList').querySelectorAll('[data-edit]').forEach(b => b.onclick = async () => { if (await manualLeaveOk()) loadManual(b.dataset.edit); });
+  }
+  $('#manualCopy').onclick = () => {
+    const o = +$('#manualCopyTo').value;
+    mSel[o] = new Set([...mSel[loc]].filter(i => locs()[o].proposed.includes(i)));
+    toast(`Copied to ${locs()[o].name} — only times proposed there`);
+  };
+  $('#manualAll').onclick = () => { mSel[loc] = new Set(locs()[loc].proposed); paintSet($('#manualGrid'), mSel[loc]); };
+  $('#manualClear').onclick = () => { mSel[loc].clear(); paintSet($('#manualGrid'), mSel[loc]); };
+  $('#manualSave').onclick = () => saveManual();
+  async function saveManual() {
+    const name = $('#manualName').value.trim();
+    if (!name) { toast('Give this entry a name so you know whose times these are'); return false; }
+    const availability = {}; Object.keys(mSel).forEach(k => availability[k] = [...mSel[k]].sort((a,b)=>a-b));
+    const list = manuals();
+    const note = $('#manualNote').value.trim();
+    if (mEntry) Object.assign(mEntry, { name, availability, note, updated_at: new Date().toISOString() });
+    else { mEntry = { id: 'x' + Date.now().toString(36), name, availability, note, updated_at: new Date().toISOString() }; list.push(mEntry); }
+    $('#manualState').textContent = 'Saving…';
+    const { error } = await sb.from('events').update({ config: plan.config }).eq('id', eventId);
+    $('#manualState').textContent = error ? 'Not saved — ' + error.message : 'Saved';
+    if (!error) {
+      // log it like a real response so it appears in the change history
+      sb.from('revisions').insert({ event_id: eventId, user_id: null, name: name + ' (added by you)', availability, note }).then(() => {});
+      setTimeout(() => { if ($('#manualState').textContent === 'Saved') $('#manualState').textContent = ''; }, 1600);
+      renderManualPick(); renderManualList(); paintHeat(); toast(`${name} saved`);
+    }
+    return !error;
+  }
+  $('#manualDelete').onclick = async () => {
+    if (!mEntry || !confirm(`Delete the entry for ${mEntry.name}?`)) return;
+    plan.config.manual = manuals().filter(m => m.id !== mEntry.id);
+    const { error } = await sb.from('events').update({ config: plan.config }).eq('id', eventId);
+    if (error) return toast(error.message);
+    mEntry = null; loadManual(''); paintHeat(); toast('Entry deleted');
+  };
+
+  /* ---------- change history ---------- */
+  let histOpen = false, histRows = null;
+  function slotsToRanges(idxs) {
+    if (!idxs.length) return [];
+    const cfg = plan.config, n = spd(cfg);
+    const sorted = [...idxs].sort((a,b) => a-b), runs = [];
+    let cur = null;
+    for (const i of sorted) {
+      if (cur && i === cur.end + 1 && Math.floor(i / n) === Math.floor(cur.start / n)) cur.end = i;
+      else { if (cur) runs.push(cur); cur = { start: i, end: i }; }
+    }
+    if (cur) runs.push(cur);
+    return runs.map(r => {
+      const day = Math.floor(r.start / n), iso = cfg.d[day];
+      if (!iso) return 'a removed day';
+      const dname = `${DOW[new Date(iso+'T00:00').getDay()]} ${fmtDate(iso)}`;
+      if (cfg.g >= 1440) return dname;
+      const from = cfg.s + (r.start % n) * cfg.g / 60, to = cfg.s + ((r.end % n) + 1) * cfg.g / 60;
+      return `${dname}, ${fmtHour(from)}–${fmtHour(to)}`;
+    });
+  }
+  $('#histToggle').onclick = async () => {
+    histOpen = !histOpen;
+    $('#histList').classList.toggle('hidden', !histOpen);
+    $('#histToggle').textContent = histOpen ? 'Hide schedule change history' : 'Show schedule change history';
+    if (!histOpen) return;
+    $('#histState').textContent = 'Loading…';
+    const { data, error } = await sb.from('revisions').select('*').eq('event_id', eventId).order('created_at', { ascending: false }).limit(100);
+    $('#histState').textContent = '';
+    if (error) { $('#histList').innerHTML = `<p class="cap">Couldn't load history: ${esc(error.message)}</p>`; return; }
+    histRows = data || [];
+    renderHist();
+  };
+  function renderHist() {
+    if (!histRows || !histRows.length) { $('#histList').innerHTML = '<p class="cap">No saves recorded yet. Changes from here on will be listed.</p>'; return; }
+    // walk oldest→newest per person so each entry can be compared with the one before it
+    const byUser = {};
+    [...histRows].reverse().forEach(r => { const key = r.user_id || 'manual:' + (r.name || ''); (byUser[key] ||= []).push(r); });
+    const items = histRows.map(r => {
+      const key = r.user_id || 'manual:' + (r.name || '');
+      const list = byUser[key], idx = list.findIndex(x => x.id === r.id);
+      const prev = idx > 0 ? list[idx - 1] : null;
+      let inner = '';
+      locs().forEach((l, i) => {
+        const now = r.availability?.[i] || [];
+        const before = prev ? (prev.availability?.[i] || []) : null;
+        const added = before ? now.filter(x => !before.includes(x)) : now;
+        const removed = before ? before.filter(x => !now.includes(x)) : [];
+        if (!added.length && !removed.length) return;
+        inner += `<p style="margin:10px 0 2px;font-weight:600;font-size:var(--fs-cap)">${esc(l.name)}</p>`;
+        if (added.length) inner += `<p class="cap" style="margin:0;color:#1F6B41">Added: ${esc(slotsToRanges(added).join('; '))}</p>`;
+        if (removed.length) inner += `<p class="cap" style="margin:0;color:#7A2E2E">Removed: ${esc(slotsToRanges(removed).join('; '))}</p>`;
+      });
+      const noteNow = (r.note || '').trim(), noteBefore = ((prev?.note) || '').trim();
+      if (noteNow && noteNow !== noteBefore) inner += `<p class="cap" style="margin:10px 0 0"><b>${prev ? 'Note updated' : 'Note'}:</b> ${esc(noteNow)}</p>`;
+      if (!inner) inner = '<p class="cap" style="margin:10px 0 0">Saved with no changes.</p>';
+      const total = locs().map((l, i) => (r.availability?.[i] || []).length).join(' / ');
+      return `<details class="rev"><summary><b>${esc(r.name || 'Someone')}</b> · ${fmtStamp(r.created_at)} <span class="cap">(${total} slots)</span></summary>${inner}</details>`;
+    }).join('');
+    $('#histList').innerHTML = items;
+  }
+
+
+  /* ---------- boot ---------- */
+  setPaintMode(paintMode);
+  if (sb) {
+    sb.auth.onAuthStateChange((_, session) => { user = session?.user || null; profileName = user?.user_metadata?.name || ''; renderAuth(); render(); });
+  } else { render(); }
+  window.addEventListener('hashchange', () => { editing = false; creating = false; render(); });
+})();
+</script>
+</body>
+</html>
