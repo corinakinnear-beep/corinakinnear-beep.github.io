@@ -1,0 +1,23 @@
+{
+  "generated": "2026-09-08",
+  "projects": [
+    {
+      "slug": "beachmap",
+      "title": "Around Our Home",
+      "description": "Our favorite places to eat, drink and park within reach of the house — with hours, walking and driving times, and a map.",
+      "url": "/beachmap/",
+      "cover": "/beachmap/cover.jpg",
+      "added": "2026-09-08",
+      "updated": "2026-09-08"
+    },
+    {
+      "slug": "ensemble",
+      "title": "Ensemble",
+      "description": "Rehearse together: everyone paints the times they can make, and the overlap shows up as a heatmap.",
+      "url": "/ensemble/",
+      "cover": "/ensemble/cover.jpg",
+      "added": "2026-09-08",
+      "updated": "2026-09-08"
+    }
+  ]
+}

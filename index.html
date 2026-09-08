@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parla Designs</title>
+<meta name="description" content="Small websites and tools by Parla Designs, made in Los Angeles. Every project lives at its own address under parladesigns.com.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Outfit:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#EDE8DF; --surface:#F8F5F0; --frame:#FFFFFF;
+    --ink:#20211C; --ink-2:#43443C; --muted:#615F55;
+    --line:#D9D2C5; --line-2:#E5DFD4;
+    --accent:#5E6B4F; --accent-2:#8C9779;
+    --serif:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --sans:"Outfit", "Helvetica Neue", Arial, sans-serif;
+    --gutter:40px; --max:1320px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:var(--sans); font-weight:400; font-size:16.5px; line-height:1.72;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  a{color:inherit; text-decoration:none}
+  img{max-width:100%; display:block}
+  .wrap{max-width:var(--max); margin:0 auto; padding:0 var(--gutter)}
+  .label{
+    font-family:var(--sans); font-weight:500; font-size:12px; letter-spacing:.11em;
+    text-transform:uppercase; color:var(--muted);
+  }
+
+  /* masthead */
+  .mast{
+    position:sticky; top:0; z-index:10;
+    background:rgba(237,232,223,.82); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  }
+  .mast .wrap{display:flex; align-items:center; justify-content:space-between; height:64px}
+  .wordmark{font-weight:500; font-size:12.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--ink)}
+  .mast nav{display:flex; gap:28px}
+  .mast nav a{
+    font-size:12px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-2);
+    padding:6px 0; border-bottom:1px solid transparent; transition:border-color .2s, color .2s;
+  }
+  .mast nav a:hover, .mast nav a[aria-current]{border-bottom-color:var(--accent); color:var(--ink)}
+
+  /* hero */
+  .hero{padding:104px var(--gutter) 96px}
+  h1{
+    font-family:var(--serif); font-weight:300; margin:0 0 22px;
+    font-size:clamp(58px,9vw,116px); line-height:.95; letter-spacing:-.01em;
+  }
+  .lede{
+    font-family:var(--serif); font-weight:300; color:var(--ink-2);
+    font-size:clamp(22px,2.2vw,29px); line-height:1.3; max-width:30ch; margin:0;
+  }
+
+  /* section band */
+  .band{
+    border-top:1px solid var(--line); padding-top:22px; margin-bottom:56px;
+    display:grid; grid-template-columns:1fr 2fr auto; gap:32px; align-items:start;
+  }
+  .band h2{font-family:var(--serif); font-weight:300; font-size:34px; line-height:1.1; margin:0}
+  .band p{margin:0; max-width:56ch; color:var(--ink-2)}
+  .band .count{justify-self:end; padding-top:6px}
+
+  /* masonry */
+  .grid{columns:3; column-gap:34px}
+  .card{break-inside:avoid; display:block; margin:0 0 72px; color:var(--ink)}
+  .card .cover{width:100%; height:auto; opacity:1; transition:opacity .25s}
+  .card:hover .cover{opacity:.88}
+  .card .placeholder{
+    width:100%; aspect-ratio:5/4; background:var(--surface);
+    display:flex; align-items:flex-end; padding:22px;
+    font-family:var(--serif); font-weight:300; font-size:clamp(40px,4vw,64px); line-height:1; color:var(--muted);
+    transition:opacity .25s;
+  }
+  .card:hover .placeholder{opacity:.88}
+  .card h3{
+    font-family:var(--serif); font-weight:400; font-size:31px; line-height:1.12;
+    margin:22px 0 8px; letter-spacing:-.005em;
+  }
+  .card p{margin:0 0 16px; color:var(--ink-2)}
+  .card .meta{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .tag{
+    display:inline-block; border:1px solid var(--line); border-radius:2px; background:var(--surface);
+    padding:5px 9px 4px; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2);
+    transition:border-color .2s, color .2s;
+  }
+  .card:hover .tag{border-color:var(--accent); color:var(--accent)}
+  .card .date{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+
+  .note{color:var(--muted); font-family:var(--serif); font-weight:300; font-size:24px; margin:0 0 108px}
+
+  /* about */
+  .about{padding:108px var(--gutter) 0}
+  .about .band{margin-bottom:0}
+
+  footer{margin-top:120px; border-top:1px solid var(--line)}
+  footer .wrap{display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap; padding:26px var(--gutter) 40px}
+
+  @media (max-width:1100px){ .grid{columns:2} }
+  @media (max-width:760px){
+    :root{--gutter:22px}
+    .hero{padding:72px var(--gutter) 64px}
+    .band{grid-template-columns:1fr; gap:12px}
+    .band .count{justify-self:start}
+    .grid{columns:1}
+    .card{margin-bottom:56px}
+    .mast nav{gap:18px}
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap">
+    <a class="wordmark" href="/">Parla Designs</a>
+    <nav>
+      <a href="#projects" aria-current="page">Projects</a>
+      <a href="#about">About</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <h1>Parla Designs</h1>
+    <p class="lede">Small websites and tools, made in Los Angeles.</p>
+  </section>
+
+  <section id="projects" class="wrap">
+    <div class="band">
+      <h2>Projects</h2>
+      <p>Each one lives at its own address under parladesigns.com. Newest first.</p>
+      <span class="label count" id="count"></span>
+    </div>
+    <div class="grid" id="grid" aria-live="polite"></div>
+    <p class="note" id="note" hidden></p>
+  </section>
+
+  <section id="about" class="wrap about">
+    <div class="band">
+      <h2>About</h2>
+      <p>A home for the pages I make — little tools for rehearsals, neighbourhood guides, experiments. Each project is its own page; this page keeps the list.</p>
+      <span class="label count">Los Angeles</span>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="label">© <span id="year"></span> Parla Designs</span>
+    <span class="label">parladesigns.com</span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  const grid = document.getElementById('grid');
+  const note = document.getElementById('note');
+  const count = document.getElementById('count');
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const when = iso => {
+    if (!iso) return '';
+    const d = new Date(iso + 'T12:00:00');
+    return isNaN(d) ? '' : d.toLocaleDateString('en-US', {month:'short', year:'numeric'});
+  };
+  const pathLabel = url => {
+    try { const u = new URL(url, location.origin); return u.origin === location.origin ? u.pathname.replace(/\/$/, '') || '/' : u.host; }
+    catch { return url; }
+  };
+
+  function card(p){
+    const a = document.createElement('a');
+    a.className = 'card';
+    a.href = p.url;
+    const visual = p.cover
+      ? `<img class="cover" src="${esc(p.cover)}" alt="" loading="lazy">`
+      : `<div class="placeholder" aria-hidden="true">${esc((p.title || '?').trim().charAt(0))}</div>`;
+    a.innerHTML = `
+      ${visual}
+      <h3>${esc(p.title)}</h3>
+      ${p.description ? `<p>${esc(p.description)}</p>` : ''}
+      <div class="meta">
+        <span class="tag">${esc(pathLabel(p.url))}</span>
+        ${p.updated ? `<span class="date">Updated ${esc(when(p.updated))}</span>` : ''}
+      </div>`;
+    return a;
+  }
+
+  fetch('/projects.json', {cache: 'no-store'})
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(data => {
+      const list = (data && data.projects) || [];
+      count.textContent = list.length ? `${list.length} project${list.length === 1 ? '' : 's'}` : '';
+      if (!list.length) { note.textContent = 'Nothing here yet.'; note.hidden = false; return; }
+      list.forEach(p => grid.appendChild(card(p)));
+    })
+    .catch(() => {
+      note.textContent = 'The project list is on its way — try again in a minute.';
+      note.hidden = false;
+    });
+</script>
+</body>
+</html>
