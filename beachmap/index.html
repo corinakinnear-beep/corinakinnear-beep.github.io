@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Around Our Home</title>
+<meta name="description" content="Our favorite places to eat, drink and park within reach of the house — with hours, walking and driving times, and a map.">
+<link id="fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Outfit:wght@400;500&display=swap">
+<style id="style">
+:root{--ground:#EDE8DF;--surface:#F8F5F0;--frame:#FFFFFF;--ink:#20211C;--ink-2:#43443C;--muted:#615F55;--line:#D9D2C5;--line-2:#E5DFD4;--accent:#5E6B4F;--accent-2:#8C9779}
+*{box-sizing:border-box}
+html{color-scheme:light}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:Outfit,"Helvetica Neue",Arial,sans-serif;font-size:16.5px;font-weight:400;line-height:1.72;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1320px;margin:0 auto;padding:0 40px}
+.mast{position:sticky;top:0;z-index:5;background:rgba(237,232,223,.84);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line-2)}
+.mast .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.wordmark,.label{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-2)}
+.mast nav{display:flex;gap:28px}
+.mast nav a{font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-2);padding:4px 0;border-bottom:1px solid transparent}
+.mast nav a:hover{border-bottom-color:var(--accent);color:var(--accent)}
+.hero{padding:104px 0 72px}
+h1{font-family:"Cormorant Garamond",Georgia,serif;font-weight:300;font-size:clamp(58px,9vw,116px);line-height:.95;letter-spacing:-.01em;margin:0 0 30px;text-wrap:balance;max-width:14ch}
+.lede{font-family:"Cormorant Garamond",Georgia,serif;font-weight:300;font-size:clamp(22px,2.2vw,29px);line-height:1.35;max-width:52ch;margin:0 0 22px}
+.hero p.small{color:var(--muted);font-size:14.5px;max-width:64ch;margin:0 0 28px}
+.hero-links{display:flex;gap:24px;margin:0}
+.hero-links a{font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--accent);border-bottom:1px solid var(--accent-2);padding-bottom:3px}
+.hero-links a:hover{color:var(--accent-2)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px 32px;padding:26px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);position:sticky;top:64px;background:var(--ground);z-index:4}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip,.tag{font-family:Outfit,sans-serif;font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;border:1px solid var(--line);border-radius:2px;background:var(--surface);color:var(--ink-2);padding:7px 12px;cursor:pointer;transition:border-color .15s,color .15s}
+.chip:hover{border-color:var(--accent-2);color:var(--accent)}
+.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.chip:focus-visible,.tag:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px}
+.sort{display:flex;align-items:center;gap:10px}
+.sort .label{color:var(--muted)}
+.sort button{background:none;border:0;padding:4px 0;font:inherit;font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-2);cursor:pointer;border-bottom:1px solid transparent}
+.sort button[aria-pressed="true"]{border-bottom-color:var(--accent);color:var(--accent)}
+.count{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-variant-numeric:tabular-nums}
+.list{list-style:none;margin:0;padding:0 0 108px}
+.row{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) 190px;gap:16px 48px;padding:40px 0;border-bottom:1px solid var(--line-2);align-items:start}
+.row[hidden]{display:none}
+.name{font-family:"Cormorant Garamond",Georgia,serif;font-weight:300;font-size:34px;line-height:1.1;margin:0 0 6px;letter-spacing:-.005em}
+.name a:hover{color:var(--accent)}
+.top-mark{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-left:12px;vertical-align:middle;font-family:Outfit,sans-serif}
+.addr{color:var(--muted);font-size:14.5px;margin:0 0 4px}
+.hours{color:var(--ink-2);font-size:13.5px;margin:0 0 14px;font-variant-numeric:tabular-nums}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{padding:5px 9px;font-size:10.5px;cursor:default}
+.blurb{margin:0 0 16px;color:var(--ink-2);max-width:56ch}
+.note{font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-weight:300;font-size:21px;line-height:1.35;color:var(--ink);margin:0;max-width:44ch}
+.note::before{content:"“";color:var(--accent-2)}
+.note::after{content:"”";color:var(--accent-2)}
+.note-empty{font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted)}
+.edit{background:none;border:0;padding:0;margin:6px 0 0;font:inherit;font-size:11.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);cursor:pointer;border-bottom:1px solid transparent}
+.edit:hover{color:var(--accent);border-bottom-color:var(--accent-2)}
+.editor{display:grid;gap:10px}
+.editor textarea{width:100%;min-height:96px;font:inherit;font-size:15.5px;line-height:1.6;padding:12px 14px;border:1px solid var(--line);border-radius:2px;background:var(--surface);color:var(--ink);resize:vertical}
+.editor .actions{display:flex;gap:16px;align-items:center}
+.editor .actions button{font:inherit;font-size:11.5px;text-transform:uppercase;letter-spacing:.11em;cursor:pointer;border:1px solid var(--line);border-radius:2px;background:var(--surface);padding:7px 12px;color:var(--ink-2)}
+.editor .actions button.primary{border-color:var(--accent);color:var(--accent)}
+.editor .actions button:hover{border-color:var(--accent-2);color:var(--accent)}
+.editor .status{font-size:12.5px;color:var(--muted)}
+.times{display:grid;gap:6px;font-variant-numeric:tabular-nums;color:var(--ink-2);justify-self:end;text-align:right}
+.times span{white-space:nowrap}
+.times .mi{font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted)}
+.empty{padding:60px 0;color:var(--muted)}
+.mapsec{padding:0 0 108px;border-top:1px solid var(--line)}
+.map-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;gap:24px 48px;align-items:end;padding:40px 0 28px}
+.h2{font-family:"Cormorant Garamond",Georgia,serif;font-weight:300;font-size:clamp(38px,4.5vw,58px);line-height:1;margin:0}
+.map-desc{margin:0;color:var(--ink-2);max-width:56ch}
+.map-link{display:inline-block;font-size:12px;text-transform:uppercase;letter-spacing:.11em;border:1px solid var(--accent);border-radius:2px;color:var(--accent);padding:12px 18px;margin:0 0 28px}
+.map-link:hover{border-color:var(--accent-2);color:var(--accent-2)}
+.map-wrap{width:100%;overflow:hidden}
+.map-wrap svg{width:100%;height:auto;display:block}
+.map-foot{color:var(--muted);font-size:13.5px;margin:14px 0 0}
+@media (max-width:900px){.map-head{grid-template-columns:1fr}}
+footer{border-top:1px solid var(--line);padding:32px 0 60px;color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.1em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+@media (max-width:900px){.row{grid-template-columns:1fr;gap:12px}.times{justify-self:start;text-align:left;grid-auto-flow:column;gap:18px}.controls{position:static}.hero{padding-top:72px}.wrap{padding:0 22px}.mast nav{display:none}.name{font-size:30px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head><body>
+
+<header class="mast"><div class="wrap"><a class="wordmark" href="#top">Around our home</a><nav><a href="#list" data-nav="top">Top picks</a><a href="#list">The list</a><a href="#map">Map</a><a href="https://www.google.com/maps/@/data=!3m1!4b1!4m2!11m1!2sHk7U6yGFSrK98erKaE3xyQ" target="_blank" rel="noopener">Google Maps ↗</a></nav></div></header>
+
+<main class="wrap" id="top">
+  <section class="hero">
+    <h1>Where we eat, drink and park.</h1>
+    <p class="lede">Our favorite places within reach of the house.</p>
+    <p class="small">We recommend 🚶 walking if possible.</p>
+    <p class="hero-links"><a href="https://www.google.com/maps/@/data=!3m1!4b1!4m2!11m1!2sHk7U6yGFSrK98erKaE3xyQ" target="_blank" rel="noopener">Open in Google Maps ↗</a></p>
+  </section>
+
+  <section class="controls" id="list" aria-label="Filter and sort">
+    <div class="chips" role="group" aria-label="Show">
+      <button class="chip" data-cat="all" aria-pressed="true">All</button>
+      <button class="chip" data-cat="top" aria-pressed="false">Top picks</button>
+      <button class="chip" data-cat="coffee" aria-pressed="false">Coffee</button>
+      <button class="chip" data-cat="breakfast" aria-pressed="false">Breakfast</button>
+      <button class="chip" data-cat="lunch" aria-pressed="false">Lunch</button>
+      <button class="chip" data-cat="dinner" aria-pressed="false">Dinner</button>
+      <button class="chip" data-cat="dessert" aria-pressed="false">Ice cream</button>
+      <button class="chip" data-cat="bars" aria-pressed="false">Bars</button>
+      <button class="chip" data-cat="beach" aria-pressed="false">Beach parking</button>
+      <button class="chip" data-cat="other" aria-pressed="false">Other</button>
+    </div>
+    <span class="count" id="count"></span>
+  </section>
+
+  <ul class="list" id="places"></ul>
+
+  <section class="mapsec" id="map">
+    <div class="map-head"><h2 class="h2">The map</h2><p class="map-desc">Every place above, plotted around the house. Open it in Google Maps and tap <em>Save</em> to add the whole list to your own maps.</p><span class="count" id="map-count"></span></div>
+    <a class="map-link" href="https://www.google.com/maps/@/data=!3m1!4b1!4m2!11m1!2sHk7U6yGFSrK98erKaE3xyQ" target="_blank" rel="noopener">Open in Google Maps ↗</a>
+    <div class="map-wrap"><svg id="map-svg" viewBox="0 0 1000 720" role="img" font-family="Outfit,Helvetica Neue,Arial,sans-serif" aria-label="Map of places around the house"></svg></div>
+    <p class="map-foot">Rings are 5, 10 and 20 minutes on foot. Off the map: Sugarfish and Din Tai Fung in downtown Santa Monica (about 12 minutes by car), Will Rogers State Beach up the coast (about 30) and ARTHA in West LA.</p>
+  </section>
+</main>
+
+<footer class="wrap"><span>Santa Monica · Venice</span><span id="foot-note"></span></footer>
+
+<script id="data" type="application/json">[{"id":1,"name":"Roosterfish","top":false,"address":"1302 Abbot Kinney Blvd, Venice","cats":["bars"],"blurb":"Venice's long-running gay bar on Abbot Kinney — pool tables, jukebox, a patio and strong, cheap-ish cocktails.","note":"Chill bar","walk":21,"drive":7,"mi":1.1,"url":"https://www.google.com/maps/search/?api=1&query=Roosterfish+1302+Abbot+Kinney+Blvd,+Venice","hours":"Mon–Thu 4 PM–2 AM · Fri–Sun 2 PM–2 AM","lat":33.99094,"lng":-118.46806},{"id":2,"name":"Bread + Butter","top":false,"address":"2645 Main St, Santa Monica","cats":["breakfast","coffee"],"blurb":"Tiny bakery on Main. Morning buns, croissants and a proper latte.","note":"The new popular spot","walk":16,"drive":5,"mi":0.8,"url":"https://www.google.com/maps/search/?api=1&query=Bread+++Butter+2645+Main+St,+Santa+Monica","hours":"Mon–Wed Closed · Thu–Sun 7 AM–2 PM","lat":34.00169,"lng":-118.48294},{"id":3,"name":"MUD\\WTR :gather","top":true,"address":"2515 Main St, Santa Monica","cats":["coffee"],"blurb":"Calm café tucked off Main from the mushroom-coffee people. Matcha lattes, meditation nooks, easy place to sit with a laptop.","note":"Co-working and healthy drink options","walk":18,"drive":6,"mi":0.9,"url":"https://www.google.com/maps/search/?api=1&query=MUD\\WTR+:gather+2515+Main+St,+Santa+Monica","hours":"Mon–Wed 7 AM–8 PM · Thu–Sat 7 AM–6 PM · Sun 7 AM–8 PM","lat":34.00306,"lng":-118.48419},{"id":4,"name":"Ashland Hill","top":false,"address":"2807 Main St, Santa Monica","cats":["lunch","dinner","bars"],"blurb":"Patio hangout on Main — burger, giant pretzel, craft beer and gin cocktails. Good happy hour.","note":"Really chill","walk":14,"drive":5,"mi":0.7,"url":"https://www.google.com/maps/search/?api=1&query=Ashland+Hill+2807+Main+St,+Santa+Monica","hours":"Mon 11 AM–9 PM · Tue Closed · Wed–Thu 11 AM–9 PM · Fri 11 AM–10 PM · Sat 10 AM–10 PM · Sun 10 AM–9 PM","lat":34.00019,"lng":-118.48144},{"id":5,"name":"Papille Gustative","top":false,"address":"2823 Main St, Santa Monica","cats":["breakfast"],"blurb":"French-leaning brunch with a terrace. Tartines, Mediterranean omelette, French toast.","note":"Unusual and special breakfast options","walk":14,"drive":5,"mi":0.7,"url":"https://www.google.com/maps/search/?api=1&query=Papille+Gustative+2823+Main+St,+Santa+Monica","hours":"Mon–Tue 7:30 AM–3:30 PM · Wed–Thu 7:30 AM–3 PM · Fri 7:30 AM–3:30 PM · Sat 8 AM–4 PM · Sun 8:30 AM–4:30 PM","lat":33.99981,"lng":-118.48119},{"id":6,"name":"pasjoli","top":false,"address":"2732 Main St, Santa Monica","cats":["dinner"],"blurb":"Luxe Parisian bistro. The tableside pressed duck is the show; save room for the chocolate soufflé.","note":"Super traditional and well-regarded","walk":15,"drive":5,"mi":0.8,"url":"https://www.google.com/maps/search/?api=1&query=pasjoli+2732+Main+St,+Santa+Monica","hours":"Mon Closed · Tue–Thu 5–9:30 PM · Fri 5–10:30 PM · Sat 11:30 AM–2:30 PM, 5–10:30 PM · Sun 11:30 AM–2:30 PM, 5–9:30 PM","lat":34.00019,"lng":-118.48206},{"id":7,"name":"The Win~Dow at American Beauty","top":true,"address":"425 Rose Ave, Venice","cats":["lunch"],"blurb":"Walk-up window on Rose: smash burgers, fried chicken sandwich and lemonade, with American Beauty steakhouse behind it.","note":"Cheap burgers and salads, classic SoCal feel","walk":8,"drive":3,"mi":0.4,"url":"https://www.google.com/maps/search/?api=1&query=The+Win~Dow+at+American+Beauty+425+Rose+Ave,+Venice","hours":"Mon–Fri 11 AM–5 PM · Sat–Sun 9 AM–5 PM","lat":33.99806,"lng":-118.47456},{"id":8,"name":"American Beauty","top":true,"address":"425 Rose Ave, Venice","cats":["dinner","bars"],"blurb":"Neighborhood steakhouse on Rose with a proper bar — steaks, sides, fancy drinks — and the Win~Dow burger counter out front.","note":"Best overall evening spot","walk":8,"drive":3,"mi":0.4,"url":"https://www.google.com/maps/search/?api=1&query=American+Beauty+425+Rose+Ave,+Venice","hours":"Mon 5:30–9 PM · Tue–Thu 5:30–10 PM · Fri–Sat 5:30–11 PM · Sun 5:30–9 PM","lat":33.99806,"lng":-118.47456},{"id":9,"name":"Wallflower","top":false,"address":"609 Rose Ave, Venice","cats":["dinner"],"blurb":"Small, moody Indonesian-leaning spot on Rose. Duck lumpia, lemongrass-coconut panna cotta, good cocktails.","note":"","walk":5,"drive":3,"mi":0.3,"url":"https://www.google.com/maps/search/?api=1&query=Wallflower+609+Rose+Ave,+Venice","hours":"Mon–Wed 5:30–9:30 PM · Thu 5:30–10 PM · Fri–Sat 5:30–11 PM · Sun 5–9:15 PM","lat":33.99944,"lng":-118.47194},{"id":10,"name":"Fig Tree","top":false,"address":"431 Ocean Front Walk, Venice","cats":["breakfast"],"blurb":"Right on the boardwalk with ocean views from the patio. Latin-inspired breakfast plates and natural wine.","note":"Breakfast with a view","walk":19,"drive":6,"mi":0.9,"url":"https://www.google.com/maps/search/?api=1&query=Fig+Tree+431+Ocean+Front+Walk,+Venice","hours":"Mon–Thu 8 AM–8:30 PM · Fri–Sat 8 AM–9 PM · Sun 8 AM–8:30 PM","lat":33.99344,"lng":-118.47919},{"id":11,"name":"George's Burgers","top":false,"address":"3101 Lincoln Blvd, Santa Monica","cats":["breakfast"],"blurb":"Diner-style stand on Lincoln. Come for the pastrami breakfast burrito.","note":"","walk":3,"drive":2,"mi":0.1,"url":"https://www.google.com/maps/search/?api=1&query=George's+Burgers+3101+Lincoln+Blvd,+Santa+Monica","hours":"Mon–Wed 6 AM–9 PM · Thu–Sat 6 AM–10 PM · Sun 7 AM–9 PM","lat":34.00319,"lng":-118.47081},{"id":12,"name":"Jyan Isaac Bread","top":false,"address":"1620 Ocean Park Blvd, Santa Monica","cats":["breakfast","coffee"],"blurb":"Sourdough bakery on Ocean Park. City sourdough, bagels, gravlax, croissants and cappuccino.","note":"","walk":18,"drive":6,"mi":0.9,"url":"https://www.google.com/maps/search/?api=1&query=Jyan+Isaac+Bread+1620+Ocean+Park+Blvd,+Santa+Monica","hours":"Daily 7 AM–3 PM","lat":34.01156,"lng":-118.46781},{"id":13,"name":"Thyme Cafe and Market","top":false,"address":"1630 Ocean Park Blvd, Santa Monica","cats":["lunch"],"blurb":"Next door to Jyan Isaac: composed salads, sandwiches, soups and a deli case to take home, plus beer and wine.","note":"Nice for grab-and-go","walk":19,"drive":6,"mi":0.9,"url":"https://www.google.com/maps/search/?api=1&query=Thyme+Cafe+and+Market+1630+Ocean+Park+Blvd,+Santa+Monica","hours":"Mon–Sat 8 AM–4 PM · Sun 8 AM–3 PM","lat":34.01181,"lng":-118.46756},{"id":14,"name":"Coucou","top":false,"address":"218 Main St, Venice","cats":["dinner","bars"],"blurb":"Women-owned French spot on Main in Venice. Ceviche, bistro classics and a soft-serve sundae.","note":"Small French spot with a nice bar","walk":13,"drive":5,"mi":0.7,"url":"https://www.google.com/maps/search/?api=1&query=Coucou+218+Main+St,+Venice","hours":"Mon–Thu 5–9:30 PM · Fri–Sat 5–10:30 PM · Sun 5–9:30 PM","lat":33.99731,"lng":-118.47869},{"id":15,"name":"Sunny Blue","top":false,"address":"2728 Main St, Santa Monica","cats":["lunch"],"blurb":"Quick omusubi (Japanese rice balls) — spicy salmon is the one — with edamame and miso.","note":"Cheap grab-and-go","walk":15,"drive":5,"mi":0.7,"url":"https://www.google.com/maps/search/?api=1&query=Sunny+Blue+2728+Main+St,+Santa+Monica","hours":"Mon Closed · Tue–Sun 11 AM–8 PM","lat":34.00031,"lng":-118.48206},{"id":16,"name":"Dudley Market","top":false,"address":"9 Dudley Ave, Venice","cats":["dinner"],"blurb":"Intimate farmhouse-chic seafood spot a few steps from the boardwalk. Seasonal menu, natural wine.","note":"Busy but awesome","walk":18,"drive":6,"mi":0.9,"url":"https://www.google.com/maps/search/?api=1&query=Dudley+Market+9+Dudley+Ave,+Venice","hours":"Mon–Tue Closed · Wed–Fri 5–11 PM · Sat–Sun 2–11 PM","lat":33.99419,"lng":-118.47956},{"id":17,"name":"La Isla Bonita","top":false,"address":"Rose Ave near 4th, Venice","cats":["lunch"],"blurb":"Beloved taco truck on Rose. Shrimp-mango-avocado ceviche tostadas and beef tacos for a few dollars.","note":"Get the fish taco","walk":9,"drive":4,"mi":0.5,"url":"https://www.google.com/maps/search/?api=1&query=La+Isla+Bonita+Rose+Ave+near+4th,+Venice","hours":"Mon–Wed 11:30 AM–5 PM · Thu Closed · Fri–Sun 11:30 AM–5 PM","lat":33.99756,"lng":-118.47481},{"id":18,"name":"Tacos Chidos","top":true,"address":"Lincoln Blvd near Navy, Venice","cats":["dinner"],"blurb":"Street-taco stand around the corner — al pastor off the trompo with pineapple, late into the night.","note":"Our favorite taco truck","walk":4,"drive":3,"mi":0.2,"url":"https://www.google.com/maps/search/?api=1&query=Tacos+Chidos+Lincoln+Blvd+near+Navy,+Venice","hours":"Daily 5 PM–12 AM","lat":34.00194,"lng":-118.46944},{"id":19,"name":"Chulita","top":false,"address":"533 Rose Ave, Venice","cats":["dinner"],"blurb":"Alta California Mexican on Rose: seasonal, local, with a serious mezcal and tequila list. Weekend brunch too.","note":"Expensive Mexican — nice ambiance","walk":6,"drive":3,"mi":0.3,"url":"https://www.google.com/maps/search/?api=1&query=Chulita+533+Rose+Ave,+Venice","hours":"Mon–Tue 9:30 AM–9:30 PM · Wed 11 AM–9:30 PM · Thu 9:30 AM–10 PM · Fri 9:30 AM–11 PM · Sat 9 AM–11 PM · Sun 9 AM–9:30 PM","lat":33.99881,"lng":-118.47306},{"id":20,"name":"Flake","top":false,"address":"513 Rose Ave, Venice","cats":["breakfast"],"blurb":"Snug Rose Ave café with cereal-box art on the walls. Clubhouse croissant, veggie sausage burrito, creative breakfast plates.","note":"Long-standing Venice spot","walk":7,"drive":3,"mi":0.4,"url":"https://www.google.com/maps/search/?api=1&query=Flake+513+Rose+Ave,+Venice","hours":"Daily 8 AM–3 PM","lat":33.99844,"lng":-118.47381},{"id":21,"name":"Superba Food + Bread","top":false,"address":"1900 Lincoln Blvd, Venice","cats":["breakfast","lunch","dinner"],"blurb":"Industrial-chic all-day café and bakery on Lincoln. Good bread, solid breakfast, burger at night.","note":"Lots of seating available","walk":26,"drive":8,"mi":1.3,"url":"https://www.google.com/maps/search/?api=1&query=Superba+Food+++Bread+1900+Lincoln+Blvd,+Venice","hours":"Mon–Thu 8 AM–9 PM · Fri–Sat 8 AM–10 PM · Sun 8 AM–9 PM","lat":33.99619,"lng":-118.45631},{"id":22,"name":"Zinqué Venice","top":false,"address":"1440 Lincoln Blvd, Venice","cats":["coffee"],"blurb":"French coffeehouse-meets-wine bar in the à côté courtyard. Coffee in the morning, boards and wine by the glass at night.","note":"","walk":20,"drive":6,"mi":1.0,"url":"https://www.google.com/maps/search/?api=1&query=Zinqué+Venice+1440+Lincoln+Blvd,+Venice","hours":"Daily 7 AM–11 PM","lat":33.99781,"lng":-118.45994},{"id":23,"name":"Gjelina","top":false,"address":"1429 Abbot Kinney Blvd, Venice","cats":["dinner"],"blurb":"The Abbot Kinney classic. Wood-fired pizzas, vegetable plates, duck confit hash at brunch. Book ahead.","note":"Classic","walk":24,"drive":7,"mi":1.2,"url":"https://www.google.com/maps/search/?api=1&query=Gjelina+1429+Abbot+Kinney+Blvd,+Venice","hours":"Daily 9 AM–10:30 PM","lat":33.99044,"lng":-118.46494},{"id":24,"name":"Gjusta","top":true,"address":"320 Sunset Ave, Venice","cats":["breakfast","lunch"],"blurb":"Gjelina's sprawling bakery-deli. Smoked fish, pastries, breads and sandwiches; grab it to go or sit in the back garden.","note":"European vibes, great smoked fish options","walk":13,"drive":5,"mi":0.7,"url":"https://www.google.com/maps/search/?api=1&query=Gjusta+320+Sunset+Ave,+Venice","hours":"Daily 7 AM–4 PM","lat":33.99519,"lng":-118.47444},{"id":25,"name":"Cobi's","top":true,"address":"2104 Main St, Santa Monica","cats":["dinner"],"blurb":"Sri Lankan and Southeast Asian in a leafy courtyard on Main. Curry puffs, curries paired with rice, women-owned.","note":"Real special","walk":25,"drive":7,"mi":1.2,"url":"https://www.google.com/maps/search/?api=1&query=Cobi's+2104+Main+St,+Santa+Monica","hours":"Mon–Wed 5–10 PM · Thu–Fri 5–11 PM · Sat 10 AM–2 PM, 5–11 PM · Sun 10 AM–2 PM, 5–10 PM","lat":34.00619,"lng":-118.48819},{"id":26,"name":"Din Tai Fung","top":false,"address":"Santa Monica Place, 395 Santa Monica Pl","cats":["lunch","dinner"],"blurb":"Soup dumplings at the mall. Xiao long bao, shrimp fried rice, sweet-and-sour pork baos; expect a wait.","note":"Ocean views; sometimes a wait at peak times","walk":39,"drive":11,"mi":1.9,"url":"https://www.google.com/maps/search/?api=1&query=Din+Tai+Fung+Santa+Monica+Place,+395+Santa+Monica+Pl","hours":"Mon 11:30 AM–9:30 PM · Tue–Thu 12–9 PM · Fri 12–10 PM · Sat 11:30 AM–10 PM · Sun 11:30 AM–9:30 PM","lat":34.01331,"lng":-118.49444},{"id":27,"name":"SUGARFISH by sushi nozawa","top":true,"address":"1345 2nd St, Santa Monica","cats":["dinner"],"blurb":"Trust-me sushi in downtown Santa Monica — warm rice, cut-to-order fish, no reservations.","note":"Best sushi","walk":44,"drive":12,"mi":2.2,"url":"https://www.google.com/maps/search/?api=1&query=SUGARFISH+by+sushi+nozawa+1345+2nd+St,+Santa+Monica","hours":"Mon Closed · Tue–Sun 11:30 AM–10 PM","lat":34.01544,"lng":-118.49719},{"id":28,"name":"Blue Bottle Coffee (Main St)","top":false,"address":"2439 Main St, Santa Monica","cats":["coffee"],"blurb":"The Main Street Blue Bottle — pour-overs, bright cold brew, pastries.","note":"","walk":19,"drive":6,"mi":0.9,"url":"https://www.google.com/maps/search/?api=1&query=Blue+Bottle+Coffee+2439+Main+St,+Santa+Monica","hours":"Daily 6:30 AM–4:30 PM","lat":34.00356,"lng":-118.48481},{"id":29,"name":"Blue Bottle Coffee (Abbot Kinney)","top":false,"address":"1103 Abbot Kinney Blvd, Venice","cats":["coffee"],"blurb":"The Abbot Kinney Blue Bottle with outdoor seating.","note":"","walk":19,"drive":6,"mi":0.9,"url":"https://www.google.com/maps/search/?api=1&query=Blue+Bottle+Coffee+1103+Abbot+Kinney+Blvd,+Venice","hours":"Daily 6 AM–6:30 PM","lat":33.99194,"lng":-118.47031},{"id":30,"name":"Intelligentsia Coffee","top":false,"address":"1331 Abbot Kinney Blvd, Venice","cats":["coffee"],"blurb":"Abbot Kinney's coffee anchor: daily-roasted beans, an open courtyard and good people-watching.","note":"","walk":22,"drive":7,"mi":1.1,"url":"https://www.google.com/maps/search/?api=1&query=Intelligentsia+Coffee+1331+Abbot+Kinney+Blvd,+Venice","hours":"Mon–Wed 6 AM–5 PM · Thu–Sat 6 AM–7 PM · Sun 6 AM–5 PM","lat":33.99106,"lng":-118.46694},{"id":31,"name":"Gnarwhal Coffee Co.","top":true,"address":"3101 Main St, Santa Monica","cats":["coffee"],"blurb":"Bright neighborhood coffee shop at the Venice end of Main with sidewalk seats, organic brews and cookies.","note":"Our favorite coffee spot","walk":13,"drive":5,"mi":0.6,"url":"https://www.google.com/maps/search/?api=1&query=Gnarwhal+Coffee+Co.+3101+Main+St,+Santa+Monica","hours":"Daily 7 AM–4 PM","lat":33.99806,"lng":-118.47931},{"id":32,"name":"Parking Lot 5 South","top":false,"address":"2701 Barnard Way, Santa Monica","cats":["beach"],"blurb":"Pay-by-the-hour beach lot right on the bike path, with bathrooms and a grassy strip. Kapowui surf lessons meet here.","note":"Larger lot if the other is full — $3/hr to the right, $10/day to the left","walk":20,"drive":6,"mi":1.0,"url":"https://www.google.com/maps/search/?api=1&query=Parking+Lot+5+South+2701+Barnard+Way,+Santa+Monica","hours":"Daily 24 hours","lat":33.99981,"lng":-118.48556},{"id":33,"name":"South Beach Park","top":false,"address":"110 Pier Ave, Santa Monica","cats":["beach"],"blurb":"Small oceanfront park at the end of Pier Ave — the closest way onto the sand, and a good sunset bench.","note":"Closest beach access — $3/hr to the right, $10/day to the left","walk":18,"drive":6,"mi":0.9,"url":"https://www.google.com/maps/search/?api=1&query=South+Beach+Park+110+Pier+Ave,+Santa+Monica","hours":"Daily 24 hours","lat":33.99669,"lng":-118.48244},{"id":34,"name":"Dayglow","top":false,"address":"540 Rose Ave, Venice","cats":["coffee"],"blurb":"Rose Ave outpost of the LA coffee roaster known for inventive signature drinks; croissants and sandwiches too.","note":"","walk":7,"drive":3,"mi":0.3,"url":"https://www.google.com/maps/search/?api=1&query=Dayglow+540+Rose+Ave,+Venice","hours":"Daily 7 AM–7 PM","lat":33.99844,"lng":-118.47294},{"id":35,"name":"Awan","top":false,"address":"310 Rennie Ave, Venice","cats":["dessert"],"blurb":"Plant-based ice cream and gelato just off Rose — Gaviota strawberry, tastings encouraged.","note":"","walk":7,"drive":3,"mi":0.4,"url":"https://www.google.com/maps/search/?api=1&query=Awan+310+Rennie+Ave,+Venice","hours":"Mon–Fri 3–10 PM · Sat–Sun 12–10 PM","lat":33.99831,"lng":-118.47269},{"id":36,"name":"Tartine","top":false,"address":"2903 Lincoln Blvd, Santa Monica","cats":["breakfast","coffee"],"blurb":"The San Francisco bakery's Lincoln Blvd outpost. Morning buns, croissants, smoked salmon tartine and egg sandwiches.","note":"Great pastries, air conditioning","walk":4,"drive":3,"mi":0.2,"url":"https://www.google.com/maps/search/?api=1&query=Tartine+2903+Lincoln+Blvd,+Santa+Monica","hours":"Daily 7 AM–3 PM","lat":34.00456,"lng":-118.47294},{"id":37,"name":"Groundwork Coffee","top":true,"address":"671 Rose Ave, Venice","cats":["coffee"],"blurb":"LA's organic coffee roaster at Rose and Lincoln — signature blends and a solid breakfast burrito.","note":"Closest coffee","walk":4,"drive":3,"mi":0.2,"url":"https://www.google.com/maps/search/?api=1&query=Groundwork+Coffee+671+Rose+Ave,+Venice","hours":"Mon–Thu 6 AM–4 PM · Fri–Sun 6 AM–5 PM","lat":34.00044,"lng":-118.47031},{"id":38,"name":"Will Rogers State Beach","top":false,"address":"15800 Pacific Coast Hwy, Pacific Palisades","cats":["beach"],"blurb":"The big county lot at Will Rogers — wide, quieter beach up the coast with lifeguards, restrooms and the bike path running through.","note":"$15/day","walk":114,"drive":29,"mi":5.7,"url":"https://www.google.com/maps/search/?api=1&query=Will+Rogers+State+Beach+15800+Pacific+Coast+Hwy,+Pacific+Palisades","hours":"Daily 6 AM–6:30 PM","lat":34.03606,"lng":-118.53681},{"id":39,"name":"Salt & Straw","top":false,"address":"1357 Abbot Kinney Blvd, Venice","cats":["dessert"],"blurb":"The Portland ice cream shop on Abbot Kinney — inventive seasonal flavors, farm-sourced ingredients, free tastes at the counter.","note":"","walk":23,"drive":7,"mi":1.1,"url":"https://www.google.com/maps/search/?api=1&query=Salt+%26+Straw+1357+Abbot+Kinney+Blvd,+Venice","hours":"Daily 11 AM–11 PM","lat":33.99081,"lng":-118.46606},{"id":40,"name":"Anima Mundi Apothecary","top":false,"address":"417 Rose Ave, Venice","cats":["coffee"],"blurb":"Herbal apothecary on Rose — tonics, teas, adaptogenic elixirs and a Mexican cocoa worth the walk; sits right beside the Win~Dow.","note":"","walk":8,"drive":4,"mi":0.4,"url":"https://www.google.com/maps/search/?api=1&query=Anima+Mundi+Apothecary+417+Rose+Ave,+Venice","hours":"Daily 9 AM–7 PM","lat":33.99796,"lng":-118.47458},{"id":41,"name":"Whole Foods Market","top":false,"address":"225 Lincoln Blvd, Venice","cats":["other"],"blurb":"The big Venice Whole Foods at Rose and Lincoln — groceries, hot bar, flowers, a quick coffee counter. Parking lot on site.","note":"","walk":4,"drive":2,"mi":0.2,"url":"https://www.google.com/maps/search/?api=1&query=Whole+Foods+Market+225+Lincoln+Blvd,+Venice","hours":"Daily 7 AM–10 PM","lat":34.00116,"lng":-118.46988},{"id":42,"name":"CVS","top":false,"address":"119 Lincoln Blvd, Venice","cats":["other"],"blurb":"Pharmacy and drugstore basics a block from the house — sunscreen, snacks, prescriptions.","note":"","walk":3,"drive":2,"mi":0.2,"url":"https://www.google.com/maps/search/?api=1&query=CVS+119+Lincoln+Blvd,+Venice","hours":"Daily 7 AM–10 PM","lat":34.00192,"lng":-118.46998},{"id":43,"name":"shefayoga Venice","top":false,"address":"245 Main St, Venice","cats":["other"],"blurb":"Neighborhood yoga studio on Main in Venice — vinyasa, restorative, early-morning classes.","note":"","walk":14,"drive":5,"mi":0.7,"url":"https://www.google.com/maps/search/?api=1&query=shefayoga+Venice+245+Main+St,+Venice","hours":"Mon–Tue 6:15 AM–9 PM · Wed 6:15 AM–10 PM · Thu 6:15 AM–9 PM · Fri 6:15 AM–7:30 PM · Sat 8 AM–6 PM · Sun 8 AM–9 PM","lat":33.9966,"lng":-118.4784},{"id":44,"name":"Raven Spa","top":false,"address":"208 Pier Ave, Santa Monica","cats":["other"],"blurb":"Day spa tucked inside the Buddhist temple grounds on Pier Ave — massage, facials, a quiet garden.","note":"","walk":13,"drive":5,"mi":0.6,"url":"https://www.google.com/maps/search/?api=1&query=Raven+Spa+208+Pier+Ave,+Santa+Monica","hours":"Daily 10 AM–9 PM","lat":33.99863,"lng":-118.47974},{"id":45,"name":"Massage One Wellness","top":false,"address":"245 Main St, Venice","cats":["other"],"blurb":"Deep-tissue and stretching massage upstairs on Main, next to shefayoga. Book online.","note":"","walk":14,"drive":5,"mi":0.7,"url":"https://www.google.com/maps/search/?api=1&query=Massage+One+Wellness+245+Main+St,+Venice","hours":"Daily 10 AM–9 PM","lat":33.99666,"lng":-118.47865},{"id":46,"name":"ARTHA Yoga and Wellness Sanctuary","top":false,"address":"12121 W Olympic Blvd, West LA","cats":["other"],"blurb":"Yoga, pilates and private sauna rooms in West LA — a drive, not a walk.","note":"","walk":61,"drive":16,"mi":3.0,"url":"https://www.google.com/maps/search/?api=1&query=ARTHA+Yoga+and+Wellness+Sanctuary+12121+W+Olympic+Blvd,+West+LA","hours":"Mon–Thu 9 AM–9 PM · Fri–Sun 10 AM–6 PM","lat":34.03293,"lng":-118.4556}]</script>
+<script id="main">
+(function(){
+  var CATS={coffee:"Coffee",breakfast:"Breakfast",lunch:"Lunch",dinner:"Dinner",dessert:"Ice cream",bars:"Bars",beach:"Beach parking",other:"Other"};
+  var ORDER=Object.keys(CATS);
+  function dayRank(p){return Math.min.apply(null,p.cats.map(function(c){return ORDER.indexOf(c);}));}
+  var state={places:JSON.parse(document.getElementById("data").textContent)};
+  var filter="all", sort="day", canWrite=false, artifact=null, editing=null;
+  var listEl=document.getElementById("places"), countEl=document.getElementById("count");
+
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+  function rowHTML(p){
+    var tags=p.cats.slice().sort(function(a,b){return ORDER.indexOf(a)-ORDER.indexOf(b);}).map(function(c){return '<span class="tag">'+CATS[c]+'</span>';}).join("");
+    var noteBlock;
+    if(editing===p.id){
+      noteBlock='<div class="editor"><textarea aria-label="Why we love '+esc(p.name)+'" data-id="'+p.id+'">'+esc(p.note)+'</textarea><div class="actions"><button class="primary" data-save="'+p.id+'">Save note</button><button data-cancel="'+p.id+'">Cancel</button><span class="status" data-status="'+p.id+'"></span></div></div>';
+    }else{
+      noteBlock=p.note?'<p class="note">'+esc(p.note)+'</p>':(canWrite?'<p class="note-empty">No note yet</p>':'');
+      if(canWrite) noteBlock+='<button class="edit" data-edit="'+p.id+'">'+(p.note?"Edit note":"Add a note")+'</button>';
+    }
+    return '<li class="row" data-id="'+p.id+'">'
+      +'<div><h2 class="name"><a href="'+esc(p.url)+'" target="_blank" rel="noopener">'+esc(p.name)+'</a>'+(p.top?'<span class="top-mark">Top pick</span>':'')+'</h2>'
+      +'<p class="addr">'+esc(p.address)+'</p>'+(p.hours?'<p class="hours">'+esc(p.hours)+'</p>':'')+'<div class="tags">'+tags+'</div></div>'
+      +'<div><p class="blurb">'+esc(p.blurb)+'</p>'+noteBlock+'</div>'
+      +'<div class="times"><span>🚶 '+p.walk+' min</span><span>🚗 '+p.drive+' min</span><span class="mi">'+p.mi+' mi</span></div>'
+      +'</li>';
+  }
+
+  function visible(p){ if(filter==="all") return true; if(filter==="top") return !!p.top; return p.cats.indexOf(filter)>=0; }
+
+  function render(){
+    var rows=state.places.filter(visible);
+    rows.sort(sort==="day"?function(a,b){return dayRank(a)-dayRank(b)||a.walk-b.walk||a.name.localeCompare(b.name);}:sort==="walk"?function(a,b){return a.walk-b.walk||a.name.localeCompare(b.name);}:function(a,b){return a.name.localeCompare(b.name);});
+    listEl.innerHTML=rows.length?rows.map(rowHTML).join(""):'<li class="empty">Nothing in this category yet.</li>';
+    countEl.textContent=rows.length+" place"+(rows.length===1?"":"s");
+  }
+
+  document.querySelectorAll(".chip").forEach(function(b){b.addEventListener("click",function(){
+    filter=b.dataset.cat; document.querySelectorAll(".chip").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");}); render();
+  });});
+
+  var navTop=document.querySelector('[data-nav="top"]');
+  if(navTop) navTop.addEventListener("click",function(){ var c=document.querySelector('.chip[data-cat="top"]'); if(c) c.click(); });
+
+  listEl.addEventListener("click",function(e){
+    var t=e.target.closest("button"); if(!t) return;
+    if(t.dataset.edit){ editing=+t.dataset.edit; render(); var ta=listEl.querySelector("textarea"); if(ta) ta.focus(); }
+    else if(t.dataset.cancel){ editing=null; render(); }
+    else if(t.dataset.save){ saveNote(+t.dataset.save); }
+  });
+
+  function fullDocument(){
+    var data=JSON.stringify(state.places).replace(/<\//g,"<\\/");
+    return "<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+      +document.querySelector("title").outerHTML+document.getElementById("fonts").outerHTML+document.getElementById("style").outerHTML
+      +"</head><body>"+document.querySelector("header.mast").outerHTML+"\n"+staticMain()+"\n"+document.querySelector("footer").outerHTML
+      +'\n<script id="data" type="application/json">'+data+"<\/script>\n"+document.getElementById("main").outerHTML+"</body></html>";
+  }
+  function staticMain(){
+    // the main section as authored: list empty, chips reset, so a fresh viewer starts at rest
+    var m=document.querySelector("main").cloneNode(true);
+    m.querySelector("#places").innerHTML="";
+    m.querySelector("#count").textContent="";
+    m.querySelectorAll(".chip").forEach(function(x){x.setAttribute("aria-pressed",x.dataset.cat==="all"?"true":"false");});
+    m.querySelector("#map-svg").innerHTML="";
+    return m.outerHTML;
+  }
+
+  function saveNote(id){
+    var ta=listEl.querySelector('textarea[data-id="'+id+'"]'), st=listEl.querySelector('[data-status="'+id+'"]');
+    var p=state.places.filter(function(x){return x.id===id;})[0]; if(!p||!ta) return;
+    var prev=p.note; p.note=ta.value.trim();
+    st.textContent="Saving…";
+    artifact.publish(fullDocument()).then(function(){ st.textContent="Saved"; }).catch(function(err){
+      p.note=prev;
+      if(err&&err.code==="conflict"){ st.textContent="Someone else just saved — reloading."; return; }
+      if(err&&(err.code==="not_writer"||err.code==="not_granted"||err.code==="not_declared")){ canWrite=false; editing=null; render(); return; }
+      st.textContent="Couldn't save ("+(err&&err.code||"error")+"). Your text is still here — try again.";
+    });
+  }
+
+  function renderMap(){
+    var svg=document.getElementById("map-svg"); if(!svg) return;
+    var H={lat:34.00222,lng:-118.47228}, W=1000, HT=720, near=state.places.filter(function(p){return p.mi<=1.6;});
+    var kx=Math.cos(H.lat*Math.PI/180);
+    function m(lat,lng){return [ (lng-H.lng)*kx*111320, -(lat-H.lat)*110574 ];}
+    var pts=near.map(function(p){var v=m(p.lat,p.lng); return {p:p,x:v[0],y:v[1]};});
+    var maxX=0,maxY=0; pts.forEach(function(q){maxX=Math.max(maxX,Math.abs(q.x));maxY=Math.max(maxY,Math.abs(q.y));});
+    var sc=Math.min((W/2-140)/maxX,(HT/2-40)/maxY); var cx=W/2, cy=HT/2;
+    function P(lat,lng){var v=m(lat,lng); return [cx+v[0]*sc, cy+v[1]*sc];}
+    function path(pts){return pts.map(function(c,i){var q=P(c[0],c[1]); return (i?"L":"M")+q[0].toFixed(1)+" "+q[1].toFixed(1);}).join(" ");}
+    var STREETS=[
+      ["Lincoln Blvd",[[34.0160,-118.4873],[34.01238,-118.48296],[34.00698,-118.47641],[34.00306,-118.47110],[34.00136,-118.46789],[33.99410,-118.45285],[33.99040,-118.44781],[33.9860,-118.4420]]],
+      ["Main St",[[34.0120,-118.4938],[34.00798,-118.48970],[34.00228,-118.48389],[33.99744,-118.47902],[33.99615,-118.47775],[33.98837,-118.47088]]],
+      ["Rose Ave",[[33.99488,-118.48012],[33.99615,-118.47775],[34.00136,-118.46789],[34.0050,-118.4610]]],
+      ["Abbot Kinney Blvd",[[33.9947,-118.4764],[33.99238,-118.47340],[33.98913,-118.46257]]],
+      ["Venice Blvd",[[33.98450,-118.46967],[33.98913,-118.46257],[33.99410,-118.45285],[33.9975,-118.4460]]],
+      ["Ocean Park Blvd",[[34.00088,-118.48587],[34.00228,-118.48389],[34.00698,-118.47641],[34.01246,-118.46690],[34.0160,-118.4610]]],
+      ["Navy St",[[33.99744,-118.47902],[34.00306,-118.47110]]],
+      ["Pico Blvd",[[34.0075,-118.4903],[34.01238,-118.48296],[34.0160,-118.4765]]],
+      ["Washington Blvd",[[33.97677,-118.47081],[33.99040,-118.44781]]]
+    ];
+    var COAST=[[34.0140,-118.5040],[34.0100,-118.4990],[34.0009,-118.4878],[33.9949,-118.4818],[33.9860,-118.4748],[33.9768,-118.4714],[33.9700,-118.4690]];
+    var out='';
+    // ocean + sand
+    var coast=path(COAST); var first=P(COAST[0][0],COAST[0][1]), last=P(COAST[COAST.length-1][0],COAST[COAST.length-1][1]);
+    out+='<path d="'+coast+' L'+(last[0]-2000)+' '+last[1]+' L'+(first[0]-2000)+' '+first[1]+' Z" fill="#E5DFD4"/>';
+    out+='<path d="'+coast+'" fill="none" stroke="#F8F5F0" stroke-width="14"/>';
+    out+='<path d="'+coast+'" fill="none" stroke="#D9D2C5" stroke-width="1"/>';
+    // streets
+    STREETS.forEach(function(st,i){
+      out+='<path id="st'+i+'" d="'+path(st[1])+'" fill="none" stroke="#D9D2C5" stroke-width="1.6" stroke-linejoin="round"/>';
+      out+='<text font-size="9.5" fill="#615F55" letter-spacing=".12em" dy="-4"><textPath href="#st'+i+'" startOffset="'+({"Lincoln Blvd":"62%","Main St":"6%","Ocean Park Blvd":"55%","Rose Ave":"4%","Navy St":"8%","Abbot Kinney Blvd":"45%","Venice Blvd":"30%","Pico Blvd":"30%","Washington Blvd":"55%"}[st[0]]||"12%")+'">'+st[0].toUpperCase()+'</textPath></text>';
+    });
+    // walking rings
+    [[310,"5 min"],[620,"10 min"],[1240,"20 min"]].forEach(function(r){var rr=r[0]*sc; var ly0=(cy-rr-6<14)?cy-rr+14:cy-rr-6; out+='<circle cx="'+cx+'" cy="'+cy+'" r="'+rr+'" fill="none" stroke="#8C9779" stroke-opacity=".7" stroke-dasharray="2 5"/><text x="'+(cx+5)+'" y="'+ly0+'" font-size="9.5" fill="#5E6B4F" letter-spacing=".1em">'+r[1].toUpperCase()+' WALK</text>';});
+    function short(n){return n.replace(/ \(.*\)$/,'').replace(' at American Beauty','').replace(' by sushi nozawa','').replace(' :gather','').replace('Coffee Co.','Coffee').replace(' Food + Bread','').replace(' Cafe and Market','').replace(' Venice','');}
+    pts.sort(function(a,b){return (b.p.top?1:0)-(a.p.top?1:0)||a.y-b.y;});
+    var placed=[]; function hit(r){return placed.some(function(o){return !(r.x+r.w<o.x||o.x+o.w<r.x||r.y+r.h<o.y||o.y+o.h<r.y);});}
+    placed.push({x:cx-8,y:cy-8,w:62,h:16});
+    pts.forEach(function(q){placed.push({x:cx+q.x*sc-5,y:cy+q.y*sc-5,w:10,h:10});});
+    pts.forEach(function(q){
+      var x=cx+q.x*sc, y=cy+q.y*sc, top=q.p.top, name=short(q.p.name), w=name.length*6.8+6, h=12;
+      var cands=[[8,4],[8,-8],[8,15],[-w-8,4],[-w-8,-8],[-w-8,15],[8,-19],[8,26],[-w-8,-19],[-w-8,26]];
+      var lx=x+8, ly=y+4;
+      for(var i=0;i<cands.length;i++){var r={x:x+cands[i][0],y:y+cands[i][1]-10,w:w,h:h}; if(!hit(r)){lx=r.x;ly=r.y+10;placed.push(r);break;}}
+      out+='<a href="'+esc(q.p.url)+'" target="_blank" rel="noopener"><title>'+esc(q.p.name)+'</title><circle cx="'+x+'" cy="'+y+'" r="'+(top?5.5:4)+'" fill="'+(top?'#5E6B4F':'#F8F5F0')+'" stroke="#5E6B4F" stroke-width="1.2"/>';
+      out+='<text x="'+lx+'" y="'+ly+'" font-size="11" fill="'+(top?'#20211C':'#43443C')+'"'+(top?' font-weight="500"':'')+'>'+esc(name)+'</text></a>';
+    });
+    out+='<circle cx="'+cx+'" cy="'+cy+'" r="9" fill="#EDE8DF" stroke="#20211C" stroke-width="1.5"/><circle cx="'+cx+'" cy="'+cy+'" r="4" fill="#20211C"/><text x="'+(cx+14)+'" y="'+(cy+4)+'" font-size="12" fill="#20211C" font-weight="500" letter-spacing=".08em">HOME</text>';
+    var oc=P(33.996,-118.4905); out+='<text x="'+oc[0]+'" y="'+oc[1]+'" font-size="10" fill="#615F55" letter-spacing=".16em" text-anchor="middle">PACIFIC OCEAN</text>';
+    out+='<text x="'+(W-16)+'" y="24" font-size="10" fill="#615F55" letter-spacing=".12em" text-anchor="end">N ↑</text>';
+    svg.setAttribute("viewBox","0 0 "+W+" "+HT);
+    svg.innerHTML=out;
+    var mc=document.getElementById("map-count"); if(mc) mc.textContent=near.length+" places within 1.6 mi";
+  }
+
+  render(); renderMap();
+  if(window.claude&&typeof window.claude.use==="function"){
+    window.claude.use("artifact").then(function(ns){
+      if(!ns) return; artifact=ns; canWrite=true; markWritable(); render();
+    });
+  }
+  document.getElementById("foot-note").textContent="";
+  function markWritable(){ document.getElementById("foot-note").textContent="Notes are saved to this page"; }
+})();
+</script>
+
+</body></html>
