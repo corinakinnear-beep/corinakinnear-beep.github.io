@@ -197,6 +197,7 @@
   table.grid td.q15{height:calc(var(--cell) * .6)}
   table.grid td.dayslot{height:calc(var(--cell) * 2)}
   table.grid td.on{background:var(--you);box-shadow:none}
+  #youGrid td.offered:not(.on),#manualGrid td.offered:not(.on){background:#E4F6EA;box-shadow:inset 0 0 0 2px var(--propose)}
   .propose table.grid td.on{background:var(--propose);box-shadow:none}
   table.grid td.na{background:repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(91,93,102,.11) 4px,rgba(91,93,102,.11) 5px);cursor:default;box-shadow:none;opacity:.65}
   table.grid td.l1{background:var(--h1)} table.grid td.l2{background:var(--h2)}
@@ -494,7 +495,7 @@
           <p class="qf-title" style="margin-bottom:10px">Choose location</p>
           <div class="tabs loc" id="locTabs" role="tablist"></div>
         </div>
-        <p class="legend" style="margin:0 0 14px"><i style="background:var(--you)"></i> = you can make it here. Hatched slots weren&rsquo;t proposed.</p>
+        <p class="legend" style="margin:0 0 14px"><i style="background:var(--propose)"></i> = opened by the coordinator. <i style="background:var(--you)"></i> = you can make it here. Hatched slots weren&rsquo;t proposed.</p>
         <div class="gridwrap" id="youGrid"></div>
         <div class="quickfill">
           <p class="qf-title">Quick fill options</p>
@@ -737,7 +738,10 @@ const PIN_SUFFIX = '::ensemble-pin';
     for (let k = 0; k < n; k++) {
       const h = cfg.s + k*cfg.g/60;
       html += `<tr><th class="time">${cfg.g >= 1440 ? 'All day' : (h % 1 === 0 ? fmtHour(h) : '')}</th>`;
-      cfg.d.forEach((_, day) => { const idx = day*n + k; const na = proposed && !proposed.has(idx); html += `<td class="${cls}${na ? ' na' : ''}" data-i="${idx}" data-day="${day}"></td>`; });
+      cfg.d.forEach((_, day) => {
+        const idx = day*n + k, offered = proposed ? proposed.has(idx) : false, na = proposed && !offered;
+        html += `<td class="${cls}${offered ? ' offered' : ''}${na ? ' na' : ''}" data-i="${idx}" data-day="${day}"></td>`;
+      });
       html += '</tr>';
     }
     if (cfg.g < 1440) html += `<tr><th class="time">${fmtHour(cfg.e)}</th></tr>`;
