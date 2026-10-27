@@ -67,6 +67,8 @@ def main():
         measure(w.get("images"), w["slug"])
     measure(data["performing"].get("images"), "performing")
     measure(data["teaching"].get("images"), "teaching")
+    measure([data["bio"]["hero"]] if data["bio"].get("hero") else [], "bio")
+    measure(data["bio"].get("extra"), "bio")
 
     # the dance hero: first image of the newest work that has one, unless moves.yaml names one
     hero = None

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block main %}
+  {% if bio.hero %}<img class="hero-img" src="/moves/img/bio/{{ bio.hero.file }}" alt="{{ bio.hero.alt }}"{% if bio.hero.w %} width="{{ bio.hero.w }}" height="{{ bio.hero.h }}"{% endif %}{% if bio.hero.pos %} style="object-position:{{ bio.hero.pos }}"{% endif %}>{% endif %}
   <section class="pagehead wrap">
     <h1>Corina Kinnear</h1>
     <p class="lede">{{ bio.lede|lower }}</p>
@@ -17,6 +18,7 @@
       {% for r in bio.residencies %}<p>{{ r }}</p>{% endfor %}
       <h3>Credits</h3>
       <p><a href="/moves/works/" style="border-bottom:1px solid var(--line-2)">Works</a> · <a href="/moves/performing/" style="border-bottom:1px solid var(--line-2)">Performing</a> · <a href="/moves/teaching/" style="border-bottom:1px solid var(--line-2)">Teaching</a></p>
+      {% for im in bio.extra or [] %}<img src="/moves/img/bio/{{ im.file }}" alt="{{ im.alt }}"{% if im.w %} width="{{ im.w }}" height="{{ im.h }}"{% endif %} loading="lazy" style="margin-top:40px">{% if im.credit %}<p class="label" style="margin-top:10px">{{ im.credit }}</p>{% endif %}{% endfor %}
     </div>
   </section>
 {% endblock %}
