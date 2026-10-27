@@ -52,6 +52,22 @@ def main():
     works = data["works"]
     shown = [w for w in works if not w.get("list_only")]
 
+    # give every image its pixel size, so pages can reserve the space before photos load
+    def measure(images, folder):
+        for im in images or []:
+            f = ROOT / "moves" / "img" / folder / im["file"]
+            if f.exists():
+                try:
+                    from PIL import Image
+                    with Image.open(f) as pic:
+                        im["w"], im["h"] = pic.size
+                except Exception:
+                    pass
+    for w in works:
+        measure(w.get("images"), w["slug"])
+    measure(data["performing"].get("images"), "performing")
+    measure(data["teaching"].get("images"), "teaching")
+
     # the dance hero: first image of the newest work that has one, unless moves.yaml names one
     hero = None
     for w in shown:

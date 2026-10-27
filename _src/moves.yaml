@@ -30,8 +30,22 @@ works:
       - [Premiere, "Los Angeles Dance Festival, 18 April 2026"]
       - [Photography, George Simian]
     photo_credit: "Photographs by George Simian"
-    images: []
-    notes: "cast list missing; second photo set (Denise Leitner or SAL) left out until the credit is confirmed; music not cleared so no video"
+    images:
+      - { file: corina-concert-4.jpg, alt: "Dancers in white against a pale wall, their shadows leaping above them" }
+      - { file: corina-concert-19.jpg, alt: "Two dancers in silhouette, each balanced on one leg" }
+      - { file: corina-concert-7.jpg, alt: "A dancer reaching upward among shadows" }
+      - { file: corina-concert-34.jpg, alt: "The ensemble mid-movement, shadows doubled on the wall" }
+      - { file: corina-concert-22.jpg, alt: "Dancers with hand-held lights on a dark stage" }
+      - { file: corina-concert-49.jpg, alt: "Two small figures in a wide, pale space" }
+      - { file: corina-concert-31.jpg, alt: "Dancers raising their arms, shadows above" }
+      - { file: corina-concert-52.jpg, alt: "A dancer upside down, lit from the floor" }
+      - { file: corina-concert-67.jpg, alt: "A dancer extending into the light beside a lamp" }
+      - { file: corina-concert-85.jpg, alt: "Two dancers in silhouette" }
+      - { file: corina-concert-88.jpg, alt: "A headstand between two hand-held lights" }
+      - { file: corina-concert-91.jpg, alt: "Dancers in a line, lit from below" }
+      - { file: corina-concert-103.jpg, alt: "Dancers with lanterns and a tall shadow" }
+      - { file: corina-concert-1.jpg, alt: "Rehearsal in the studio" }
+    notes: "cast list missing; second photo set (Denise Leitner or SAL — strong images, e.g. untitled 83, 89, 99) left out until the credit is confirmed; music not cleared so no video"
 
   - slug: temps-oublie
     title: Temps Oublié
@@ -76,9 +90,24 @@ works:
     credits:
       - [Choreography and direction, Corina Kinnear]
       - [Shown at, "The Odyssey Theatre, Los Angeles — July 2023"]
-    video: null
-    images: []
-    notes: "trailer and full film exist in Dropbox (62 and 65 MB) — upload to Vimeo to embed; composer and cast unnamed; wardrobe 'Stevy' needs a surname"
+    video:
+      kind: file
+      src: /moves/video/lost-time-trailer.mp4
+      poster: /moves/img/video/lost-time-trailer.jpg
+      caption: "Lost Time — trailer"
+    images:
+      - { file: img-8551.jpg, alt: "The ensemble in black, each dancer holding a clock" }
+      - { file: screen-shot-2025-05-06-at-12-46-13-am.jpg, alt: "A dancer in white kicks while another kneels in a pool of light" }
+      - { file: screen-shot-2025-05-06-at-12-48-02-am.jpg, alt: "Dancers reaching forward under red light" }
+      - { file: img-8450.jpg, alt: "Two dancers in red light" }
+      - { file: trailer-0042s.jpg, alt: "Dancers in blue light" }
+      - { file: screen-shot-2025-05-06-at-12-48-49-am.jpg, alt: "Dancers between stage lights" }
+      - { file: screen-shot-2025-05-06-at-12-50-51-am.jpg, alt: "Two dancers facing each other between lights" }
+      - { file: img-8441.jpg, alt: "A dancer turning in red light" }
+      - { file: trailer-0029s.jpg, alt: "The ensemble linked in a chain" }
+      - { file: screen-shot-2025-05-06-at-12-49-57-am.jpg, alt: "Dancers crowding together with clocks" }
+      - { file: img-7364.jpg, alt: "Three frames of a dancer against red" }
+    notes: "trailer self-hosted (re-encoded 720p); full film (65 MB) in Dropbox; composer and cast unnamed; wardrobe 'Stevy' needs a surname; stills are from the film and phone photos — credit unknown"
 
   - slug: ocean-12
     title: Ocean 12
@@ -117,7 +146,18 @@ works:
       - [Commissioned for, "a healthcare event, Amsterdam — January 2020"]
       - [Photography, Alessandro]
     photo_credit: "Photographs by Alessandro"
-    images: []
+    images:
+      - { file: dx1a7757.jpg, alt: "Five dancers in bright colours pressed together against an inscribed stone wall" }
+      - { file: dx1a7641.jpg, alt: "Dancers leaning in a line against the stone wall" }
+      - { file: dx1a7626.jpg, alt: "Five dancers spaced along the wall" }
+      - { file: dx1a7732.jpg, alt: "Dancers in an embrace against the wall" }
+      - { file: dx1a7766.jpg, alt: "Black-and-white portrait of the dancers, faces close together" }
+      - { file: dx1a7918.jpg, alt: "Dancers jumping on the waterfront" }
+      - { file: dx1a7960.jpg, alt: "Dancers linked across a wide quay" }
+      - { file: dx1a8008.jpg, alt: "A dancer lifted at the top of a group" }
+      - { file: dx1a8062.jpg, alt: "A dancer lifted high, legs to the sky" }
+      - { file: dx1a8115.jpg, alt: "Black-and-white portrait of four dancers in long coats" }
+      - { file: dx1a7655.jpg, alt: "Dancers along the wall, heads turned" }
     notes: "client (Ashfield Healthcare / Janssen) may hold rights; Alessandro's surname unknown"
 
   - slug: naked
@@ -161,8 +201,19 @@ works:
       kind: vimeo
       id: "250096790"
       caption: "naked. an art happening — the promotional film (FOXFLY, 2018)"
-    images: []
-    notes: "press photos by Lilly Lawrence (consent confirmed by Cori); full show recording (3 GB) in Dropbox"
+    images:
+      - { file: naked-press-photo-by-lilly-lawrence-2.jpg, alt: "Performers lying back against a pale wall, legs raised" }
+      - { file: lilly-lawrence-1.jpg, alt: "Reading through notes in rehearsal" }
+      - { file: l013118-036.jpg, alt: "Clasped hands" }
+      - { file: photo-by-lilly-lawrence-4.jpg, alt: "A performer kneeling in low light" }
+      - { file: l013118-050.jpg, alt: "Two performers in robes, listening" }
+      - { file: r-roger.jpg, alt: "A performer stretching, arms over his head" }
+      - { file: naked-press-photo-by-lilly-lawrence-3.jpg, alt: "The company on a dark stage" }
+      - { file: lilly-lawrance-5.jpg, alt: "Rehearsal at The Post House" }
+      - { file: r-sean.jpg, alt: "A performer bending forward by a window" }
+      - { file: l013118-030.jpg, alt: "A performer arching over an exercise ball" }
+      - { file: l013118-033.jpg, alt: "A performer drinking from a mug" }
+    notes: "press photos by Lilly Lawrence (consent confirmed by Cori); more nude press portraits (r amanda, r khristina, r ryan, Lilly Lawrance 6, photo credit Lilly Lawrence) and the DSC036xx stage set (photographer unclear) left out — Cori to choose; full show recording (3 GB) in Dropbox"
 
   - slug: movmt
     title: MOVMT
@@ -182,8 +233,13 @@ works:
       - [Choreography and direction, Corina Kinnear]
       - [Produced with, Foxfly Productions]
       - [Performance, "MiMoDa Studio, Los Angeles — 23 April 2014"]
-    images: []
-    notes: "five short interlude films exist (commercial music, so no embed); frame grabs possible"
+    photo_credit: "Frames from the interlude films projected during the evening"
+    images:
+      - { file: mountain-top-edit-0024s.jpg, alt: "A figure in a hood facing clouds on a mountain ridge" }
+      - { file: mountain-top-edit-0014s.jpg, alt: "Mountains and low cloud" }
+      - { file: beach-0014s.jpg, alt: "Waves and a flock of birds" }
+      - { file: park-fliped-0019s.jpg, alt: "A young tree in a park, early spring" }
+    notes: "five short interlude films exist (commercial music, so no embed); no photographs of the evening found"
 
 also:
   - title: Entanglement
@@ -242,8 +298,26 @@ performing:
         - { work: "We Are Kindred — ballet film", company: "", role: "Dancer", where: "", when: "2018" }
         - { work: "L'Oréal Professionnel tour · IAA Frankfurt", company: "", role: "Dancer", where: "", when: "" }
         - { work: "Face Off", company: "Syfy", role: "Assistant choreographer", where: "Los Angeles", when: "2014" }
-  images: []
-  notes: "spellings corrected from the CV (Aszure Barton, Nathan Trice, Jiří Kylián, La Rondine, Les Huguenots) — confirm; Berlin runway work (Anja Gockel?) left out until confirmed"
+  photo_credit: "Photographs by Chris Gonz"
+  video:
+    kind: file
+    src: /moves/video/reel-2025.mp4
+    poster: /moves/img/video/reel-2025.jpg
+    caption: "Performance reel, 2025"
+  images:
+    - { file: corina-deutscheoper-60.jpg, alt: "Corina at the barre in a red dress", pos: "50% 12%" }
+    - { file: corina-deutscheoper-56.jpg, alt: "An arabesque on the empty stage of the Deutsche Oper Berlin" }
+    - { file: corina-deutscheoper-54.jpg, alt: "Dancing on the opera stage, the auditorium behind" }
+    - { file: corina-deutscheoper-50.jpg, alt: "Backstage among the stage lights" }
+    - { file: corina-deutscheoper-36.jpg, alt: "A backbend in warm light" }
+    - { file: anja-4-chrisgonz.jpg, alt: "In costume against a red curtain and blue wall" }
+    - { file: corina-deutscheoper-22.jpg, alt: "Backstage, arms raised" }
+    - { file: anja-5-chrisgonz.jpg, alt: "In a white ruffled costume, arms raised" }
+    - { file: corina-deutscheoper-18.jpg, alt: "Portrait, looking back over the shoulder" }
+    - { file: anja-show-2-chrisgonz.jpg, alt: "Close up, holding a light above the head" }
+    - { file: corina-deutscheoper-46.jpg, alt: "A développé beside a spiral stair" }
+    - { file: corina-deutscheoper-62.jpg, alt: "Black-and-white portrait at the barre" }
+  notes: "spellings corrected from the CV (Aszure Barton, Nathan Trice, Jiří Kylián, La Rondine, Les Huguenots) — confirm; Berlin runway work (Anja Gockel?) left out of the list until confirmed, but three of Chris Gonz's photos from it are in the gallery; the Deutsche Oper set is assumed to be Chris Gonz too — confirm"
 
 teaching:
   intro: >-
@@ -265,9 +339,13 @@ teaching:
     - { name: "Company class", detail: "Deutsche Oper Berlin, Invertigo Dance Theatre" }
     - { name: "Workshops and private coaching", detail: "Los Angeles, Berlin, Paris and by arrangement" }
   cta: "Enquire about a class, workshop or intensive"
-  video: null
+  video:
+    kind: file
+    src: /moves/video/teaching-reel.mp4
+    poster: /moves/img/video/teaching-reel.jpg
+    caption: "Teaching reel — ballet class at The Edge and company class"
   images: []
-  notes: "teaching reel (Nov 2025) exists — upload to Vimeo; Sep 2026 class footage could give stills; Week of Dance photos include minors, so none used"
+  notes: "teaching reel (Nov 2025) self-hosted — confirm the students in it are adults and fine to show; Sep 2026 class footage could give stills; Week of Dance and Fluid photos include minors, so none used"
 
 bio:
   lede: "Choreographer, director and dancer. Founder of Parlā."
@@ -299,6 +377,6 @@ bio:
     - "Intensives: Springboard Danse Montréal, Steps on Broadway, Hubbard Street Dance Chicago, Cleo Parker Robinson Dance, The Edge, Ballet West, Pacific Northwest Ballet School"
   residencies:
     - "PARTS, Brussels · CND, Paris · TanzFabrik, Berlin · The Post House / Bella Lewitzky Residency, Los Angeles · MAD Art, Seattle"
-  headshot: null
-  headshot_credit: ""
-  notes: "bio newly written from the 2025 CV, the 2019 teaching bio and the 2018 artist statement — Cori to approve; headshot by Rory (May 2026) to add"
+  headshot: b9951026.jpg
+  headshot_credit: "Photograph by Rory"
+  notes: "bio newly written from the 2025 CV, the 2019 teaching bio and the 2018 artist statement — Cori to approve; headshot by Rory (May 2026) — surname wanted for the credit"

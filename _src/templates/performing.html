@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block main %}
-  {% if performing.images %}<img class="hero-img" src="/moves/img/performing/{{ performing.images[0].file }}" alt="{{ performing.images[0].alt }}">{% endif %}
+  {% if performing.images %}<img class="hero-img" src="/moves/img/performing/{{ performing.images[0].file }}" alt="{{ performing.images[0].alt }}"{% if performing.images[0].w %} width="{{ performing.images[0].w }}" height="{{ performing.images[0].h }}"{% endif %}{% if performing.images[0].pos %} style="object-position:{{ performing.images[0].pos }}"{% endif %}>{% endif %}
   <section class="pagehead wrap">
     <h1>Performing</h1>
     <p class="intro">{{ performing.intro }}</p>
@@ -15,9 +15,11 @@
     </div>
     {% endfor %}
   </section>
+  {% with v = performing.video, vtitle = 'Performance reel' %}{% include "_video.html" %}{% endwith %}
   {% if performing.images|length > 1 %}
   <section class="gallery">
-    {% for im in performing.images[1:] %}<img src="/moves/img/performing/{{ im.file }}" alt="{{ im.alt }}" loading="lazy">{% endfor %}
+    {% for im in performing.images[1:] %}<img src="/moves/img/performing/{{ im.file }}" alt="{{ im.alt }}"{% if im.w %} width="{{ im.w }}" height="{{ im.h }}"{% endif %} loading="lazy">{% endfor %}
   </section>
   {% endif %}
+  {% if performing.photo_credit and performing.images %}<p class="photo-credit label">{{ performing.photo_credit }}</p>{% endif %}
 {% endblock %}

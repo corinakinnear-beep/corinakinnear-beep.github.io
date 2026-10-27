@@ -1,0 +1,12 @@
+{% if v and v.kind in ('vimeo', 'file') %}
+  <section class="video">
+    <div class="frame">
+    {% if v.kind == 'vimeo' %}
+      <iframe src="https://player.vimeo.com/video/{{ v.id }}?title=0&byline=0&portrait=0&color=FF4200" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="{{ vtitle }}"></iframe>
+    {% else %}
+      <video controls playsinline preload="none"{% if v.poster %} poster="{{ v.poster }}"{% endif %} title="{{ vtitle }}"><source src="{{ v.src }}" type="video/mp4"></video>
+    {% endif %}
+    </div>
+    {% if v.caption %}<p class="label">{{ v.caption }}</p>{% endif %}
+  </section>
+{% endif %}

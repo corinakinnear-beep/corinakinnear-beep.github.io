@@ -12,7 +12,8 @@ moves/…                 the dance portfolio: works, performing, teaching, bio 
 about/index.html        the About page -> https://parladesigns.com/about/
 _src/moves.yaml         the words for the front door and the Moves pages — edit this, not the HTML
 _src/templates/         the page templates; scripts/site.py turns _src into the pages above
-moves/img/<work>/       photos for each dance work, named in moves.yaml
+moves/img/<work>/       photos for each dance work, named in moves.yaml (web size, about 1800 px)
+moves/video/            short self-hosted films (720p MP4, under 20 MB each) with posters in moves/img/video/
 assets/site.css         the shared stylesheet (PARLA colors, type, layout)
 current/                the code-protected "Current projects" part -> https://parladesigns.com/current/
                         (only locked, unreadable copies live here; see below)
@@ -46,7 +47,9 @@ Edit `_src/moves.yaml` (text, credits, image file names) or a template in `_src/
     python3 scripts/site.py
 
 and upload the files it rewrote. Add a dance work by adding an entry under `works:` and its photos
-under `moves/img/<slug>/`.
+under `moves/img/<slug>/` (the first photo is the large one at the top; `pos: "50% 20%"` moves its focal point).
+A film can be a Vimeo embed (`video: {kind: vimeo, id: …}`) or a file in `moves/video/`
+(`video: {kind: file, src: /moves/video/NAME.mp4, poster: /moves/img/video/NAME.jpg}`).
 
 ## Publishing a new project
 

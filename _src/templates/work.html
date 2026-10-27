@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block main %}
-  {% if w.images %}<img class="hero-img" src="/moves/img/{{ w.slug }}/{{ w.images[0].file }}" alt="{{ w.images[0].alt or w.title }}">{% endif %}
+  {% if w.images %}<img class="hero-img" src="/moves/img/{{ w.slug }}/{{ w.images[0].file }}" alt="{{ w.images[0].alt or w.title }}"{% if w.images[0].w %} width="{{ w.images[0].w }}" height="{{ w.images[0].h }}"{% endif %}{% if w.images[0].pos %} style="object-position:{{ w.images[0].pos }}"{% endif %}>{% endif %}
   <section class="pagehead wrap" style="padding-bottom:0">
     <h1>{{ w.title }}</h1>
     {% if w.subtitle %}<p class="lede">{{ w.subtitle|lower }}.</p>{% endif %}
@@ -21,15 +21,10 @@
       {% for c in w.credits %}<div><dt>{{ c[0] }}</dt><dd>{{ c[1] }}</dd></div>{% endfor %}
     </dl>
   </section>
-  {% if w.video and w.video.kind == 'vimeo' %}
-  <section class="video">
-    <div class="frame"><iframe src="https://player.vimeo.com/video/{{ w.video.id }}?title=0&byline=0&portrait=0&color=FF4200" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="{{ w.title }}"></iframe></div>
-    {% if w.video.caption %}<p class="label">{{ w.video.caption }}</p>{% endif %}
-  </section>
-  {% endif %}
+  {% with v = w.video, vtitle = w.title %}{% include "_video.html" %}{% endwith %}
   {% if w.images|length > 1 %}
   <section class="gallery">
-    {% for im in w.images[1:] %}<img src="/moves/img/{{ w.slug }}/{{ im.file }}" alt="{{ im.alt or w.title }}" loading="lazy">{% endfor %}
+    {% for im in w.images[1:] %}<img src="/moves/img/{{ w.slug }}/{{ im.file }}" alt="{{ im.alt or w.title }}"{% if im.w %} width="{{ im.w }}" height="{{ im.h }}"{% endif %} loading="lazy">{% endfor %}
   </section>
   {% endif %}
   {% if w.photo_credit and w.images %}<p class="photo-credit label">{{ w.photo_credit }}</p>{% endif %}

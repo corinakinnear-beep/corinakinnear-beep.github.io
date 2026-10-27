@@ -15,9 +15,5 @@
     </ul>
     <a class="cta" href="mailto:{{ site.contact_email }}?subject=Class%20or%20workshop%20enquiry">{{ teaching.cta }}</a>
   </section>
-  {% if teaching.video and teaching.video.kind == 'vimeo' %}
-  <section class="video">
-    <div class="frame"><iframe src="https://player.vimeo.com/video/{{ teaching.video.id }}?title=0&byline=0&portrait=0&color=FF4200" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Teaching reel"></iframe></div>
-  </section>
-  {% endif %}
+  {% with v = teaching.video, vtitle = 'Teaching reel' %}{% include "_video.html" %}{% endwith %}
 {% endblock %}
