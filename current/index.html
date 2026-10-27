@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Current — Parla Designs</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Outfit:wght@400;500&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .gate{padding:132px var(--gutter) 120px}
+  .gate > *{max-width:560px}
+  .gate h1{font-family:var(--serif); font-weight:300; font-size:clamp(44px,5.6vw,66px); line-height:1; margin:0 0 20px; color:var(--ink)}
+  .gate .lede{font-size:clamp(22px,2.2vw,27px); color:var(--ink-2); font-style:normal; max-width:none; margin:0 0 40px}
+  .gate form{display:flex; gap:12px; align-items:stretch; max-width:380px}
+  .gate input{
+    flex:1; min-width:0; font:inherit; font-size:22px; letter-spacing:.28em; padding:12px 16px;
+    border:1px solid var(--line-2); border-radius:2px; background:#fff; color:var(--ink); outline:none;
+  }
+  .gate input:focus{border-color:var(--tangerine)}
+  .gate button{
+    font:inherit; font-size:12px; font-weight:500; letter-spacing:.11em; text-transform:uppercase;
+    padding:0 22px; border:1px solid var(--aubergine); border-radius:2px; background:var(--aubergine); color:#fff; cursor:pointer;
+  }
+  .gate button:hover{background:var(--tangerine); border-color:var(--tangerine)}
+  .gate button:disabled{opacity:.55; cursor:default}
+  .gate .err{min-height:1.7em; margin:14px 0 0; color:var(--tangerine)}
+  .gate .fine{margin:40px 0 0; color:var(--muted); font-size:14px}
+  .gate.shake form{animation:shake .4s}
+  @keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+  noscript p{padding:60px var(--gutter)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="parla" viewBox="8 4 203 51">
+    <path d="M10.76,18.41h14.05c7.25,0,11.3,3.75,11.3,9.9s-4.05,10-11.3,10h-10.3v15.1h-3.75V18.41ZM24.71,34.81c4.85,0,7.55-2.35,7.55-6.5s-2.7-6.4-7.55-6.4h-10.2v12.9h10.2Z"/>
+    <path d="M68.98,18.41h4.95l3.71,35h-4.1l-1.07-10.9h-15.9l-7.33,10.9h-4.1l23.84-35ZM72.15,39.11l-1.69-17.3-11.61,17.3h13.3Z"/>
+    <path d="M96.77,18.41h14.55c7.25,0,11.3,3.65,11.3,9.65s-4.05,9.75-11.3,9.75h-.3l12.6,15.6h-4.8l-12.6-15.65h-5.7v15.65h-3.75V18.41ZM111.32,34.31c4.8,0,7.45-2.25,7.45-6.25s-2.65-6.15-7.45-6.15h-10.8v12.4h10.8Z"/>
+    <path d="M140.42,18.41h3.75v31.5h16.95v3.5h-20.7V18.41Z"/>
+    <path d="M179.9,18.41h4.95l23.79,35h-4.1l-7.33-10.9h-15.9l-1.07,10.9h-4.1l3.76-35ZM194.94,39.11l-11.61-17.3-1.69,17.3h13.3Z"/>
+    <rect x="173.63" y="5.93" width="29.4" height="2.78"/>
+  </symbol>
+</svg>
+<header class="mast">
+  <div class="wrap">
+    <a href="/" aria-label="Parla — home"><svg class="logo" viewBox="0 0 203 51" role="img" aria-label="Parla"><use href="#parla"/></svg></a>
+    <nav>
+      <a href="/">Projects</a>
+      <a href="/current/" aria-current="page">Current</a>
+      <a href="/about/">About</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <section class="wrap gate" id="gate" hidden>
+    <h1>Current projects</h1>
+    <p class="lede">This part of the site is private.</p>
+    <form id="form" autocomplete="off">
+      <label class="sr" for="code">Code</label>
+      <input id="code" name="code" type="password" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Code" aria-describedby="err">
+      <button type="submit" id="go">Open</button>
+    </form>
+    <p class="err" id="err" role="alert"></p>
+    <p class="fine">Ask Corina for the code if you don't have it.</p>
+  </section>
+  <noscript><p>This page needs JavaScript to open.</p></noscript>
+</main>
+<footer>
+  <div class="wrap">
+    <svg class="logo" viewBox="0 0 203 51" role="img" aria-label="Parla"><use href="#parla"/></svg>
+    <div class="right"><span class="label">© <span id="year"></span> Parla</span><span class="label">parladesigns.com</span></div>
+  </div>
+</footer>
+<script id="locked" type="application/json">{"v": 1, "iter": 300000, "salt": "qtl5uGuez7pnXDvJ1RsMuQ==", "iv": "e/MERRk/3ntGSuyM", "ct": "zt7/GUN5QZ1+nOv1/wjmWmhJvubNEv4QaO9RMKiQNd2cHkMP6Ol13QUGaRxSaazdDsfqE0PbhvC9Sh3SeAuFuVPTQY+MPlVpLl/U/p4BHbV+MOOoELyPEmPJLvlZyWrqlNeoZECD1ZTw06uVlQ3uC+nPH9vtY+n/gShMCX/bH1Wx+Cn5ESlHktbbFuzd+OsyMvyqL8lG8VLZ8AuHL8JVjgRFSXXK/lorcIIp0U1hznQMv+SznMv73bF0o7hloYIdefsuAz3LrqO37MRN8IYifDA0PBurCuQ5UrKikWohmxg+rzVeonyf+Y7RxlpYCAZN+KFhrIdvD7uBdtqcX5O+JdMoTzDg1nhGheQcHq12zzTS9EHoxTN95EhUetUvJKha48myz1DCy7g4Pe9oUgwWj9C54I2sJx7tEP6fAoI3W+CpEK/bqffnb/JybaOIB+Kv6DJtUyXqFOIGoy2qn7Puzrd8R0ufQcSnym5noisFw/iM1ijBs9GjC8foxKVDYgWpgjpHJZkFzXp1e+33VN58vBWGnsVm8kXUdthU8/6XaoMQeUjMYMBGLm54RiZcz/p78f7yBE2XpcO/W0c8CvYdC7ZUkG5HiI85BBSx4p4nm33eWikTPG2JkH3c63qZuIyi/qTFzaOFDKCDtTGBdt9HdviTWW4UoDveQMdEYuemJ9sCVVWm1b0ZsU3rd6dbP49ehyHhHO1mVkZZK6a6sT3thhDCLC4zET1cJXYOTa9PKxnlkt3+ishuJ9NZ2HeAljXKMrFoSjKxrbkyAnLUZ4BR9QmkExobRgKIRtEyItgv1UJTdtwp8XanMAusV30FpfGZfwDMpB0XvpG/Fj4B1ttV/MCxxGBnz4Zrdl3S4afYcVEMeveS3ULT92Smi/rdrP4aD2cB9yjXo52Rbm9NdmoTEwWu1I5GB8kMxbfZKlKxD5jqovg2z7VWiSzeu+j5sazs5GUm7dNL+zEm8PiPWws+PMjIl2G3D8TckIzXWn4ZLGISE7Ma7RHOu7aqbOUrbFX+rkX5rtXfaYUrfPrC9U+meU36cn3jTj6xuZ8JsK/a6ryCiRn9RZnHy5rAx0EK38IWk/Og18nheSlcUrP0CJKBVmA8lYnOpb6VybNhsWZes7J/kbjfWsvo77FRLxmCerNaYnHqX0m2FQTfTdtUmikoi/XcgvU9aX2AY4lFaSc5SBylbOkD3gXFAgoRzNFTJfltC/pI7yEEuziO84IjqQIUPpn4JJQIaKueb0RD7EB2y+4NxxKGfrOH1FoBW0zQIGkAKJyl/SAYvp/vDj6Lw/8KGKBbYJ+xKmP/Ax9sVhPeqMTjpaCoS0+ZHHDB6mzvAenlsve28ZuxOEkSUzUBtE8mSaJIAOaPeTUVAnOhO2WjkgBLWUn6ko2WNu+eParNOo5KenoTGs/IwVqthgb4xeVAWVvbLmujJ0XKTTCnT9GTIVgA8y/KCQ7vf2iLKYUdug8kvYphE7zIFrLVRL/4pir9drOTi0uiLGNhk2ZRQUEVvdm/LHRJhWMrs64KhDSpIaSfVZyR325GUVRC9Zbtz9XnyvwsPgn4lwfm1liRSxeqh5i81TsvJ17UYG06YgZiMG9P4IwT53lGg0Z3ierwKD2OP2LIF0vMQL8HbsYEtTNaenJ8HauH+SWYZ9pgeGFNviDKAkrsIxGcoTfZcDnUnzdW5mKakHALec+Ju4XNineJvKHxogzdbUB5vmCJHVMI1VVF5zwFOwRLSMASQIwlSmXjnEFbQv7Pa8b8771IWhDe4ruyeMzuIaVK+4PB+cnvmCxr1QbKA5PWZhq1spGtIBiyaWltUKRRrmonNDB6IVJwSyX4CKXVWQtavmFeATmfZTc9yd8eO6mURXfp2wl9Rr2vypc/iZcIjb++AjTmq7RehjYziBHv8kqSJNsAVg9sCkK/sm3M/Mf7K2LxJrXTCdlvAQxxYYzD7efrqD2FD8DAnyoWTwCFg8LwsLnteZ09AJWkkDHHrQhJxZnJYdZM0Btjt2edWsaOhqwFqmDU/D23zKx4hf/kvZjtOh/Ow7t+DitaVqoN/A+EA5ODWBy6z7ue0eoH3WL+0vEOfkpPyBMG6Po+/0tAnaFD0kRJblNBJgYn7rhw2YfYct9+BMF36J4Yxh+toISZi7qdvTuxCo9KfI/V3OKlZ/FlMUZGEJA2XY1qg2h9S/usgv0OFy3KFw+hhmnN0V6T6JmZyesxSt/P39UkWSNd4w9WSRKqNX4sW4VyDBxeHXvQHhTyUPxJWOY3JqFbJ14tpnZs68bFJXEAvGdmuEE5VyN72WviOPfE94F+VQgMAqS4H2Bml4I1fnQgxvuGxXT4u1gjNsA+R58PU2taX50uKXu2QGipQF9vA4fdBT1r0LF2NoVIUcaOXA0Z+duc+XG0B7T/si9vcIh01ehRU+1atuqJndMBm9QVWd34FTJcbX+4YSr91QHTKxGsCC05RFatND9R08LDH4FR/Kw6PR7Y0B3S1GueipD/D8K4EkNLKUChoLmfkabhKSm+n/eCy52FJhJyR46q0VfKHhw9t91AlJOFEL4is2veRkNHURXuY11ufUuMmborrrrRVwMPrKzxD3ILeXlle1ko6usILnkGKoyr3q67/QpzpbsJ2R5/+qUfekEISh8bLZZDXLwxWTI4Fv4AnPrpQNuSRqXzZoHrFI9Fl8RQeKu9uf/E5p5ny8UKDrjIYSNJvLIC2gfhXSU8laXKVnAQD4NWbVDQ9NsnP3lZHB02tH/+VTQbEn9ep1D63febr5n/NvdXYrLmc6FZPgJ1Zis5Mr/Urrrp0R8dA8Va90xRZdRNQuHeP1IlTDE3GG+EnfCQUQFDWEEPDE3Mb2+kRlXXjfAhicqCkJQsGiszF39NMlvaAa8C5mGpmf2hS+sRzKXz/NNbSw24JdEwAHbIl7N3cwKB/ZObVFQUGjjtsvuzOr1aSGggVsjn5FcHFuUxIKDGb2u8gNU2vHVXNPeMxMaBH008Vu61OlD8RqjQxIuME2Z4UqY32w23AriQ5oV6dhJGekwETEjba6AomMO+hbeeFa80KhtRk2tQWNlpsjUfBBqJC8loE+LLVpz8JZC7eTB277nnVtsoUZL6Av+TsdBZY2zR9D0oiIa0FL7wq3r8Zss+Z0QepKTiwl2/sT45RgS12RjiQ5LhrKgCb2yOfPRK0zJnvHrg3bzL8qXl9nnmpkv7NHeGEfoN8h8BsX+qJAUUAmggqHVjmLaxwyTeEjZvyMjsoEBHoniJW9mKieiP8eRh1k1ACkTTnvY9xM0J7qH+4vnnOyNamOfd6vTyHS8/O/PRpHu630C1KgPYHuAPaPh/SoxQPM1Tq4BzS/KDFLIUyfVnBMxH5Aml3CRdGOZGCPkRbUlr7dxUdQjNlBE4Y8tqZhskn5K8jPUuj8l2AbVVt330LomPoHkOGb/tmk417hm4NbDadNBFDjOwMqcWCGR+UD+p8/+AcySsNOGM8AXwmZQihAONxi7XogRoJl8YEaqzsbW+xX83TGSmlrWOSKN40il7ZpgeSDn8TyViknb45tzSWerBEZEoA7kLQ/Jb7c8viK88msPythh6E2duO2NLN+Tj0RBB1xYM8NEbgbPlGMh4OVMPkj9BbQYXIpfRSDw0fADDZAZjBZspyvvvxu1ayL5LwfFdfSYeTuH0FM5LR8ABG2idS7LqzcTDrvkbojuq4J2/EwpYbvVktS796n6lPR5riZvj+SzKzztwV17tPZHwzUHoU9hKd0UxtgVWkh0FUjU0kVDFqG7XB8a7hhqqP/N6zQSviYpG2M+1VAywdm3ukkXU8MXteoRBmXWU5hcEg00Xyrjj9Fu07de7tWRUfkNcSInLFqyntbxlJ6VQ5BGugmou9UnLZWruEfLFJn8whTdDPVNIkehipsBkEsypS1/BY2yV8Pm+UIt6AqVn8k3TQtVjANjiUyMJVD2foNnkAwE4XltcqiFpzfwubzq+cVIHMHEKAwJAR9M0ZwAs2OAb0O0TtZiWwfFrMbMmGM5dAvAlRnZD4CoEH+TNRKBQbKtAnnlYGlK6XmS2LybtK6wPrLQrUx53nqpuW61foQGXIj35nHPq3uGZ6RMUY2zy5eZCSb8ztHPxIjJjr9F5njtyXWopD1zQT6mfbw2oF1f68setMoVzc2d9cw/8xsL9GFZHwY3Pa+7K55yCL/enRWs2iBDEMqxz0rXUjdzVlMg+456ZT5fRqwK+5SvbZHCvA4BvgVGM+6VIhsN0+b0fw3jBwHj99AojZV48SdEGxDYJHyu3m1sGlHx/OpAkqPt42Iq7PHLTtXvNxR2yMBWGTbRD11hNcEXHZMd/heEE2EqkquFTxyy2YV7uPuo+tiCo/w/7LCT/cNV0EDv/MzmkZdiIZ/iN5nAOFWMrBpeGyY5DL0LW07Xkx3g3KUcxg9KjQ2NUHAATHPVVNU5rIRxPCF+XJKJxbUdQ6Dnl2jGdwZao6DFLXF+ERzeC0kdqQC8fX0vmDiZK+GafQUEkq3SBdreuKWSOad7y6MkWKLzVp+y/kiGQzs7Wwff2LVobUojNx9uBSqdXSTfrRx4SSXhSKisENcGcZpIPfvYYs9I5lOg1eBLMReAT7E2Ax5IHsVsv0r51Z94rZgQnemN7k9AAJnk="}</script>
+<script>
+(async function () {
+  document.getElementById('year').textContent = new Date().getFullYear();
+  var data = JSON.parse(document.getElementById('locked').textContent);
+  var b64 = function (s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); };
+  var salt = b64(data.salt), iv = b64(data.iv), ct = b64(data.ct);
+  var cacheKey = 'parla-lock:' + data.salt;
+  var gate = document.getElementById('gate'), form = document.getElementById('form'),
+      input = document.getElementById('code'), err = document.getElementById('err'), go = document.getElementById('go');
+
+  async function keyFromCode(code) {
+    var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveBits']);
+    var bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: salt, iterations: data.iter }, base, 256);
+    return new Uint8Array(bits);
+  }
+  async function open(raw) {
+    var key = await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['decrypt']);
+    var plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);   // throws if the code is wrong
+    return new TextDecoder().decode(plain);
+  }
+  async function show(html) {
+    // document.open() is ignored while the page is still being parsed, so wait until it is done
+    if (document.readyState === 'loading') await new Promise(function (r) { document.addEventListener('DOMContentLoaded', r, { once: true }); });
+    await new Promise(function (r) { setTimeout(r, 0); });
+    document.open(); document.write(html); document.close();
+  }
+
+  if (!(window.crypto && crypto.subtle)) { gate.hidden = false; err.textContent = 'This browser cannot open the page (it needs a secure https connection).'; form.hidden = true; return; }
+
+  if (/(^|[?&])lock(&|$)/.test(location.search)) {        // the "Lock" link in the footer of the list
+    try { Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf('parla-lock:') === 0) sessionStorage.removeItem(k); }); } catch (_) {}
+    try { history.replaceState(null, '', location.pathname); } catch (_) {}
+  }
+  try {
+    var cached = sessionStorage.getItem(cacheKey);
+    if (cached) { await show(await open(b64(cached))); return; }
+  } catch (e) { try { sessionStorage.removeItem(cacheKey); } catch (_) {} }
+
+  gate.hidden = false; input.focus();
+  form.addEventListener('submit', async function (ev) {
+    ev.preventDefault(); err.textContent = ''; go.disabled = true; gate.classList.remove('shake');
+    try {
+      var raw = await keyFromCode(input.value.trim());
+      var html = await open(raw);
+      try { sessionStorage.setItem(cacheKey, btoa(String.fromCharCode.apply(null, raw))); } catch (_) {}
+      await show(html);
+    } catch (e) {
+      err.textContent = "That's not it — try again.";
+      gate.classList.add('shake'); input.select(); go.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>

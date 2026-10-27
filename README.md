@@ -9,6 +9,9 @@ index.html              the home page (lists every project automatically)
 about/index.html        the About page -> https://parladesigns.com/about/
                         (its parla.json says "hidden", so it is not listed as a project)
 assets/site.css         the shared stylesheet (PARLA colors, type, layout) for those two pages
+current/                the code-protected "Current projects" part -> https://parladesigns.com/current/
+                        (only locked, unreadable copies live here; see below)
+scripts/lock.py         makes those locked copies from the readable originals
 projects.json           the list the home page reads — generated, do not edit by hand
 favicon.png, apple-touch-icon.png   the tab / home-screen icon, made from the PARLA logo
 CNAME                   tells GitHub Pages the custom domain (leave as is)
@@ -23,7 +26,7 @@ beachmap/index.html     -> https://parladesigns.com/beachmap/
 ```
 
 **One folder = one project.** Any top-level folder that contains an `index.html`
-(other than `about/` and `assets/`) appears on the home page within about a minute
+(other than `about/`, `assets/` and `current/`) appears on the home page within about a minute
 of being added, with:
 
 - its **title** – taken from the page's `<title>`
@@ -61,6 +64,28 @@ Only needed when you want to override what the page itself says:
 
 `order` pins a project to the top (1 first, then 2, …); the rest sort newest first.
 `hidden` keeps a project off the home page while it is still live at its address.
+
+## The code-protected part (/current/)
+
+`https://parladesigns.com/current/` asks for a code and then lists work-in-progress
+pages, each at `https://parladesigns.com/current/<name>/`. Because this repository is
+public, the readable pages are **not** stored here. They live only on Corina's Mac in
+`~/Documents/parladesigns/_private/current/<name>/index.html`, next to the code in
+`_private/current/CODE.txt`. `scripts/lock.py` scrambles them (AES-GCM, key derived from
+the code) into the `current/` folder, and the small page around each one unscrambles it
+in the visitor's browser after the right code is typed. Typing the code once opens every
+page for that browser tab; the "Lock" link in the footer forgets it again.
+
+To add or change a current project: put the page in `_private/current/<name>/`, run
+
+    python3 scripts/lock.py _private/current current
+
+and upload the `current/` folder. Never upload `_private/`.
+
+Honest note on strength: a four-digit code keeps out casual visitors and search engines
+(the pages are marked noindex and unreadable without the code), but someone determined
+could try all 10,000 codes. Use a longer phrase if anything sensitive ever goes there —
+the lock accepts any length.
 
 ## If something looks wrong
 
