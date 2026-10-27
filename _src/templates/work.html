@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block main %}
+  {% if w.images %}<img class="hero-img" src="/moves/img/{{ w.slug }}/{{ w.images[0].file }}" alt="{{ w.images[0].alt or w.title }}">{% endif %}
+  <section class="pagehead wrap" style="padding-bottom:0">
+    <h1>{{ w.title }}</h1>
+    {% if w.subtitle %}<p class="lede">{{ w.subtitle|lower }}.</p>{% endif %}
+    <div class="meta">
+      <span><b>{{ w.year }}</b></span>
+      <span>{{ w.kind }}</span>
+      <span>{{ w.venue }}{% if w.place and w.place not in w.venue %}, {{ w.place }}{% endif %}</span>
+      <span>{{ w.when }}</span>
+    </div>
+  </section>
+  <section class="work-body">
+    <div class="text">
+      <p>{{ w.summary }}</p>
+      {% for p in w.body %}<p>{{ p }}</p>{% endfor %}
+      {% if w.quote %}<blockquote>{{ w.quote.text }}<cite>{{ w.quote.cite }}</cite></blockquote>{% endif %}
+    </div>
+    <dl class="credits">
+      {% for c in w.credits %}<div><dt>{{ c[0] }}</dt><dd>{{ c[1] }}</dd></div>{% endfor %}
+    </dl>
+  </section>
+  {% if w.video and w.video.kind == 'vimeo' %}
+  <section class="video">
+    <div class="frame"><iframe src="https://player.vimeo.com/video/{{ w.video.id }}?title=0&byline=0&portrait=0&color=FF4200" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="{{ w.title }}"></iframe></div>
+    {% if w.video.caption %}<p class="label">{{ w.video.caption }}</p>{% endif %}
+  </section>
+  {% endif %}
+  {% if w.images|length > 1 %}
+  <section class="gallery">
+    {% for im in w.images[1:] %}<img src="/moves/img/{{ w.slug }}/{{ im.file }}" alt="{{ im.alt or w.title }}" loading="lazy">{% endfor %}
+  </section>
+  {% endif %}
+  {% if w.photo_credit and w.images %}<p class="photo-credit label">{{ w.photo_credit }}</p>{% endif %}
+  <nav class="worknav">
+    {% if prev %}<a href="/moves/works/{{ prev.slug }}/">← {{ prev.title }}</a>{% else %}<span></span>{% endif %}
+    {% if next %}<a href="/moves/works/{{ next.slug }}/">{{ next.title }} →</a>{% else %}<a href="/moves/works/">All works</a>{% endif %}
+  </nav>
+{% endblock %}

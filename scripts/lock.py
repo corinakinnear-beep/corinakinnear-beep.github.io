@@ -94,12 +94,20 @@ __WORDMARK__
   <div class="wrap">
     <a href="/" aria-label="Parla — home">__LOGO__</a>
     <nav>
-      <a href="/">Projects</a>
-      <a href="/current/" aria-current="page">Current</a>
+      <a href="/designs/" aria-current="page">Designs</a>
+      <a href="/moves/">Moves</a>
       <a href="/about/">About</a>
     </nav>
   </div>
 </header>
+<nav class="subnav" aria-label="Designs">
+  <div class="wrap">
+    <a href="/designs/">Overview</a>
+    <a href="/spaces/">Spaces</a>
+    <a href="/designs/#apps">Apps &amp; tools</a>
+    <a href="/current/" aria-current="page">Current<span class="lock-ico">●</span></a>
+  </div>
+</nav>
 <main>
   <section class="wrap gate" id="gate" hidden>
     <h1>Current projects</h1>
@@ -206,12 +214,20 @@ __WORDMARK__
   <div class="wrap">
     <a href="/" aria-label="Parla — home">__LOGO__</a>
     <nav>
-      <a href="/">Projects</a>
-      <a href="/current/" aria-current="page">Current</a>
+      <a href="/designs/" aria-current="page">Designs</a>
+      <a href="/moves/">Moves</a>
       <a href="/about/">About</a>
     </nav>
   </div>
 </header>
+<nav class="subnav" aria-label="Designs">
+  <div class="wrap">
+    <a href="/designs/">Overview</a>
+    <a href="/spaces/">Spaces</a>
+    <a href="/designs/#apps">Apps &amp; tools</a>
+    <a href="/current/" aria-current="page">Current<span class="lock-ico">●</span></a>
+  </div>
+</nav>
 <main>
   <section class="wrap intro">
     <h1>Current projects</h1>

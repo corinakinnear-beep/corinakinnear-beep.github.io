@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Parla Designs</title>
-<meta name="description" content="Parla — creating and making. Websites, tools and studies by designer Corina Kinnear. Every project lives at its own address under parladesigns.com.">
+<title>Parla</title>
+<meta name="description" content="Parla — creating and making. Designs and Moves by Corina Kinnear.">
 <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +13,6 @@
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
-
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="parla" viewBox="8 4 203 51">
     <path d="M10.76,18.41h14.05c7.25,0,11.3,3.75,11.3,9.9s-4.05,10-11.3,10h-10.3v15.1h-3.75V18.41ZM24.71,34.81c4.85,0,7.55-2.35,7.55-6.5s-2.7-6.4-7.55-6.4h-10.2v12.9h10.2Z"/>
@@ -24,34 +23,37 @@
     <rect x="173.63" y="5.93" width="29.4" height="2.78"/>
   </symbol>
 </svg>
-
 <header class="mast">
   <div class="wrap">
     <a href="/" aria-label="Parla — home"><svg class="logo" viewBox="0 0 203 51" role="img" aria-label="Parla"><use href="#parla"/></svg></a>
     <nav>
-      <a href="/" aria-current="page">Projects</a>
-      <a href="/current/">Current</a>
+      <a href="/designs/">Designs</a>
+      <a href="/moves/">Moves</a>
       <a href="/about/">About</a>
     </nav>
   </div>
 </header>
-
 <main>
-  <section class="hero wrap">
-    <h1 class="sr">Parla Designs</h1>
+  <section class="door-hero wrap">
+    <h1 class="sr">Parla</h1>
     <svg class="logo" viewBox="0 0 203 51" role="img" aria-label="Parla"><use href="#parla"/></svg>
     <p class="lede">creating and making.</p>
   </section>
-
-  <section id="projects" class="wrap">
-    <div class="band">
-      <h2>Projects</h2>
-    </div>
-    <div class="grid" id="grid" aria-live="polite"></div>
-    <p class="note" id="note" hidden></p>
+  <section class="doors">
+    <a class="door" href="/designs/">
+      <span class="label">Parla Designs</span>
+      <h2>Designs</h2>
+      <p>Spaces designed for how they will be lived in, alongside the architect — and small apps and tools, each at its own address.</p>
+<svg class="pic brand" viewBox="0 0 500 400" aria-hidden="true"><rect width="500" height="400" fill="#E5DEAA"/><g fill="#FF4200"><use href="#parla" x="90" y="158" width="320" height="84"/></g></svg>      <span class="go">Enter →</span>
+    </a>
+    <a class="door" href="/moves/">
+      <span class="label">Parla Moves</span>
+      <h2>Moves</h2>
+      <p>Choreography, direction and performance — productions, films and commissions, and a life on stage.</p>
+<svg class="pic brand" viewBox="0 0 500 400" aria-hidden="true"><rect width="500" height="400" fill="#E5DEAA"/><g fill="#FF4200"><use href="#parla" x="90" y="158" width="320" height="84"/></g></svg>      <span class="go">Enter →</span>
+    </a>
   </section>
 </main>
-
 <footer>
   <div class="wrap">
     <svg class="logo" viewBox="0 0 203 51" role="img" aria-label="Parla"><use href="#parla"/></svg>
@@ -61,55 +63,6 @@
     </div>
   </div>
 </footer>
-
-<script>
-  document.getElementById('year').textContent = new Date().getFullYear();
-
-  const grid = document.getElementById('grid');
-  const note = document.getElementById('note');
-
-  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const when = iso => {
-    if (!iso) return '';
-    const d = new Date(iso + 'T12:00:00');
-    return isNaN(d) ? '' : d.toLocaleDateString('en-US', {month:'short', year:'numeric'});
-  };
-  const pathLabel = url => {
-    try { const u = new URL(url, location.origin); return u.origin === location.origin ? u.pathname.replace(/\/$/, '') || '/' : u.host; }
-    catch { return url; }
-  };
-
-  function card(p){
-    const a = document.createElement('a');
-    a.className = 'card';
-    a.href = p.url;
-    const visual = p.cover
-      ? `<img class="cover" src="${esc(p.cover)}" alt="" loading="lazy">`
-      : `<div class="placeholder" aria-hidden="true">${esc((p.title || '?').trim().charAt(0))}</div>`;
-    a.innerHTML = `
-      ${visual}
-      <div class="body">
-        <h3>${esc(p.title)}</h3>
-        ${p.description ? `<p>${esc(p.description)}</p>` : ''}
-        <div class="meta">
-          <span class="tag">${esc(pathLabel(p.url))}</span>
-          ${p.updated ? `<span class="date">Updated ${esc(when(p.updated))}</span>` : ''}
-        </div>
-      </div>`;
-    return a;
-  }
-
-  fetch('/projects.json', {cache: 'no-store'})
-    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(data => {
-      const list = (data && data.projects) || [];
-      if (!list.length) { note.textContent = 'Nothing here yet.'; note.hidden = false; return; }
-      list.forEach(p => grid.appendChild(card(p)));
-    })
-    .catch(() => {
-      note.textContent = 'The project list is on its way — try again in a minute.';
-      note.hidden = false;
-    });
-</script>
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spaces — Parla Designs</title>
+<meta name="description" content="Space design alongside the architect: design intent, circulation and finish specification by Corina Kinnear.">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Outfit:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .sp .hero{padding:96px 0 0}
+  .sp h1{font-family:var(--serif);font-weight:300;font-size:clamp(56px,8vw,104px);line-height:.95;letter-spacing:-.01em;color:var(--ink);margin:0}
+  .sp .lede{font-family:var(--serif);font-weight:300;font-style:normal;font-size:clamp(22px,2.2vw,29px);line-height:1.38;color:var(--ink-2);max-width:30ch;margin:30px 0 0}
+  .sp .tags{display:flex;flex-wrap:wrap;gap:8px;margin:44px 0 0}
+  .sp section{padding:108px 0 0}
+  .sp .band{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto;gap:40px;align-items:baseline;border-top:1px solid var(--line);padding-top:22px;margin:0}
+  .sp .band h2{font-family:var(--serif);font-weight:300;font-size:clamp(30px,3.6vw,46px);line-height:1.04;color:var(--ink);margin:0}
+  .sp .band p{margin:0;max-width:56ch;color:var(--muted)}
+  .sp .count{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);white-space:nowrap}
+  .sp .cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:52px;margin-top:54px}
+  .sp .cols h3{font-family:var(--serif);font-weight:400;font-size:25px;line-height:1.18;color:var(--ink);margin:0 0 12px}
+  .sp .cols p{margin:0;color:var(--ink-2)}
+  .sp .work{margin-top:62px;display:grid;gap:84px}
+  .sp .proj{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.5fr);gap:56px}
+  .sp .proj .place{font-family:var(--serif);font-weight:400;font-size:33px;line-height:1.08;color:var(--ink);margin:0 0 10px}
+  .sp .proj .when{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+  .sp .proj .body > p:first-child{font-family:var(--serif);font-size:23px;line-height:1.42;color:var(--ink);margin:0 0 22px;font-weight:300}
+  .sp .proj .body p{margin:0 0 16px}
+  .sp ul.did{list-style:none;margin:22px 0 0;padding:0}
+  .sp ul.did li{border-top:1px solid var(--line-2);padding:13px 0}
+  .sp blockquote{margin:26px 0 0;padding:0 0 0 20px;border-left:1px solid var(--grass);font-family:var(--serif);font-size:23px;font-weight:300;line-height:1.42;color:var(--ink)}
+  .sp blockquote cite{display:block;margin-top:12px;font-family:var(--sans);font-style:normal;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+  .sp .phases{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 0}
+  .sp .phase{border:1px solid var(--line-2);border-radius:2px;padding:5px 10px;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .sp .phase.now{border-color:var(--tangerine);color:var(--tangerine)}
+  .sp .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:56px;margin-top:54px}
+  .sp .two h3{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:500;margin:0 0 14px}
+  .sp .two p{margin:0 0 14px}
+  .sp .notlist{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 0}
+  .sp .contact{margin-top:72px;border-top:1px solid var(--line);padding-top:22px}
+  .sp .contact a{color:var(--tangerine);border-bottom:1px solid currentColor}
+  @media(max-width:900px){.sp .proj{grid-template-columns:1fr;gap:24px}}
+  @media(max-width:860px){.sp .band{grid-template-columns:1fr;gap:12px}.sp .cols{grid-template-columns:1fr;gap:38px}.sp .two{grid-template-columns:1fr;gap:34px}}
+  @media(max-width:700px){.sp .hero{padding-top:56px}.sp section{padding-top:64px}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="parla" viewBox="8 4 203 51">
+    <path d="M10.76,18.41h14.05c7.25,0,11.3,3.75,11.3,9.9s-4.05,10-11.3,10h-10.3v15.1h-3.75V18.41ZM24.71,34.81c4.85,0,7.55-2.35,7.55-6.5s-2.7-6.4-7.55-6.4h-10.2v12.9h10.2Z"/>
+    <path d="M68.98,18.41h4.95l3.71,35h-4.1l-1.07-10.9h-15.9l-7.33,10.9h-4.1l23.84-35ZM72.15,39.11l-1.69-17.3-11.61,17.3h13.3Z"/>
+    <path d="M96.77,18.41h14.55c7.25,0,11.3,3.65,11.3,9.65s-4.05,9.75-11.3,9.75h-.3l12.6,15.6h-4.8l-12.6-15.65h-5.7v15.65h-3.75V18.41ZM111.32,34.31c4.8,0,7.45-2.25,7.45-6.25s-2.65-6.15-7.45-6.15h-10.8v12.4h10.8Z"/>
+    <path d="M140.42,18.41h3.75v31.5h16.95v3.5h-20.7V18.41Z"/>
+    <path d="M179.9,18.41h4.95l23.79,35h-4.1l-7.33-10.9h-15.9l-1.07,10.9h-4.1l3.76-35ZM194.94,39.11l-11.61-17.3-1.69,17.3h13.3Z"/>
+    <rect x="173.63" y="5.93" width="29.4" height="2.78"/>
+  </symbol>
+</svg>
+<header class="mast">
+  <div class="wrap">
+    <a href="/" aria-label="Parla — home"><svg class="logo" viewBox="0 0 203 51" role="img" aria-label="Parla"><use href="#parla"/></svg></a>
+    <nav>
+      <a href="/designs/" aria-current="page">Designs</a>
+      <a href="/moves/">Moves</a>
+      <a href="/about/">About</a>
+    </nav>
+  </div>
+</header>
+<nav class="subnav" aria-label="Designs">
+  <div class="wrap">
+    <a href="/designs/">Overview</a>
+    <a href="/spaces/" aria-current="page">Spaces</a>
+    <a href="/designs/#apps">Apps &amp; tools</a>
+    <a href="/current/">Current<span class="lock-ico">●</span></a>
+  </div>
+</nav>
+<main>
+<div class="sp wrap">
+  <div class="hero">
+    <h1>Spaces</h1>
+    <p class="lede">I design how a space will actually be lived in — alongside the architect or firm already on the project.</p>
+    <div class="tags">
+      <span class="tag">ADU &amp; garage conversion</span>
+      <span class="tag">Residential renovation</span>
+      <span class="tag">Studios &amp; movement spaces</span>
+      <span class="tag">Lighting design intent</span>
+      <span class="tag">Circulation review</span>
+      <span class="tag">Finish specification</span>
+    </div>
+  </div>
+
+  <section>
+    <div class="band">
+      <h2>What I do</h2>
+      <p>A permit set says where the walls go. It rarely says which way the light falls at four in the afternoon, or whether two people can pass each other at the door. That is my part.</p>
+      <span class="count">Three deliverables</span>
+    </div>
+    <div class="cols">
+      <div>
+        <h3>Design intent, room by room</h3>
+        <p>Lighting, outlets, switching and dimming zones, finishes, fixtures, design choices, and the open questions for the architect — written so a project manager can hand it straight to a drafter.</p>
+      </div>
+      <div>
+        <h3>Layout and circulation notes</h3>
+        <p>Markups on the plans as they stand, in the terms the drafter needs. Where people enter, gather and get stuck. Small moves, named precisely, early enough to cost nothing.</p>
+      </div>
+      <div>
+        <h3>Finish and lighting specification</h3>
+        <p>Paint, surfaces, metals, cabinetry, colour temperature, CRI, dimming, how a strip is detailed so it doesn't read as a plastic extrusion. Specified to be bought and installed, not moodboarded.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="band">
+      <h2>Selected work</h2>
+      <p>Two projects: one of my own, currently in plan check with the City of Los Angeles, and one paid engagement alongside a client's architect.</p>
+      <span class="count">Two projects</span>
+    </div>
+    <div class="work">
+      <article class="proj">
+        <div class="meta">
+          <p class="place">Garage conversion &amp; ADU<br>Venice, Los Angeles</p>
+          <span class="when">2026 · In permitting</span>
+        </div>
+        <div class="body">
+          <p>A two-storey garage conversion and ADU. I wrote the design intent, and the permit set was drawn from it.</p>
+          <p>The design-intent document is organised room by room — lighting, outlets, switching and dimming zones, finishes, design choices, and the questions the architect needed to answer. The design-build firm's drafter worked inside that document rather than beside it, resolving specifics against my lines as the set came together.</p>
+          <ul class="did">
+            <li>Specified the palette: moss green and a warm white, waterproof microcement in a warm limestone beige through both bathrooms, burnished brass sealed.</li>
+            <li>Specified the lighting to buyable detail — everything on dimmers, 2&quot; recessed 3000K downlights in matt white trim, 95+ CRI at the mirrors, LED strip mudded into a recessed channel rather than surface-mounted.</li>
+            <li>Marked up each plan revision in the drafter's terms: an extra foot towards the house, a ribbon window in the lower bathroom, the toilet and sink switched.</li>
+            <li>Caught a dimension error on site — the plans assumed seven feet between the neighbouring house and the existing garage. Measured, it was six. Found before the set was priced.</li>
+          </ul>
+          <div class="phases">
+            <span class="phase">Design session</span>
+            <span class="phase">Drafting · Aug 2026</span>
+            <span class="phase">Engineering · Sep 2026</span>
+            <span class="phase">Title 24 · Oct 2026</span>
+            <span class="phase now">Submitted to the City · 17 Oct 2026</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="proj">
+        <div class="meta">
+          <p class="place">Studio Brava<br>Doha, Qatar</p>
+          <span class="when">2018 · Completed</span>
+        </div>
+        <div class="body">
+          <p>They were building a dance school and they had an architect. What they did not have was anyone who knew what happens in the room.</p>
+          <p>I was brought in on the general layout plan and the engagement ran well past it. I proposed a rectangular studio configuration and they built it; I flagged that the Studio 1 door sat close enough to the reception desk to jam traffic, which is the kind of thing that only shows up if you picture forty people arriving at once.</p>
+          <ul class="did">
+            <li>Reworked the studio geometry on the architect's layout plan.</li>
+            <li>Found the circulation conflict between the studio door and reception.</li>
+            <li>Sourced and assessed instructors, and recommended the teacher with regional experience over the stronger dancer, reasoning from the client's own oversight burden.</li>
+            <li>Specified what a studio needs to open: dancewear and shoe suppliers, a route through liability, a read on their branding options.</li>
+          </ul>
+          <blockquote>
+            We ended up going with your idea to have a rectangular studio space.
+            <cite>Fiorella Otero · Studio Brava · June 2018</cite>
+          </blockquote>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <div class="band">
+      <h2>Where I fit</h2>
+      <p>An extra pair of eyes for the firm, not a second voice arguing with it.</p>
+      <span class="count">How it works</span>
+    </div>
+    <div class="two">
+      <div>
+        <h3>The work</h3>
+        <p>Best before the permit set is finalised, when a layout change is still a conversation rather than a revision fee. But useful at any point where there are drawings and the question of what the space is <em>for</em> is still open.</p>
+        <p>On a live project I'm on the weekly call, I turn edits around in a day or two, and I hand over documents the team can act on without translating them first.</p>
+        <p>Most of my working life has been spent putting bodies in rooms — as a dancer, choreographer and director. I read a floor plan the way I read a stage. It is the same skill.</p>
+      </div>
+      <div>
+        <h3>What I don't do</h3>
+        <p>I'm not the architect of record. The firm stays the firm. I'll recommend the drafters, contractors and suppliers I've vetted, and sit in the meetings.</p>
+        <div class="notlist">
+          <span class="tag">Permit drawings</span>
+          <span class="tag">Structural</span>
+          <span class="tag">Title 24</span>
+          <span class="tag">Engineering</span>
+          <span class="tag">Contractor management</span>
+          <span class="tag">Purchasing</span>
+        </div>
+      </div>
+    </div>
+    <p class="contact">Working on a project that could use this? <a href="mailto:corina.kinnear@gmail.com?subject=Space%20design">Write to me</a>.</p>
+  </section>
+</div>
+</main>
+<footer>
+  <div class="wrap">
+    <svg class="logo" viewBox="0 0 203 51" role="img" aria-label="Parla"><use href="#parla"/></svg>
+    <div class="right">
+      <span class="label">© <span id="year"></span> Parla</span>
+      <span class="label">parladesigns.com</span>
+    </div>
+  </div>
+</footer>
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

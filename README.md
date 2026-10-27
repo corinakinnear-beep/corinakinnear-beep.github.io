@@ -5,10 +5,15 @@ This one repository is the whole website. GitHub Pages publishes it at **https:/
 ## How it is organized
 
 ```
-index.html              the home page (lists every project automatically)
+index.html              the front door: Parla -> Designs | Moves
+designs/index.html      the design home (Spaces, Apps & tools, Current)   -> /designs/
+spaces/index.html       space-design services and case studies            -> /spaces/
+moves/…                 the dance portfolio: works, performing, teaching, bio -> /moves/
 about/index.html        the About page -> https://parladesigns.com/about/
-                        (its parla.json says "hidden", so it is not listed as a project)
-assets/site.css         the shared stylesheet (PARLA colors, type, layout) for those two pages
+_src/moves.yaml         the words for the front door and the Moves pages — edit this, not the HTML
+_src/templates/         the page templates; scripts/site.py turns _src into the pages above
+moves/img/<work>/       photos for each dance work, named in moves.yaml
+assets/site.css         the shared stylesheet (PARLA colors, type, layout)
 current/                the code-protected "Current projects" part -> https://parladesigns.com/current/
                         (only locked, unreadable copies live here; see below)
 scripts/lock.py         makes those locked copies from the readable originals
@@ -26,13 +31,22 @@ beachmap/index.html     -> https://parladesigns.com/beachmap/
 ```
 
 **One folder = one project.** Any top-level folder that contains an `index.html`
-(other than `about/`, `assets/` and `current/`) appears on the home page within about a minute
+(other than `about/`, `assets/`, `current/`, `designs/`, `moves/` and `spaces/`) appears under Apps & tools on /designs/ within about a minute
 of being added, with:
 
 - its **title** – taken from the page's `<title>`
 - its **description** – taken from `<meta name="description" content="...">`
 - its **cover** – a `cover.jpg` (or `.png` / `.webp`) in the same folder, if there is one
 - its dates – from the git history
+
+## Changing the front door, Designs or Moves pages
+
+Edit `_src/moves.yaml` (text, credits, image file names) or a template in `_src/templates/`, then run
+
+    python3 scripts/site.py
+
+and upload the files it rewrote. Add a dance work by adding an entry under `works:` and its photos
+under `moves/img/<slug>/`.
 
 ## Publishing a new project
 

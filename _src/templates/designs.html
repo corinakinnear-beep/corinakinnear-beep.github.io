@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block main %}
+  <section class="pagehead wrap">
+    <h1>Designs</h1>
+    <p class="lede">rooms, screens and the people in them.</p>
+    <p class="intro">Space design alongside the architect or firm already on the project, and the small apps and tools I build along the way. Most of my working life has been spent putting bodies in rooms; I read a floor plan the way I read a stage.</p>
+  </section>
+  <section class="wrap">
+    <div class="teaser">
+      <div><h2>Spaces</h2><a class="more" href="/spaces/">See the work →</a></div>
+      <div>
+        <p>I design how a space will actually be lived in — lighting, circulation, finishes — written so the drafter can work straight from it. Two projects so far: a two-storey ADU in Venice, now in plan check with the City of Los Angeles, and a dance school in Doha.</p>
+      </div>
+    </div>
+    <div class="teaser" id="apps">
+      <div><h2>Apps &amp; tools</h2><span class="label count" id="count"></span></div>
+      <div><p>Small, useful things, each at its own address — a scheduling tool for rehearsals, a neighbourhood guide. New ones appear here as they're made.</p></div>
+    </div>
+    <div class="grid" id="grid" aria-live="polite"></div>
+    <p class="note" id="note" hidden></p>
+    <div class="teaser" style="margin-top:84px">
+      <div><h2>Current</h2><a class="more" href="/current/">Enter with a code →</a></div>
+      <div><p>Work in progress for clients and collaborators — moodboards, plans, drafts. This part of the site is private; ask me for the code.</p></div>
+    </div>
+  </section>
+{% endblock %}
+{% block scripts %}
+<script>
+  const grid = document.getElementById('grid'), note = document.getElementById('note'), count = document.getElementById('count');
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const when = iso => { if (!iso) return ''; const d = new Date(iso + 'T12:00:00'); return isNaN(d) ? '' : d.toLocaleDateString('en-US', {month:'short', year:'numeric'}); };
+  const pathLabel = url => { try { const u = new URL(url, location.origin); return u.origin === location.origin ? u.pathname.replace(/\/$/, '') || '/' : u.host; } catch { return url; } };
+  function card(p){
+    const a = document.createElement('a'); a.className = 'card'; a.href = p.url;
+    const visual = p.cover ? `<img class="cover" src="${esc(p.cover)}" alt="" loading="lazy">` : `<div class="placeholder" aria-hidden="true">${esc((p.title || '?').trim().charAt(0))}</div>`;
+    a.innerHTML = `${visual}<div class="body"><h3>${esc(p.title)}</h3>${p.description ? `<p>${esc(p.description)}</p>` : ''}<div class="meta"><span class="tag">${esc(pathLabel(p.url))}</span>${p.updated ? `<span class="date">Updated ${esc(when(p.updated))}</span>` : ''}</div></div>`;
+    return a;
+  }
+  fetch('/projects.json', {cache: 'no-store'}).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(data => { const list = (data && data.projects) || []; count.textContent = list.length ? `${list.length} so far` : ''; if (!list.length) { note.textContent = 'Nothing here yet.'; note.hidden = false; return; } list.forEach(p => grid.appendChild(card(p))); })
+    .catch(() => { note.textContent = 'The list is on its way — try again in a minute.'; note.hidden = false; });
+</script>
+{% endblock %}

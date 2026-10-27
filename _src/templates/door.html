@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block main %}
+  <section class="door-hero wrap">
+    <h1 class="sr">Parla</h1>
+    {{ logo|safe }}
+    <p class="lede">creating and making.</p>
+  </section>
+  <section class="doors">
+    <a class="door" href="/designs/">
+      <span class="label">Parla Designs</span>
+      <h2>Designs</h2>
+      <p>Spaces designed for how they will be lived in, alongside the architect — and small apps and tools, each at its own address.</p>
+      {% if door_designs %}<img class="pic" src="{{ door_designs }}" alt="">{% else %}<svg class="pic brand" viewBox="0 0 500 400" aria-hidden="true"><rect width="500" height="400" fill="#E5DEAA"/><g fill="#FF4200"><use href="#parla" x="90" y="158" width="320" height="84"/></g></svg>{% endif %}
+      <span class="go">Enter →</span>
+    </a>
+    <a class="door" href="/moves/">
+      <span class="label">Parla Moves</span>
+      <h2>Moves</h2>
+      <p>Choreography, direction and performance — productions, films and commissions, and a life on stage.</p>
+      {% if door_moves %}<img class="pic" src="{{ door_moves }}" alt="">{% else %}<svg class="pic brand" viewBox="0 0 500 400" aria-hidden="true"><rect width="500" height="400" fill="#E5DEAA"/><g fill="#FF4200"><use href="#parla" x="90" y="158" width="320" height="84"/></g></svg>{% endif %}
+      <span class="go">Enter →</span>
+    </a>
+  </section>
+{% endblock %}

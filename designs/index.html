@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Designs — Parla</title>
+<meta name="description" content="Parla Designs — space design alongside the architect, and small apps and tools by Corina Kinnear.">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Outfit:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="parla" viewBox="8 4 203 51">
+    <path d="M10.76,18.41h14.05c7.25,0,11.3,3.75,11.3,9.9s-4.05,10-11.3,10h-10.3v15.1h-3.75V18.41ZM24.71,34.81c4.85,0,7.55-2.35,7.55-6.5s-2.7-6.4-7.55-6.4h-10.2v12.9h10.2Z"/>
+    <path d="M68.98,18.41h4.95l3.71,35h-4.1l-1.07-10.9h-15.9l-7.33,10.9h-4.1l23.84-35ZM72.15,39.11l-1.69-17.3-11.61,17.3h13.3Z"/>
+    <path d="M96.77,18.41h14.55c7.25,0,11.3,3.65,11.3,9.65s-4.05,9.75-11.3,9.75h-.3l12.6,15.6h-4.8l-12.6-15.65h-5.7v15.65h-3.75V18.41ZM111.32,34.31c4.8,0,7.45-2.25,7.45-6.25s-2.65-6.15-7.45-6.15h-10.8v12.4h10.8Z"/>
+    <path d="M140.42,18.41h3.75v31.5h16.95v3.5h-20.7V18.41Z"/>
+    <path d="M179.9,18.41h4.95l23.79,35h-4.1l-7.33-10.9h-15.9l-1.07,10.9h-4.1l3.76-35ZM194.94,39.11l-11.61-17.3-1.69,17.3h13.3Z"/>
+    <rect x="173.63" y="5.93" width="29.4" height="2.78"/>
+  </symbol>
+</svg>
+<header class="mast">
+  <div class="wrap">
+    <a href="/" aria-label="Parla — home"><svg class="logo" viewBox="0 0 203 51" role="img" aria-label="Parla"><use href="#parla"/></svg></a>
+    <nav>
+      <a href="/designs/" aria-current="page">Designs</a>
+      <a href="/moves/">Moves</a>
+      <a href="/about/">About</a>
+    </nav>
+  </div>
+</header>
+<nav class="subnav" aria-label="Designs">
+  <div class="wrap">
+    <a href="/designs/" aria-current="page">Overview</a>
+    <a href="/spaces/">Spaces</a>
+    <a href="/designs/#apps">Apps &amp; tools</a>
+    <a href="/current/">Current<span class="lock-ico">●</span></a>
+  </div>
+</nav>
+<main>
+  <section class="pagehead wrap">
+    <h1>Designs</h1>
+    <p class="lede">rooms, screens and the people in them.</p>
+    <p class="intro">Space design alongside the architect or firm already on the project, and the small apps and tools I build along the way. Most of my working life has been spent putting bodies in rooms; I read a floor plan the way I read a stage.</p>
+  </section>
+  <section class="wrap">
+    <div class="teaser">
+      <div><h2>Spaces</h2><a class="more" href="/spaces/">See the work →</a></div>
+      <div>
+        <p>I design how a space will actually be lived in — lighting, circulation, finishes — written so the drafter can work straight from it. Two projects so far: a two-storey ADU in Venice, now in plan check with the City of Los Angeles, and a dance school in Doha.</p>
+      </div>
+    </div>
+    <div class="teaser" id="apps">
+      <div><h2>Apps &amp; tools</h2><span class="label count" id="count"></span></div>
+      <div><p>Small, useful things, each at its own address — a scheduling tool for rehearsals, a neighbourhood guide. New ones appear here as they're made.</p></div>
+    </div>
+    <div class="grid" id="grid" aria-live="polite"></div>
+    <p class="note" id="note" hidden></p>
+    <div class="teaser" style="margin-top:84px">
+      <div><h2>Current</h2><a class="more" href="/current/">Enter with a code →</a></div>
+      <div><p>Work in progress for clients and collaborators — moodboards, plans, drafts. This part of the site is private; ask me for the code.</p></div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <svg class="logo" viewBox="0 0 203 51" role="img" aria-label="Parla"><use href="#parla"/></svg>
+    <div class="right">
+      <span class="label">© <span id="year"></span> Parla</span>
+      <span class="label">parladesigns.com</span>
+    </div>
+  </div>
+</footer>
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+<script>
+  const grid = document.getElementById('grid'), note = document.getElementById('note'), count = document.getElementById('count');
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const when = iso => { if (!iso) return ''; const d = new Date(iso + 'T12:00:00'); return isNaN(d) ? '' : d.toLocaleDateString('en-US', {month:'short', year:'numeric'}); };
+  const pathLabel = url => { try { const u = new URL(url, location.origin); return u.origin === location.origin ? u.pathname.replace(/\/$/, '') || '/' : u.host; } catch { return url; } };
+  function card(p){
+    const a = document.createElement('a'); a.className = 'card'; a.href = p.url;
+    const visual = p.cover ? `<img class="cover" src="${esc(p.cover)}" alt="" loading="lazy">` : `<div class="placeholder" aria-hidden="true">${esc((p.title || '?').trim().charAt(0))}</div>`;
+    a.innerHTML = `${visual}<div class="body"><h3>${esc(p.title)}</h3>${p.description ? `<p>${esc(p.description)}</p>` : ''}<div class="meta"><span class="tag">${esc(pathLabel(p.url))}</span>${p.updated ? `<span class="date">Updated ${esc(when(p.updated))}</span>` : ''}</div></div>`;
+    return a;
+  }
+  fetch('/projects.json', {cache: 'no-store'}).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(data => { const list = (data && data.projects) || []; count.textContent = list.length ? `${list.length} so far` : ''; if (!list.length) { note.textContent = 'Nothing here yet.'; note.hidden = false; return; } list.forEach(p => grid.appendChild(card(p))); })
+    .catch(() => { note.textContent = 'The list is on its way — try again in a minute.'; note.hidden = false; });
+</script>
+</body>
+</html>

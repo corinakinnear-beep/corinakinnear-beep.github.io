@@ -1,0 +1,304 @@
+# Source of truth for the Parla Moves pages (dance). scripts/site.py turns this into HTML.
+# Images: file names relative to /moves/img/<slug>/ ; add them as they are chosen.
+# Anything marked "confirm" in notes is a question for Cori, not shown on the site.
+
+site:
+  moves_tagline: "choreography, direction and performance."
+  moves_intro: >-
+    Dance work by Corina Kinnear — productions, films and commissions made under the name
+    Parlā, alongside twenty years of performing for companies and choreographers in Los Angeles,
+    Berlin, San Francisco, Montreal and New York.
+  instagram: "https://www.instagram.com/parlamoves/"
+  instagram_handle: "@parlamoves"
+  contact_email: "corina.kinnear@gmail.com"
+
+works:
+  - slug: objects-in-mirror
+    title: Objects in Mirror Are Closer Than They Appear
+    year: 2026
+    kind: Group work
+    role: Choreography
+    venue: Los Angeles Dance Festival
+    place: Los Angeles
+    when: April 2026
+    summary: >-
+      A six-minute group work made for the Los Angeles Dance Festival and performed there on
+      18 April 2026.
+    body: []
+    credits:
+      - [Choreography, Corina Kinnear]
+      - [Premiere, "Los Angeles Dance Festival, 18 April 2026"]
+      - [Photography, George Simian]
+    photo_credit: "Photographs by George Simian"
+    images: []
+    notes: "cast list missing; second photo set (Denise Leitner or SAL) left out until the credit is confirmed; music not cleared so no video"
+
+  - slug: temps-oublie
+    title: Temps Oublié
+    subtitle: Forgotten Time
+    year: 2025
+    kind: Residency & performance
+    role: Choreography and direction
+    venue: Centre national de la danse
+    place: Pantin, Paris
+    when: May–June 2025
+    summary: >-
+      A new work developed in a creation residency at the Centre national de la danse in Pantin,
+      May 2025, with dancer Matthew Van Oss, and shown in a performance and filmed recording in
+      June 2025.
+    body: []
+    credits:
+      - [Choreography and direction, Corina Kinnear]
+      - [Dancer, Matthew Van Oss]
+      - [Residency, "Centre national de la danse (CND), Pantin — May 2025"]
+    images: []
+    list_only: true
+    notes: "no images or recording in Dropbox yet; composer unknown"
+
+  - slug: lost-time
+    title: Lost Time
+    year: 2023
+    kind: Dance film
+    role: Choreography and direction
+    venue: The Odyssey Theatre
+    place: Los Angeles
+    when: July 2023
+    summary: >-
+      A short dance film made in Los Angeles in the summer of 2023, shown at The Odyssey Theatre.
+    quote:
+      text: >-
+        Missing! Desperate to find lost time. Afraid it will never be found again. Lost yesterday
+        or tomorrow, but could've been today. Changes depending on who is looking at it and where
+        it's being looked at. Stands still for no man and flies when you're having fun. Loves to
+        bother white rabbits. Priceless. If found, please contact right away. Not a moment to spare.
+      cite: "From the film's notice"
+    body: []
+    credits:
+      - [Choreography and direction, Corina Kinnear]
+      - [Shown at, "The Odyssey Theatre, Los Angeles — July 2023"]
+    video: null
+    images: []
+    notes: "trailer and full film exist in Dropbox (62 and 65 MB) — upload to Vimeo to embed; composer and cast unnamed; wardrobe 'Stevy' needs a surname"
+
+  - slug: ocean-12
+    title: Ocean 12
+    year: 2020
+    kind: Site-specific production
+    role: Choreography and direction
+    venue: Santa Monica Beach
+    place: Santa Monica
+    when: September–October 2020
+    summary: >-
+      An outdoor production made for the beach at Santa Monica in the autumn of 2020, performed
+      across seven evenings in September and October.
+    body: []
+    credits:
+      - [Choreography and direction, Corina Kinnear]
+      - [Performances, "Santa Monica Beach — September and October 2020"]
+    images: []
+    notes: "only professional footage exists (12 clips by 'SS'); frame grabs needed; cast and music unknown"
+
+  - slug: i-am-here
+    title: I am here
+    year: 2020
+    kind: Commission
+    role: Choreography
+    venue: Commissioned work
+    place: Amsterdam
+    when: January 2020
+    summary: >-
+      A commissioned piece for an event in Amsterdam, January 2020: five scenes for a cast of
+      dancers that move from a figure of depression — four costumed bodies stacked on one
+      another's shoulders — through community and support to a single person walking, in slow
+      motion, towards the light at the end of the catwalk.
+    body: []
+    credits:
+      - [Choreography, Corina Kinnear]
+      - [Commissioned for, "a healthcare event, Amsterdam — January 2020"]
+      - [Photography, Alessandro]
+    photo_credit: "Photographs by Alessandro"
+    images: []
+    notes: "client (Ashfield Healthcare / Janssen) may hold rights; Alessandro's surname unknown"
+
+  - slug: naked
+    title: "NAKED: An Art Happening"
+    year: 2018
+    kind: Production — 17 performances
+    role: Direction and choreography
+    venue: Odyssey Dance Festival · Pico Union Project
+    place: Los Angeles
+    when: February–March 2018
+    summary: >-
+      How are we supposed to look? NAKED premiered at the Odyssey Dance Festival on 8 and 9
+      February 2018 and ran for fifteen further evenings at the Pico Union Project in downtown
+      Los Angeles. At its centre is a thirty-minute contemporary dance for five performers of
+      differing sexes, races and ages — from 23 to 73 — performed entirely in the nude, as a way
+      of looking at non-sexualised nakedness.
+    body:
+      - >-
+        Each evening was built as a happening in four parts: an exhibition of work by guest
+        artists at eight, the dance at half past, then an experiment in which the audience was
+        asked about its own perceptions and experience of nakedness, and finally a stripped-down,
+        unplugged set by a different Los Angeles band.
+      - >-
+        Guest artists included the visual artist Gina Teichert, the illustrator C.W. Moss, the
+        photographer Lilly Lawrence, the sound artists SILENTSHOUT and, in the photography exhibit
+        Second Mirror, Andrew Grace. The bands included Whispertown, The Mynabirds, The Love
+        Language, Russian Red and BLONDFIRE.
+    credits:
+      - [Direction and choreography, Corina Kinnear]
+      - [Performers, "Amanda Masongsong, Khristina Cayetano, Sean Greene, Keon Saghari, Ryan Ruiz, Amanda “M.C.” MacLeod, Louie Cornejo, Roger Gonzalez Hibner"]
+      - [Original score, "SILENTSHOUT (Alina Cutrono and Theo Karon)"]
+      - [Dramaturgy, Laura Karlin]
+      - [Lighting design, Bosco Flanagan]
+      - [Company class, Andrew Pearson]
+      - [Artistic development, Stephanie Baer]
+      - [Photography, Lilly Lawrence]
+      - [Rehearsal space, The Post House]
+      - [Premiere, "Odyssey Dance Festival, 8–9 February 2018; then Pico Union Project, 22 February – 25 March 2018"]
+    photo_credit: "Photographs by Lilly Lawrence"
+    video:
+      kind: vimeo
+      id: "250096790"
+      caption: "naked. an art happening — the promotional film (FOXFLY, 2018)"
+    images: []
+    notes: "press photos by Lilly Lawrence (consent confirmed by Cori); full show recording (3 GB) in Dropbox"
+
+  - slug: movmt
+    title: MOVMT
+    year: 2014
+    kind: Evening-length production
+    role: Choreography and direction
+    venue: MiMoDa Studio
+    place: Los Angeles
+    when: April 2014
+    summary: >-
+      Corina Kinnear's Los Angeles choreographic debut: an immersive evening at MiMoDa Studio
+      for ten professional dancers between the ages of 22 and 74, presented with Foxfly
+      Productions on 23 April 2014. Theatrical interludes connected contemporary and
+      experimental dance across a score that ran from classical to indie to electronic.
+    body: []
+    credits:
+      - [Choreography and direction, Corina Kinnear]
+      - [Produced with, Foxfly Productions]
+      - [Performance, "MiMoDa Studio, Los Angeles — 23 April 2014"]
+    images: []
+    notes: "five short interlude films exist (commercial music, so no embed); frame grabs possible"
+
+also:
+  - title: Entanglement
+    detail: "New work in development — research at LA Dance Project, PRAX and in Berlin, 2025–26"
+  - title: Nella Ombra
+    detail: "Immersive dance opera, Venice — 2017"
+  - title: Leath
+    detail: "Experimental residency, TanzFabrik Berlin"
+  - title: Interface Seattle
+    detail: "Residency with MAD Art, Seattle — “for this research, the process is the product”"
+  - title: Welcome to Berlin
+    detail: "Opening ceremony, EMF Berlin — 2016"
+  - title: Spectral Schematics
+    detail: "By Lea Piontek, PARTS Brussels and CND Paris — dancer and co-choreographer, 2016"
+  - title: arrêt
+    detail: "Dance film with John Lambremont; cinematography Jeremy Peele — c. 2014"
+    link: "https://vimeo.com/89527861"
+  - title: Post House Residency
+    detail: "Bella Lewitzky Residency, Los Angeles — 2017–19"
+  - title: Fall Soirée
+    detail: "Associate choreographer, Invertigo Dance Theatre — 2019"
+  - title: Face Off
+    detail: "Assistant choreographer, Syfy — 2014"
+  - title: Vail Dance Project
+    detail: "Producer, Solaris Plaza, Vail — 2013"
+
+performing:
+  intro: >-
+    Twenty years on stage, in opera houses, theatres, television studios and on the road —
+    classical and contemporary, pointe and floor.
+  groups:
+    - heading: Opera and ballet
+      items:
+        - { work: "Elektra · La Rondine · Parsifal · Les Huguenots", company: "Deutsche Oper Berlin", role: "Contemporary dancer", where: "Berlin", when: "2015–2018" }
+        - { work: "La Traviata", company: "Los Angeles Opera", role: "Classical dancer", where: "Los Angeles", when: "2019" }
+        - { work: "Ode to Joy", company: "Deutsches Fernsehballett", role: "Ballet dancer, pointe", where: "Berlin", when: "2015" }
+        - { work: "Ocean", company: "Alonzo King LINES Ballet", role: "Ballet dancer", where: "San Francisco", when: "2009" }
+    - heading: Companies and choreographers
+      items:
+        - { work: "Fish", company: "Mike Tyus", role: "Dancer", where: "Los Angeles", when: "2021" }
+        - { work: "Dream Eaters", company: "Invertigo Dance Theatre", role: "Contemporary dancer", where: "Los Angeles", when: "2021" }
+        - { work: "Formula and Fairy Tales", company: "Invertigo Dance Theatre", role: "Contemporary dancer", where: "Gainesville", when: "2020" }
+        - { work: "Beef", company: "Luke Zender", role: "Dancer", where: "New York and Jackson, Wyoming", when: "2018–2019" }
+        - { work: "Impaired Judgment in Slow Motion", company: "MiMoDa Movement Theater", role: "Dance-theatre dancer", where: "Los Angeles", when: "2013–2015" }
+        - { work: "Fly Away", company: "Arrogant Elbow (Sarah Elgart)", role: "Contemporary dancer", where: "LAX, Los Angeles", when: "2013" }
+        - { work: "Molly Maps", company: "Mecca Vazie Andrews", role: "Contemporary dancer", where: "REDCAT, Los Angeles", when: "2013" }
+        - { work: "After It Happened", company: "Laura Karlin", role: "Contemporary dancer", where: "Los Angeles", when: "2012" }
+        - { work: "Nyau", company: "Gibson Muriva", role: "Contemporary and African dancer", where: "Montreal", when: "2011–2012" }
+        - { work: "Jack in the Box", company: "Aszure Barton", role: "Contemporary ballet dancer", where: "Montreal", when: "2011" }
+        - { work: "Dynamic Inquiry", company: "Nathan Trice", role: "Contemporary dancer", where: "San Francisco", when: "2010" }
+        - { work: "Q", company: "Yannis Adoniou", role: "Contemporary dancer", where: "San Francisco", when: "2010" }
+        - { work: "Works by Jiří Kylián, Toru Shimazaki and Alejandro Cerrudo", company: "Hubbard Street Dance Chicago", role: "Contemporary dancer", where: "Chicago", when: "2009" }
+    - heading: Film, television and brands
+      items:
+        - { work: "Lose Yourself to Dance", company: "Daft Punk", role: "Dancer", where: "", when: "" }
+        - { work: "We Are Kindred — ballet film", company: "", role: "Dancer", where: "", when: "2018" }
+        - { work: "L'Oréal Professionnel tour · IAA Frankfurt", company: "", role: "Dancer", where: "", when: "" }
+        - { work: "Face Off", company: "Syfy", role: "Assistant choreographer", where: "Los Angeles", when: "2014" }
+  images: []
+  notes: "spellings corrected from the CV (Aszure Barton, Nathan Trice, Jiří Kylián, La Rondine, Les Huguenots) — confirm; Berlin runway work (Anja Gockel?) left out until confirmed"
+
+teaching:
+  intro: >-
+    Classical and contemporary technique, master classes, conventions and choreography for
+    studios and companies — with the intention of combining artistic exploration with technical
+    development, so that dancers leave as well-rounded, expressive artists.
+  body:
+    - >-
+      Corina grew up teaching and choreographing at her mother's studio, Parker Dance Academy in
+      Colorado. After her BFA with Alonzo King's LINES Ballet she began teaching professional
+      classes at The Edge Performing Arts Center in Hollywood and company class for ensembles
+      including the Deutsche Oper Berlin and Invertigo Dance Theatre, and now teaches
+      internationally in workshops and intensives.
+  where:
+    - { name: "The Edge Performing Arts Center", detail: "Ballet and contemporary classes, Hollywood" }
+    - { name: "Week of Dance", detail: "A summer intensive in Parker, Colorado — over thirty classes in a week, each day opening with coaching; every summer since 2014" }
+    - { name: "Fluid Dance Conventions", detail: "Faculty" }
+    - { name: "CLI Studios", detail: "Online classes, 2020" }
+    - { name: "Company class", detail: "Deutsche Oper Berlin, Invertigo Dance Theatre" }
+    - { name: "Workshops and private coaching", detail: "Los Angeles, Berlin, Paris and by arrangement" }
+  cta: "Enquire about a class, workshop or intensive"
+  video: null
+  images: []
+  notes: "teaching reel (Nov 2025) exists — upload to Vimeo; Sep 2026 class footage could give stills; Week of Dance photos include minors, so none used"
+
+bio:
+  lede: "Choreographer, director and dancer. Founder of Parlā."
+  paragraphs:
+    - >-
+      Corina Kinnear makes dances, films and happenings that take the details of ordinary life —
+      time, nakedness, a crowded room, the sea — and give an audience a way to look at them again.
+      Her productions have ranged from MOVMT, an immersive evening for ten dancers at MiMoDa
+      Studio in Los Angeles, to NAKED: An Art Happening, seventeen performances built around a
+      nude company of five and a nightly conversation with the audience, to Ocean 12 on the beach
+      at Santa Monica and the dance film Lost Time. Her newest work, Temps Oublié, was developed
+      in residency at the Centre national de la danse in Paris in 2025; Objects in Mirror Are
+      Closer Than They Appear premiered at the Los Angeles Dance Festival in 2026.
+    - >-
+      She trained at Parker Dance Academy, her mother's studio in Colorado, and at International
+      Ballet School, and holds a BFA from Dominican University of California with Alonzo King's
+      LINES Ballet. As a performer she has danced with the Deutsche Oper Berlin, Los Angeles
+      Opera, Invertigo Dance Theatre, Alonzo King LINES Ballet and the Deutsches Fernsehballett,
+      and for choreographers including Aszure Barton, Sarah Elgart, Mike Tyus and Laura Karlin,
+      with creative residencies at PARTS in Brussels, CND in Paris and TanzFabrik in Berlin.
+    - >-
+      Parlā is her company and the name under which she directs, choreographs and teaches,
+      between Los Angeles, Berlin and Paris. She also designs spaces — the same attention to how
+      a body moves through a room, applied to the room itself.
+  training:
+    - "BFA, Dominican University of California with Alonzo King's LINES Ballet (2011) — Alonzo King, Marina Hotchkiss, Arturo Fernandez, Maurya Kerr, Yannis Adoniou, Gregory Dawson, Kara Davis"
+    - "International Ballet School (2000–2007) — German Zamuel, Mark Carlson, Sandra Carlson"
+    - "Parker Dance Academy (1991–2007) — ballet, pointe, tap, jazz, hip-hop, contemporary"
+    - "Intensives: Springboard Danse Montréal, Steps on Broadway, Hubbard Street Dance Chicago, Cleo Parker Robinson Dance, The Edge, Ballet West, Pacific Northwest Ballet School"
+  residencies:
+    - "PARTS, Brussels · CND, Paris · TanzFabrik, Berlin · The Post House / Bella Lewitzky Residency, Los Angeles · MAD Art, Seattle"
+  headshot: null
+  headshot_credit: ""
+  notes: "bio newly written from the 2025 CV, the 2019 teaching bio and the 2018 artist statement — Cori to approve; headshot by Rory (May 2026) to add"

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block main %}
+  {% if hero %}<img class="hero-img" src="{{ hero.src }}" alt="{{ hero.alt }}">{% endif %}
+  <section class="pagehead wrap">
+    <h1>Moves</h1>
+    <p class="lede">{{ site.moves_tagline }}</p>
+    <p class="intro">{{ site.moves_intro }}</p>
+  </section>
+  <section class="wrap">
+    <div class="band"><h2>Works</h2><a class="more label" href="/moves/works/">All works →</a></div>
+    <div class="works">
+      {% for w in works if not w.list_only %}
+      <a class="workcard" href="/moves/works/{{ w.slug }}/">
+        {% if w.images %}<img src="/moves/img/{{ w.slug }}/{{ w.images[0].file }}" alt="{{ w.images[0].alt or w.title }}" loading="lazy">{% else %}<div class="noimg" aria-hidden="true">{{ w.title[:1] }}</div>{% endif %}
+        <h3>{{ w.title }}</h3>
+        <span class="sub">{{ w.year }} · {{ w.venue }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  <section class="wrap" style="margin-top:108px">
+    <div class="teaser">
+      <div><h2>Performing</h2><a class="more" href="/moves/performing/">Credits →</a></div>
+      <div><p>{{ performing.intro }}</p></div>
+    </div>
+    <div class="teaser">
+      <div><h2>Teaching</h2><a class="more" href="/moves/teaching/">Classes and intensives →</a></div>
+      <div><p>{{ teaching.intro }}</p></div>
+    </div>
+    <div class="teaser">
+      <div><h2>Bio</h2><a class="more" href="/moves/bio/">Read →</a></div>
+      <div><p>{{ bio.lede }} {{ bio.paragraphs[2] }}</p></div>
+    </div>
+  </section>
+{% endblock %}

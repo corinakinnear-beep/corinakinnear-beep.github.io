@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<meta name="description" content="{{ description }}">
+{% if noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Outfit:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+{% block head %}{% endblock %}
+</head>
+<body>
+{{ wordmark|safe }}
+<header class="mast">
+  <div class="wrap">
+    <a href="/" aria-label="Parla — home">{{ logo|safe }}</a>
+    <nav>
+      <a href="/designs/"{% if section == 'designs' %} aria-current="page"{% endif %}>Designs</a>
+      <a href="/moves/"{% if section == 'moves' %} aria-current="page"{% endif %}>Moves</a>
+      <a href="/about/"{% if section == 'about' %} aria-current="page"{% endif %}>About</a>
+    </nav>
+  </div>
+</header>
+{% if section == 'designs' %}
+<nav class="subnav" aria-label="Designs">
+  <div class="wrap">
+    <a href="/designs/"{% if sub == 'home' %} aria-current="page"{% endif %}>Overview</a>
+    <a href="/spaces/"{% if sub == 'spaces' %} aria-current="page"{% endif %}>Spaces</a>
+    <a href="/designs/#apps"{% if sub == 'apps' %} aria-current="page"{% endif %}>Apps &amp; tools</a>
+    <a href="/current/"{% if sub == 'current' %} aria-current="page"{% endif %}>Current<span class="lock-ico">●</span></a>
+  </div>
+</nav>
+{% elif section == 'moves' %}
+<nav class="subnav" aria-label="Moves">
+  <div class="wrap">
+    <a href="/moves/"{% if sub == 'home' %} aria-current="page"{% endif %}>Overview</a>
+    <a href="/moves/works/"{% if sub == 'works' %} aria-current="page"{% endif %}>Works</a>
+    <a href="/moves/performing/"{% if sub == 'performing' %} aria-current="page"{% endif %}>Performing</a>
+    <a href="/moves/teaching/"{% if sub == 'teaching' %} aria-current="page"{% endif %}>Teaching</a>
+    <a href="/moves/bio/"{% if sub == 'bio' %} aria-current="page"{% endif %}>Bio</a>
+  </div>
+</nav>
+{% endif %}
+<main>
+{% block main %}{% endblock %}
+</main>
+<footer>
+  <div class="wrap">
+    {{ logo|safe }}
+    <div class="right">
+      <span class="label">© <span id="year"></span> Parla</span>
+      {% if section == 'moves' %}<a class="label" href="{{ site.instagram }}" target="_blank" rel="noopener">{{ site.instagram_handle }}</a>{% endif %}
+      <span class="label">parladesigns.com</span>
+    </div>
+  </div>
+</footer>
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
