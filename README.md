@@ -47,7 +47,7 @@ Edit `_src/moves.yaml` (text, credits, image file names) or a template in `_src/
     python3 scripts/site.py
 
 and upload the files it rewrote. Add a dance work by adding an entry under `works:` and its photos
-under `moves/img/<slug>/` (the first photo is the large one at the top; `pos: "50% 20%"` moves its focal point).
+under `moves/img/<slug>/` (the first photo is the large one at the top; `card: FILE` picks a different photo for the Works cards; `pos: "50% 20%"` moves its focal point).
 A film can be a Vimeo embed (`video: {kind: vimeo, id: …}`) or a file in `moves/video/`
 (`video: {kind: file, src: /moves/video/NAME.mp4, poster: /moves/img/video/NAME.jpg}`).
 

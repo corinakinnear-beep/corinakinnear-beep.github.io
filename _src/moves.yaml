@@ -124,8 +124,23 @@ works:
     credits:
       - [Choreography and direction, Corina Kinnear]
       - [Performances, "Santa Monica Beach — September and October 2020"]
-    images: []
-    notes: "only professional footage exists (12 clips by 'SS'); frame grabs needed; cast and music unknown"
+    photo_credit: "Frames from the performance footage, filmed on Santa Monica Beach, 10 September 2020"
+    card: ocean-12-c007-034s.jpg   # the image on the Works cards (default: the first image)
+    images:
+      - { file: ocean-12-c013-018s.jpg, alt: "Three dancers in white on the night beach, a pale blue screen standing in the sand" }
+      - { file: ocean-12-c007-034s.jpg, alt: "A dancer in a long white coat, one arm thrown up into the dark" }
+      - { file: ocean-12-c013-039s.jpg, alt: "Two dancers on either side of the screen, sand lit from the ground" }
+      - { file: ocean-12-c007-054s.jpg, alt: "A low lunge, the white coat flaring" }
+      - { file: ocean-12-c016-046s.jpg, alt: "A dancer crawling across the sand beside the screen" }
+      - { file: ocean-12-c007-006s.jpg, alt: "A dancer crouched in a pool of light on the sand" }
+      - { file: ocean-12-c013-010s.jpg, alt: "One dancer standing, another falling against the screen" }
+      - { file: ocean-12-c016-131s.jpg, alt: "A dancer in a deep wide stance, facing the camera" }
+      - { file: ocean-12-c007-058s.jpg, alt: "Close on a dancer reaching up and back" }
+      - { file: ocean-12-c016-095s.jpg, alt: "A dancer behind the screen, arms flung wide" }
+      - { file: ocean-12-c007-050s.jpg, alt: "A dancer facing the camera in a wide second position" }
+      - { file: ocean-12-c016-168s.jpg, alt: "A high knee on the lit sand" }
+      - { file: ocean-12-c016-144s.jpg, alt: "A dancer kicking low across the sand" }
+    notes: "frames grabbed from four of the twelve camera clips (C007, C011, C013, C016) filmed by 'SS' on 10 Sep 2020 — who owns the footage and the camera operator's name still to confirm; cast and music unknown"
 
   - slug: i-am-here
     title: I am here
