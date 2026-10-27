@@ -2,6 +2,15 @@
   "generated": "2026-10-27",
   "projects": [
     {
+      "slug": "briefly",
+      "title": "Briefly",
+      "description": "Instagram, once a day: Claude reads your feed and writes one organized brief on your schedule. Not permitted by Instagram — use at your own risk.",
+      "url": "/briefly/",
+      "cover": "/briefly/cover.jpg",
+      "added": "2026-10-27",
+      "updated": "2026-10-27"
+    },
+    {
       "slug": "beachmap",
       "title": "Around Our Home",
       "description": "Our favorite places to eat, drink and park within reach of the house — with hours, walking and driving times, and a map.",

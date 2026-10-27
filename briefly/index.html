@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Instagram, once a day: Claude reads your feed and writes one organized brief on your schedule. Not permitted by Instagram — use at your own risk.">
+<title>Briefly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg-base: #fafbfc;
+    --bg-wash-1: #e2f1fb;
+    --bg-wash-2: #fdecf0;
+    --surface: #ffffff;
+    --surface-tint: #f2f5f9;
+    --ink: #212b3a;
+    --ink-soft: #454f63;
+    --muted: #6b7488;
+    --line: #e7ecf3;
+    --accent: #ef5f7c;
+    --accent-strong: #c53f5c;
+    --accent-ink: #fff6f7;
+    --accent-soft: #fdeaef;
+    --accent-line: #f6c7d3;
+    --pastel-blue: #4a9bd6;
+    --pastel-blue-soft: #e1f0fb;
+    --pastel-mint: #35a884;
+    --pastel-mint-soft: #e0f5ee;
+    --pastel-lavender: #8577d9;
+    --pastel-lavender-soft: #eae7fb;
+    --pastel-peach: #e3934a;
+    --pastel-peach-soft: #fcecdc;
+    --shadow: 0 1px 2px rgba(43,54,72,0.05), 0 10px 28px rgba(43,54,72,0.07);
+    --font-display: "Manrope", -apple-system, "Segoe UI", sans-serif;
+    --font-mark: "Instrument Serif", Georgia, serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+
+
+  .ig-warning{
+    display:flex; gap:12px; align-items:flex-start;
+    margin:18px 0 22px; padding:14px 16px;
+    background:#fff4ec; border:1px solid #f4c9a5; border-radius:12px;
+    color:#7a3a12; font-size:0.95rem; line-height:1.55;
+  }
+  .ig-warning svg{ flex:0 0 auto; width:20px; height:20px; margin-top:2px; fill:none; stroke:#d9742a; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .ig-warning strong{ color:#5c2a0b; }
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0;
+    background:
+      radial-gradient(ellipse 70% 55% at 10% -5%, var(--bg-wash-1), transparent 60%),
+      radial-gradient(ellipse 65% 55% at 100% 105%, var(--bg-wash-2), transparent 60%),
+      var(--bg-base);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: var(--font-display);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "tnum" 1;
+  }
+  ::selection{ background: var(--accent-soft); color: var(--ink); }
+  a{ color: var(--accent); }
+
+  .mast{
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.35rem clamp(1.25rem, 4vw, 3rem);
+    background: color-mix(in srgb, var(--bg-base) 78%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .wordmark{
+    font-family: var(--font-mark);
+    font-style: italic;
+    font-size: 1.55rem;
+    letter-spacing: 0.005em;
+    color: var(--ink);
+  }
+
+  .progress{
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    max-width: 220px;
+  }
+  .progress-track{
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .progress-fill{
+    height: 100%;
+    width: 33.33%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.35s ease;
+  }
+  .progress-label{
+    font-size: 0.78rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  @media (max-width: 520px){
+    .progress{ display: none; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .progress-fill{ transition: none; }
+  }
+
+  main{
+    max-width: 640px;
+    margin: 0 auto;
+    padding: clamp(2rem, 6vw, 3.5rem) clamp(1.25rem, 4vw, 1.5rem) 6rem;
+  }
+
+  .screen{ display: none; }
+  .screen.active{
+    display: block;
+    animation: rise 0.4s ease both;
+  }
+  @keyframes rise{
+    from{ opacity: 0; transform: translateY(8px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .screen.active{ animation: none; }
+  }
+
+  .kicker{
+    font-size: 0.92rem;
+    color: var(--muted);
+    margin: 0 0 0.85rem;
+  }
+  h1{
+    font-weight: 700;
+    font-size: clamp(1.9rem, 4.6vw, 2.5rem);
+    line-height: 1.18;
+    letter-spacing: -0.02em;
+    margin: 0 0 1rem;
+    text-wrap: balance;
+    max-width: 17ch;
+  }
+  h2{
+    font-weight: 700;
+    font-size: 1.3rem;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.4rem;
+  }
+  .lede{
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    max-width: 46ch;
+    margin: 0 0 2.5rem;
+  }
+  p{ margin: 0 0 1rem; }
+  .muted{ color: var(--muted); }
+
+  .section-gap{ margin-top: 3rem; }
+
+  /* --- principles --- */
+  .principles{
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin: 0 0 2.75rem;
+  }
+  .principle{
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .icon-chip{
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--chip-bg, var(--accent-soft));
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .icon-chip svg{ width: 18px; height: 18px; stroke: var(--chip-fg, var(--accent)); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  .ic-blue{ --chip-bg: var(--pastel-blue-soft); --chip-fg: var(--pastel-blue); }
+  .ic-mint{ --chip-bg: var(--pastel-mint-soft); --chip-fg: var(--pastel-mint); }
+  .ic-lavender{ --chip-bg: var(--pastel-lavender-soft); --chip-fg: var(--pastel-lavender); }
+  .ic-peach{ --chip-bg: var(--pastel-peach-soft); --chip-fg: var(--pastel-peach); }
+  .principle-text .p-head{ font-weight: 600; margin: 0 0 0.2rem; }
+  .principle-text p{ font-size: 0.92rem; color: var(--muted); margin: 0; max-width: 44ch; }
+
+  /* --- surfaces / cards --- */
+  .panel{
+    background: var(--surface);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 1.6rem;
+  }
+  .panel + .panel{ margin-top: 1rem; }
+
+  .label-row{
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0 0 0.9rem;
+  }
+
+  .step-label{
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    margin: 0 0 0.35rem;
+  }
+
+  /* --- billing --- */
+  .pay-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0;
+  }
+  .pay-row + .pay-row{ border-top: 1px solid var(--line); }
+  .pay-name{
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .pay-mark{
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-tint);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    flex: none;
+  }
+  .badge{
+    font-size: 0.72rem;
+    color: var(--muted);
+    background: var(--surface-tint);
+    padding: 0.32rem 0.6rem;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .note{
+    font-size: 0.86rem;
+    color: var(--muted);
+    margin: 1.1rem 0 0;
+  }
+
+  /* --- buttons --- */
+  .btn{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.92rem;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 0.75rem 1.3rem;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+  .btn:hover{ transform: translateY(-1px); }
+  .btn:active{ transform: translateY(0); }
+  .btn:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn-primary{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .btn-primary:hover{ opacity: 0.92; }
+  .btn-ghost{
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+  }
+  .btn-row{
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+  @media (prefers-reduced-motion: reduce){ .btn{ transition: none; } }
+
+  /* --- setup steps --- */
+  .step-block{
+    display: flex;
+    gap: 1.1rem;
+    padding: 1.9rem 0;
+  }
+  .step-block + .step-block{ border-top: 1px solid var(--line); }
+  .step-icon{
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--chip-bg, var(--accent-soft));
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .step-icon svg{ width: 19px; height: 19px; stroke: var(--chip-fg, var(--accent)); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .step-body{ flex: 1; min-width: 0; }
+  .step-body h2{ font-size: 1.1rem; }
+  .step-body p{ color: var(--muted); max-width: 44ch; font-size: 0.94rem; }
+  .step-actions{ margin-top: 0.9rem; }
+  .step-actions .btn{ padding: 0.6rem 1.1rem; font-size: 0.86rem; }
+
+  .sub-steps{ display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1.3rem; }
+  .sub-step{
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    background: var(--surface-tint);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+  }
+  .sub-step-icon{
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .sub-step-icon svg{ width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .sub-step-text{ flex: 1; min-width: 0; }
+  .sub-step-text .st-name{ font-weight: 600; font-size: 0.92rem; }
+  .sub-step-text .st-desc{ font-size: 0.82rem; color: var(--muted); margin-top: 0.1rem; }
+  .sub-step .btn{ padding: 0.55rem 1rem; font-size: 0.82rem; flex: none; }
+  @media (max-width: 520px){
+    .sub-step{ flex-wrap: wrap; }
+    .sub-step .btn{ margin-left: 3rem; }
+  }
+
+  .callout{
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: var(--surface-tint);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin: 1.3rem 0;
+  }
+  .callout-icon{
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+    margin-top: 0.1rem;
+  }
+  .callout-icon svg{ width: 11px; height: 11px; stroke: var(--accent-strong); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .callout p{ font-size: 0.86rem; color: var(--ink-soft); margin: 0; }
+  .callout strong{ color: var(--ink); }
+
+  .mock-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  @media (max-width: 560px){
+    .mock-grid{ grid-template-columns: 1fr; }
+  }
+  .mock-shell{
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface-tint);
+    overflow: hidden;
+  }
+  .mock-bar{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.55rem 0.7rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .mock-dot{ width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+  .mock-url{
+    margin-left: 0.4rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+    background: var(--surface-tint);
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+  }
+  .mock-body{ padding: 1rem; display: flex; justify-content: flex-end; }
+  .mock-popover{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.85rem;
+    box-shadow: var(--shadow);
+    width: 100%;
+  }
+  .mock-popover p{ font-size: 0.8rem; margin: 0 0 0.75rem; color: var(--ink-soft); }
+  .mock-btn-row{ display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .mock-btn{
+    font-family: var(--font-display);
+    font-size: 0.74rem;
+    padding: 0.4rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface-tint);
+    color: var(--muted);
+    opacity: 1;
+  }
+  .mock-btn.primary{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .mock-caption{ font-size: 0.78rem; color: var(--muted); margin: 0.6rem 0 0; }
+
+  /* --- form --- */
+  fieldset{ border: none; margin: 0; padding: 0; }
+  legend{ padding: 0; width: 100%; }
+  label{
+    display: block;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  input[type="text"], input[type="time"]{
+    width: 100%;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: var(--ink);
+    background: var(--surface-tint);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 0.7rem 0.85rem;
+  }
+  input[type="text"]:focus, input[type="time"]:focus{
+    outline: none;
+    border-color: var(--accent-line);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .helper{
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0.5rem 0 0;
+  }
+
+  .category-card{
+    background: var(--surface-tint);
+    border-radius: 12px;
+    padding: 1.1rem 1.1rem 1.2rem;
+  }
+  .category-card + .category-card{ margin-top: 0.8rem; }
+  .category-card.hidden{ display: none; }
+
+  .add-heading-btn{
+    margin-top: 0.8rem;
+    border-style: dashed;
+    color: var(--muted);
+    background: transparent;
+    padding: 0.65rem 1.1rem;
+    font-size: 0.86rem;
+  }
+
+  .info-details{ margin-top: 1rem; }
+  .info-details summary{
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.85rem;
+    list-style: none;
+  }
+  .info-details summary::-webkit-details-marker{ display: none; }
+  .info-details summary::before{ content: "＋ "; }
+  .info-details[open] summary::before{ content: "－ "; }
+  .info-details p{
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 0.5rem 0 0;
+    max-width: 46ch;
+  }
+  .cat-index{
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.55rem;
+  }
+  .cat-name-field{ margin-bottom: 0.85rem; }
+  .cat-accounts-row{
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .cat-accounts-field{ flex: 1; min-width: 180px; }
+
+  .switch-field{
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding-bottom: 0.7rem;
+  }
+  .switch{
+    width: 38px; height: 22px;
+    border-radius: 999px;
+    background: var(--line);
+    border: none;
+    position: relative;
+    cursor: pointer;
+    flex: none;
+    padding: 0;
+    transition: background 0.15s ease;
+  }
+  .switch::after{
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--surface);
+    transition: transform 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  }
+  .switch.on{ background: var(--accent); }
+  .switch.on::after{ transform: translateX(16px); }
+  .switch-label{ font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce){
+    .switch, .switch::after{ transition: none; }
+  }
+
+  /* --- frequency --- */
+  .freq-options{
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .freq-card{
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 1rem 1.15rem;
+    cursor: pointer;
+  }
+  .freq-card.active{
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+  }
+  .freq-top{ display: flex; align-items: center; gap: 0.7rem; }
+  .freq-radio{
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    flex: none;
+    position: relative;
+    background: var(--surface);
+  }
+  .freq-card.active .freq-radio{ border-color: var(--accent); }
+  .freq-card.active .freq-radio::after{
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .freq-name{ font-weight: 600; font-size: 0.96rem; }
+  .freq-desc{ font-size: 0.85rem; color: var(--muted); margin: 0.2rem 0 0 1.75rem; }
+  .freq-controls{
+    margin: 1rem 0 0 1.75rem;
+    display: none;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+  }
+  .freq-card.active .freq-controls{ display: flex; }
+  .freq-field{ min-width: 130px; }
+  .day-picker{ display: flex; gap: 0.4rem; }
+  .day-chip{
+    width: 36px; height: 36px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .day-chip.active{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .field-error{
+    font-size: 0.84rem;
+    color: var(--ink-soft);
+    background: var(--surface-tint);
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem;
+    margin-top: 1rem;
+    display: none;
+  }
+  .field-error.show{ display: block; }
+
+  /* --- summary --- */
+  .confirm-badge{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    margin-bottom: 1.6rem;
+  }
+  .confirm-badge svg{ width: 15px; height: 15px; stroke: var(--accent-strong); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .brief-row + .brief-row{
+    border-top: 1px solid var(--line);
+    margin-top: 1.3rem;
+    padding-top: 1.3rem;
+  }
+  .brief-row .k{
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.7rem;
+  }
+  .cat-tags{ display: flex; flex-direction: column; gap: 0.6rem; }
+  .cat-tag{
+    background: var(--surface-tint);
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem;
+  }
+  .cat-tag .cn{ font-weight: 600; font-size: 0.98rem; }
+  .cat-tag .ca{ font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
+  .schedule-line{ font-size: 1.05rem; font-weight: 600; }
+  .checklist{ display: flex; flex-direction: column; gap: 0.55rem; font-size: 0.92rem; color: var(--ink-soft); }
+  .checklist .ok{ color: var(--accent); margin-right: 0.5rem; }
+
+  /* --- prompt panel --- */
+  .cadence-highlight{ color: var(--accent-strong); font-weight: 600; }
+  .prompt-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.9rem;
+  }
+  .draft-badge{
+    font-size: 0.72rem;
+    color: var(--muted);
+    background: var(--surface-tint);
+    padding: 0.32rem 0.65rem;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .copy-btn{ padding: 0.55rem 1rem; font-size: 0.82rem; flex: none; }
+  pre.prompt-text{
+    background: var(--surface-tint);
+    border-radius: 12px;
+    padding: 1.15rem;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--ink-soft);
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  @media (prefers-reduced-motion: reduce){ .copy-btn{ transition: none; } }
+
+  /* --- admin preview --- */
+  .admin-layout{ display: flex; gap: 1.6rem; align-items: flex-start; }
+  .admin-list{ width: 240px; flex: none; display: flex; flex-direction: column; gap: 0.6rem; }
+  .admin-list-item{
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    font-family: var(--font-display);
+  }
+  .admin-list-item.active{ border-color: var(--accent-line); background: var(--accent-soft); }
+  .admin-list-date{ font-weight: 700; font-size: 0.9rem; color: var(--ink); }
+  .admin-list-meta{ margin-top: 0.35rem; }
+  .status-pill{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.22rem 0.6rem;
+    border-radius: 20px;
+  }
+  .status-pill.ok{ background: var(--pastel-mint-soft); color: var(--pastel-mint); }
+  .status-pill.blocked{ background: var(--accent-soft); color: var(--accent-strong); }
+  .admin-content{ flex: 1; min-width: 0; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 1.6rem; }
+  .view-tabs{ display: flex; gap: 0.5rem; margin-bottom: 1.4rem; }
+  .view-tab{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.86rem;
+    padding: 0.55rem 1.05rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .view-tab.active{ background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .admin-panel{ display: none; }
+  .admin-panel.active{ display: block; }
+  .view-panel{ display: none; }
+  .admin-content[data-view="newspaper"] .view-panel.newspaper{ display: block; }
+  .admin-content[data-view="magazine"] .view-panel.magazine{ display: block; }
+  .news-section{ margin-bottom: 1.5rem; }
+  .news-section:last-child{ margin-bottom: 0; }
+  .news-section h3{ font-size: 1rem; margin: 0 0 0.5rem; }
+  .news-section p{ color: var(--ink-soft); font-size: 0.94rem; margin: 0 0 0.6rem; }
+  .news-caughtup{ font-size: 0.86rem; color: var(--muted); margin: 0; }
+  .mag-section{ margin-bottom: 1.7rem; }
+  .mag-section:last-child{ margin-bottom: 0; }
+  .mag-section h3{ font-size: 1rem; margin: 0 0 0.85rem; display: flex; align-items: center; gap: 0.55rem; }
+  .mag-dot{ width: 9px; height: 9px; border-radius: 50%; background: var(--dot-color, var(--accent)); flex: none; }
+  .mag-item{
+    display: flex;
+    gap: 0.9rem;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.7rem;
+    background: var(--surface-tint);
+    border-left: 3px solid var(--item-color, var(--accent));
+    border-radius: 0 12px 12px 0;
+  }
+  .mag-item:last-child{ margin-bottom: 0; }
+  .mag-thumb{
+    width: 54px; height: 54px;
+    border-radius: 10px;
+    flex: none;
+    background: var(--item-soft, var(--accent-soft));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mag-thumb svg{ width: 20px; height: 20px; stroke: var(--item-color, var(--accent)); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .mag-text{ flex: 1; min-width: 0; }
+  .mag-head{ font-weight: 700; font-size: 0.9rem; margin: 0 0 0.1rem; }
+  .mag-tag{ font-size: 0.76rem; color: var(--muted); margin: 0 0 0.4rem; }
+  .mag-writeup{ font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 0.45rem; }
+  .mag-link{ font-size: 0.8rem; font-weight: 600; color: var(--accent); text-decoration: none; }
+  .mag-link:hover{ text-decoration: underline; }
+  .blocked-panel{ text-align: center; padding: 3rem 1rem; }
+  .blocked-panel .callout-icon{ margin: 0 auto 1rem; }
+  .blocked-panel h3{ font-size: 1.05rem; margin: 0 0 0.5rem; }
+  .blocked-panel p{ color: var(--muted); max-width: 40ch; margin: 0 auto; }
+  .mag-thumb img{ width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+  .admin-empty{ text-align: center; padding: 3rem 1rem; color: var(--muted); background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); }
+  .admin-empty p{ max-width: 38ch; margin: 0 auto; font-size: 0.94rem; }
+  textarea{
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--ink);
+    background: var(--surface-tint);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 0.85rem;
+    resize: vertical;
+    min-height: 130px;
+  }
+  textarea:focus{
+    outline: none;
+    border-color: var(--accent-line);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .submit-status{ font-size: 0.84rem; color: var(--muted); margin: 0.8rem 0 0; }
+  .submit-status.error{ color: var(--accent-strong); }
+  .submit-status.ok{ color: var(--pastel-mint); }
+  @media (max-width: 720px){
+    .admin-layout{ flex-direction: column; }
+    .admin-list{ width: 100%; flex-direction: row; overflow-x: auto; gap: 0.6rem; }
+    .admin-list-item{ min-width: 200px; }
+  }
+
+  footer.page-foot{
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 clamp(1.25rem, 4vw, 1.5rem) 3rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="mast">
+  <span class="wordmark">Briefly</span>
+  <div class="progress">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="progress-label" id="progressLabel">Step 1 of 4</span>
+  </div>
+</div>
+
+<main>
+
+  <!-- SCREEN 1 -->
+  <section class="screen active" id="s1">
+    <p class="kicker">Before you begin</p>
+    <h1>Instagram, once a day.</h1>
+    <p class="lede">Briefly turns your feed from something you scroll into something you read — one organized brief, delivered on your schedule, written by Claude.</p>
+
+    <div class="ig-warning" role="alert">
+      <svg viewBox="0 0 24 24"><path d="M12 3.5l9 16h-18z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.2" r=".6"/></svg>
+      <p style="margin:0"><strong>Please read before you continue.</strong> Briefly is not permitted by Instagram. Reading Instagram this way goes against Instagram's terms of use and will get your Instagram account suspended. Use it only if you accept that risk.</p>
+    </div>
+
+    <div class="principles">
+      <div class="principle">
+        <div class="icon-chip ic-blue">
+          <svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="4.5" rx="1.5"/><rect x="3.5" y="10.25" width="17" height="4.5" rx="1.5"/><rect x="3.5" y="16.5" width="10" height="4.5" rx="1.5"/></svg>
+        </div>
+        <div class="principle-text">
+          <p class="p-head">Sorted, not scrolled</p>
+          <p>Everything is filed into the categories you actually care about, instead of one long, chronological feed.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="icon-chip ic-mint">
+          <svg viewBox="0 0 24 24"><path d="M4 20l1.1-4.2L16.6 4.3a1.5 1.5 0 012.1 0l1 1a1.5 1.5 0 010 2.1L8.2 18.9 4 20z"/><path d="M14 6.7l3.3 3.3"/></svg>
+        </div>
+        <div class="principle-text">
+          <p class="p-head">Written, not reposted</p>
+          <p>Your brief summarizes what happened. No re-posted photos or endless captions, just what's worth knowing.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="icon-chip ic-lavender">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.4 2.4 4.6-5.4"/></svg>
+        </div>
+        <div class="principle-text">
+          <p class="p-head">Finite, not endless</p>
+          <p>You read it, you're caught up, you're done — no infinite scroll designed to keep you inside the app.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 style="font-size:1.05rem;">How it reaches you</h2>
+      <p class="muted" style="margin-bottom:0;">Briefly isn't an app you install — it's a short, guided setup that turns Claude into your personal wire service for Instagram. Claude does the reading, sorting, and writing; you just tell it what matters and how often you want to hear from it. The next page walks you through both pieces.</p>
+
+      <p class="muted" style="margin:12px 0 0; color:#7a3a12;"><strong>Important:</strong> this is not permitted by Instagram. Automated reading of your feed goes against Instagram's terms of use, and your account will get suspended for it. Briefly is a personal experiment, not an Instagram-approved service.</p>
+    </div>
+
+    <div class="section-gap">
+      <p class="label-row">Access</p>
+      <div class="panel">
+        <div class="pay-row">
+          <div class="pay-name"><span class="pay-mark">Z</span>Zelle</div>
+          <span class="badge">Testing — disabled</span>
+        </div>
+        <div class="pay-row">
+          <div class="pay-name"><span class="pay-mark">V</span>Venmo</div>
+          <span class="badge">Testing — disabled</span>
+        </div>
+        <p class="note">Briefly is currently in testing, so no payment is required. This is a preview of how billing will work at launch — you'll be able to pay by Zelle or Venmo directly from this screen.</p>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goTo(2)">Continue to setup →</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section class="screen" id="s2">
+    <p class="kicker">Setup</p>
+    <h1 style="max-width:20ch">Connect Claude and Chrome.</h1>
+    <p class="lede">A few installs, then one quick step to get Instagram permission out of the way before anything is scheduled.</p>
+
+    <div class="step-block">
+      <div class="step-icon ic-blue">
+        <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.2"/><path d="M3.5 9h17"/></svg>
+      </div>
+      <div class="step-body" style="width:100%;">
+        <h2>Connect Chrome</h2>
+        <p>Claude needs its desktop app and Chrome extension installed, and needs to find you already logged into Instagram in that browser.</p>
+
+        <div class="sub-steps">
+          <div class="sub-step">
+            <div class="sub-step-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 3.5v11.5"/><path d="M7.5 11l4.5 4.5L16.5 11"/><path d="M4.5 18h15"/></svg>
+            </div>
+            <div class="sub-step-text">
+              <div class="st-name">Claude Desktop</div>
+              <div class="st-desc">Where your brief gets written.</div>
+            </div>
+            <a class="btn" href="https://claude.com/download" target="_blank" rel="noopener">Download ↗</a>
+          </div>
+          <div class="sub-step">
+            <div class="sub-step-icon">
+              <svg viewBox="0 0 24 24"><path d="M14.5 4.5v2.4a1.6 1.6 0 001.6 1.6h2.4"/><rect x="4.5" y="3.5" width="15" height="17" rx="2.2"/><path d="M8.4 13.2a2.6 2.6 0 105.2 0 2.6 2.6 0 00-5.2 0z"/></svg>
+            </div>
+            <div class="sub-step-text">
+              <div class="st-name">Claude for Chrome</div>
+              <div class="st-desc">Lets Claude open and read Instagram for you.</div>
+            </div>
+            <a class="btn" href="https://claude.com/chrome" target="_blank" rel="noopener">Add ↗</a>
+          </div>
+          <div class="sub-step">
+            <div class="sub-step-icon">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="8.3" r="3.3"/><path d="M5.3 19.2c1-3.3 3.7-5.2 6.7-5.2s5.7 1.9 6.7 5.2"/></svg>
+            </div>
+            <div class="sub-step-text">
+              <div class="st-name">Sign in to Instagram</div>
+              <div class="st-desc">In that same Chrome browser — Claude reads your feed from this session, so there's nothing extra to log into inside Claude.</div>
+            </div>
+            <a class="btn" href="https://www.instagram.com" target="_blank" rel="noopener">Open Instagram ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-icon ic-peach">
+        <svg viewBox="0 0 24 24"><path d="M13 3L4 14h7l-1 7 9-11h-7l1-7z"/></svg>
+      </div>
+      <div class="step-body" style="width:100%;">
+        <h2>Grant Instagram access now</h2>
+        <p class="muted" style="font-size:0.94rem;">The first time Claude opens Instagram, it will pause and ask permission — both the browser and Claude may show a prompt like these. Choose <strong style="color:var(--ink)">“Always allow”</strong>. If you only allow it once, the brief won't be able to run again on its own later.</p>
+
+        <div class="mock-grid">
+          <div>
+            <div class="mock-shell">
+              <div class="mock-bar"><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-url">instagram.com</span></div>
+              <div class="mock-body">
+                <div class="mock-popover">
+                  <p><strong style="color:var(--ink)">Claude</strong> wants to use this tab to read Instagram.</p>
+                  <div class="mock-btn-row">
+                    <button class="mock-btn" disabled>Not now</button>
+                    <button class="mock-btn primary" disabled>Always allow</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="mock-caption">Browser permission — example only</p>
+          </div>
+          <div>
+            <div class="mock-shell">
+              <div class="mock-bar"><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-url">Claude</span></div>
+              <div class="mock-body" style="justify-content:stretch;">
+                <div class="mock-popover">
+                  <p>Before I continue, can I open Instagram in your browser?</p>
+                  <div class="mock-btn-row">
+                    <button class="mock-btn" disabled>Ask every time</button>
+                    <button class="mock-btn primary" disabled>Always allow for this site</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="mock-caption">Claude's own prompt — example only</p>
+          </div>
+        </div>
+
+        <p style="margin-top:1.4rem;">Paste this short prompt into Claude to trigger that check now, so it's out of the way before the recurring brief is set up on the next page.</p>
+
+        <div class="panel prompt-panel" style="margin-top:1.1rem;">
+          <div class="prompt-head">
+            <p class="label-row" style="margin:0;">Quick prompt — do this first</p>
+          </div>
+          <pre class="prompt-text" id="onboardPromptText">Open Chrome and go to instagram.com, using the account I'm already signed into. Just confirm you can see my normal feed — you don't need to read or summarize anything yet.
+
+If Chrome or you ask for permission to control this tab, choose "Always allow," not "just once," so this doesn't ask again when my scheduled brief runs later.</pre>
+          <div class="btn-row" style="margin-top:1.1rem;">
+            <button class="btn btn-primary copy-btn" id="onboardCopyBtn" onclick="copyOnboardPrompt()">Copy prompt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goTo(1)">← Back</button>
+      <button class="btn btn-primary" onclick="goTo(3)">Continue →</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 3 -->
+  <section class="screen" id="s3">
+    <p class="kicker">Setup</p>
+    <h1 style="max-width:20ch">Tell Claude what to include.</h1>
+    <p class="lede">Where it goes, what belongs in it, and how often you want it.</p>
+
+    <div class="step-block">
+      <div class="step-icon ic-peach">
+        <svg viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/></svg>
+      </div>
+      <div class="step-body" style="width:100%;">
+        <h2>Where it's delivered</h2>
+        <p>Just tell us where to send your finished brief — no extra account to connect here.</p>
+        <div style="max-width:360px;">
+          <label for="recipientEmail">Where should Briefly deliver your brief?</label>
+          <input type="text" id="recipientEmail" placeholder="you@example.com">
+        </div>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-icon ic-lavender">
+        <svg viewBox="0 0 24 24"><path d="M4 6.5h16"/><path d="M4 12h16"/><path d="M4 17.5h10"/></svg>
+      </div>
+      <div class="step-body" style="width:100%;">
+        <h2>Fill in the blanks</h2>
+        <p>Tell Claude what belongs in your brief and how often you want it.</p>
+
+        <fieldset>
+          <legend class="label-row" style="margin-top:1.4rem;">Headings — up to six</legend>
+          <div id="catFields"></div>
+          <button type="button" class="btn add-heading-btn" id="addHeadingBtn" onclick="revealNextHeading()">+ Add another heading</button>
+        </fieldset>
+
+        <fieldset style="margin-top:1.8rem;">
+          <legend class="label-row">How often should it arrive?</legend>
+          <div class="freq-options" id="freqOptions">
+
+            <div class="freq-card" data-freq="daily" onclick="setFreq('daily')">
+              <div class="freq-top"><span class="freq-radio"></span><span class="freq-name">Every day</span></div>
+              <p class="freq-desc">One brief, same time, every day — works well for most people.</p>
+              <div class="freq-controls">
+                <div class="freq-field">
+                  <label for="dailyTime">Delivery time</label>
+                  <input type="time" id="dailyTime" value="07:00">
+                </div>
+              </div>
+            </div>
+
+            <div class="freq-card" data-freq="multi" onclick="setFreq('multi')">
+              <div class="freq-top"><span class="freq-radio"></span><span class="freq-name">Every 2–6 days</span></div>
+              <p class="freq-desc">Choose how many days apart — a lighter touch than daily.</p>
+              <div class="freq-controls">
+                <div class="freq-field">
+                  <label>Every how many days</label>
+                  <div class="day-picker" id="dayPicker"></div>
+                </div>
+                <div class="freq-field">
+                  <label for="multiTime">Delivery time</label>
+                  <input type="time" id="multiTime" value="07:00">
+                </div>
+              </div>
+            </div>
+
+            <div class="freq-card" data-freq="weekly" onclick="setFreq('weekly')">
+              <div class="freq-top"><span class="freq-radio"></span><span class="freq-name">Every week</span></div>
+              <p class="freq-desc">One brief, once a week — the lightest touch.</p>
+              <div class="freq-controls">
+                <div class="freq-field">
+                  <label>Which day</label>
+                  <div class="day-picker" id="weekDayPicker"></div>
+                </div>
+                <div class="freq-field">
+                  <label for="weeklyTime">Delivery time</label>
+                  <input type="time" id="weeklyTime" value="07:00">
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <details class="info-details">
+            <summary>What does delivery time mean?</summary>
+            <p>Your brief starts building around the time you set — it may take a few minutes to actually land in your inbox.</p>
+          </details>
+
+          <details class="info-details">
+            <summary>What if Instagram blocks a run?</summary>
+            <p>Occasionally Instagram may ask an automated-looking session to verify it's really you. When that happens, Briefly won't guess or send a broken brief — it'll tell you plainly that a run needs your attention. This is a little more likely with daily than with every-few-days or weekly.</p>
+          </details>
+        </fieldset>
+
+        <p class="field-error" id="formError">Add at least one heading and an email address before continuing.</p>
+
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="goTo(2)">← Back</button>
+          <button class="btn btn-primary" onclick="submitPrefs()">Generate my prompt →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 4 -->
+  <section class="screen" id="s4">
+    <p class="kicker">Last step</p>
+    <div class="confirm-badge">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.2 12.3l2.4 2.4 5-5.4"/></svg>
+      Generated <span id="filedTime"></span>
+    </div>
+    <h1>Paste this into Claude, once.</h1>
+    <p class="lede">Claude sets up its own recurring schedule from this and runs today's brief right away — there's no separate scheduled-task screen for you to find or configure.</p>
+
+    <div class="callout">
+      <div class="callout-icon"><svg viewBox="0 0 24 24"><path d="M6 12l4 4 8-8"/></svg></div>
+      <p><strong>Send it in a normal conversation.</strong> Open Claude, paste in the text below, and send it. It schedules itself for every <span class="cadence-highlight" id="cadenceText">day at 7:00 AM</span>, confirms that back to you in one line, and writes today's brief immediately.</p>
+    </div>
+
+    <div class="callout">
+      <div class="callout-icon"><svg viewBox="0 0 24 24"><path d="M12 8v5"/><circle cx="12" cy="16" r="0.6" fill="var(--accent-strong)" stroke="none"/></svg></div>
+      <p><strong>One quick approval.</strong> Right after, Claude will ask you to approve running this on your computer — a one-time click. After that, it runs invisibly in the background from then on.</p>
+    </div>
+
+    <div class="callout">
+      <div class="callout-icon"><svg viewBox="0 0 24 24"><path d="M12 8v5"/><circle cx="12" cy="16" r="0.6" fill="var(--accent-strong)" stroke="none"/></svg></div>
+      <p><strong>Your computer needs to be on.</strong> The scheduled brief only runs while your computer is on, unlocked, and connected to Claude — it can't fire from the cloud alone, or from a phone-only setup.</p>
+    </div>
+
+    <div class="panel prompt-panel">
+      <div class="prompt-head">
+        <p class="label-row" style="margin:0;">Your prompt</p>
+        <span class="draft-badge">Live — the link points at your inbox on this page</span>
+      </div>
+      <pre class="prompt-text" id="promptText"></pre>
+      <div class="btn-row" style="margin-top:1.1rem;">
+        <button class="btn btn-primary copy-btn" id="copyBtn" onclick="copyPrompt()">Copy prompt</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goTo(3)">← Edit preferences</button>
+      <button class="btn" onclick="startOver()">Start over</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 5: ADMIN / INBOX -->
+  <section class="screen" id="s5">
+    <p class="kicker">Your inbox</p>
+    <h1 style="max-width:22ch">Where your briefs land.</h1>
+    <p class="lede">Every brief Claude submits through your personal Briefly link shows up here, most recent first.</p>
+
+    <div class="admin-empty" id="adminEmpty">
+      <p>No briefs yet. Once Claude submits one through your personal Briefly link, it'll show up here.</p>
+    </div>
+
+    <div class="admin-layout" id="adminLayout" style="display:none;">
+      <div class="admin-list" id="adminList"></div>
+
+      <div class="admin-content" id="adminContent" data-view="newspaper">
+        <div class="view-tabs">
+          <button type="button" class="view-tab active" id="tabNewspaper" onclick="setView('newspaper')">Newspaper</button>
+          <button type="button" class="view-tab" id="tabMagazine" onclick="setView('magazine')">Magazine</button>
+        </div>
+        <div id="adminPanels"></div>
+      </div>
+    </div>
+
+    <script id="briefsData" type="application/json">[]</script>
+
+    <div class="panel prompt-panel" style="margin-top:2rem;">
+      <div class="prompt-head">
+        <p class="label-row" style="margin:0;">Submit a brief</p>
+      </div>
+      <p class="muted" style="font-size:0.88rem; margin:0 0 0.9rem;">This is the same box your scheduled prompt tells Claude to paste the finished JSON brief into and submit. You can also paste one here yourself to test it.</p>
+      <textarea id="submitBriefInput" placeholder='{"status": "ok", "date": "...", "newspaper": {...}, "magazine": {...}, "note": ""}'></textarea>
+      <div class="btn-row" style="margin-top:1rem;">
+        <button class="btn btn-primary" id="submitBriefBtn" onclick="submitBriefFromTextarea()">Submit brief</button>
+      </div>
+      <p class="submit-status" id="submitStatus"></p>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goTo(4)">← Back to prompt</button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="page-foot">Briefly · a guided way to read Instagram, not scroll it. · <a href="#" onclick="goTo(5);return false;">Your inbox</a></footer>
+
+<script id="mainScript">
+  var CATEGORY_HINTS = ["Friends", "News", "Jobs & opportunities", "Community", "Local events", "Hobbies & interests"];
+  var HEADING_COUNT = 6;
+  var DEFAULT_VISIBLE = 2;
+  var WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  var WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  var state = { freq: "daily", days: 3, weekDay: "Sunday", limited: [false, false, false, false, false, false], visibleHeadings: DEFAULT_VISIBLE, briefs: [] };
+
+  // STATIC_HEAD / STATIC_BODY_SHELL are generated from this file's own <head> and <body>
+  // (with the #briefsData JSON swapped for the __BRIEFS_JSON__ token) by a build step —
+  // see scripts/build-templates.js. Regenerate them after editing anything outside the
+  // "Submit a brief" JS logic in this <script id="mainScript"> block. They exist so
+  // publishBriefs() can republish this whole page from a known-good template instead of
+  // the live, possibly-interacted-with DOM.
+  var STATIC_HEAD = "<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Briefly</title>\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=Manrope:wght@400;500;600;700;800&display=swap\" rel=\"stylesheet\">\n\n<style>\n  :root{\n    --bg-base: #fafbfc;\n    --bg-wash-1: #e2f1fb;\n    --bg-wash-2: #fdecf0;\n    --surface: #ffffff;\n    --surface-tint: #f2f5f9;\n    --ink: #212b3a;\n    --ink-soft: #454f63;\n    --muted: #6b7488;\n    --line: #e7ecf3;\n    --accent: #ef5f7c;\n    --accent-strong: #c53f5c;\n    --accent-ink: #fff6f7;\n    --accent-soft: #fdeaef;\n    --accent-line: #f6c7d3;\n    --pastel-blue: #4a9bd6;\n    --pastel-blue-soft: #e1f0fb;\n    --pastel-mint: #35a884;\n    --pastel-mint-soft: #e0f5ee;\n    --pastel-lavender: #8577d9;\n    --pastel-lavender-soft: #eae7fb;\n    --pastel-peach: #e3934a;\n    --pastel-peach-soft: #fcecdc;\n    --shadow: 0 1px 2px rgba(43,54,72,0.05), 0 10px 28px rgba(43,54,72,0.07);\n    --font-display: \"Manrope\", -apple-system, \"Segoe UI\", sans-serif;\n    --font-mark: \"Instrument Serif\", Georgia, serif;\n    --font-mono: ui-monospace, \"SFMono-Regular\", Menlo, Consolas, monospace;\n  }\n\n\n  .ig-warning{\n    display:flex; gap:12px; align-items:flex-start;\n    margin:18px 0 22px; padding:14px 16px;\n    background:#fff4ec; border:1px solid #f4c9a5; border-radius:12px;\n    color:#7a3a12; font-size:0.95rem; line-height:1.55;\n  }\n  .ig-warning svg{ flex:0 0 auto; width:20px; height:20px; margin-top:2px; fill:none; stroke:#d9742a; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }\n  .ig-warning strong{ color:#5c2a0b; }\n  *{ box-sizing: border-box; }\n  body{\n    margin: 0;\n    background:\n      radial-gradient(ellipse 70% 55% at 10% -5%, var(--bg-wash-1), transparent 60%),\n      radial-gradient(ellipse 65% 55% at 100% 105%, var(--bg-wash-2), transparent 60%),\n      var(--bg-base);\n    background-attachment: fixed;\n    color: var(--ink);\n    font-family: var(--font-display);\n    line-height: 1.6;\n    -webkit-font-smoothing: antialiased;\n    font-feature-settings: \"tnum\" 1;\n  }\n  ::selection{ background: var(--accent-soft); color: var(--ink); }\n  a{ color: var(--accent); }\n\n  .mast{\n    position: sticky;\n    top: 0;\n    z-index: 10;\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 1.5rem;\n    padding: 1.35rem clamp(1.25rem, 4vw, 3rem);\n    background: color-mix(in srgb, var(--bg-base) 78%, transparent);\n    backdrop-filter: blur(8px);\n    -webkit-backdrop-filter: blur(8px);\n  }\n  .wordmark{\n    font-family: var(--font-mark);\n    font-style: italic;\n    font-size: 1.55rem;\n    letter-spacing: 0.005em;\n    color: var(--ink);\n  }\n\n  .progress{\n    display: flex;\n    align-items: center;\n    gap: 0.75rem;\n    flex: 1;\n    max-width: 220px;\n  }\n  .progress-track{\n    flex: 1;\n    height: 3px;\n    border-radius: 2px;\n    background: var(--line);\n    overflow: hidden;\n  }\n  .progress-fill{\n    height: 100%;\n    width: 33.33%;\n    background: var(--accent);\n    border-radius: 2px;\n    transition: width 0.35s ease;\n  }\n  .progress-label{\n    font-size: 0.78rem;\n    color: var(--muted);\n    white-space: nowrap;\n  }\n  @media (max-width: 520px){\n    .progress{ display: none; }\n  }\n  @media (prefers-reduced-motion: reduce){\n    .progress-fill{ transition: none; }\n  }\n\n  main{\n    max-width: 640px;\n    margin: 0 auto;\n    padding: clamp(2rem, 6vw, 3.5rem) clamp(1.25rem, 4vw, 1.5rem) 6rem;\n  }\n\n  .screen{ display: none; }\n  .screen.active{\n    display: block;\n    animation: rise 0.4s ease both;\n  }\n  @keyframes rise{\n    from{ opacity: 0; transform: translateY(8px); }\n    to{ opacity: 1; transform: translateY(0); }\n  }\n  @media (prefers-reduced-motion: reduce){\n    .screen.active{ animation: none; }\n  }\n\n  .kicker{\n    font-size: 0.92rem;\n    color: var(--muted);\n    margin: 0 0 0.85rem;\n  }\n  h1{\n    font-weight: 700;\n    font-size: clamp(1.9rem, 4.6vw, 2.5rem);\n    line-height: 1.18;\n    letter-spacing: -0.02em;\n    margin: 0 0 1rem;\n    text-wrap: balance;\n    max-width: 17ch;\n  }\n  h2{\n    font-weight: 700;\n    font-size: 1.3rem;\n    letter-spacing: -0.01em;\n    margin: 0 0 0.4rem;\n  }\n  .lede{\n    font-size: 1.05rem;\n    color: var(--ink-soft);\n    max-width: 46ch;\n    margin: 0 0 2.5rem;\n  }\n  p{ margin: 0 0 1rem; }\n  .muted{ color: var(--muted); }\n\n  .section-gap{ margin-top: 3rem; }\n\n  /* --- principles --- */\n  .principles{\n    display: flex;\n    flex-direction: column;\n    gap: 1.5rem;\n    margin: 0 0 2.75rem;\n  }\n  .principle{\n    display: flex;\n    align-items: flex-start;\n    gap: 1rem;\n  }\n  .icon-chip{\n    width: 38px; height: 38px;\n    border-radius: 50%;\n    background: var(--chip-bg, var(--accent-soft));\n    display: flex; align-items: center; justify-content: center;\n    flex: none;\n  }\n  .icon-chip svg{ width: 18px; height: 18px; stroke: var(--chip-fg, var(--accent)); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }\n\n  .ic-blue{ --chip-bg: var(--pastel-blue-soft); --chip-fg: var(--pastel-blue); }\n  .ic-mint{ --chip-bg: var(--pastel-mint-soft); --chip-fg: var(--pastel-mint); }\n  .ic-lavender{ --chip-bg: var(--pastel-lavender-soft); --chip-fg: var(--pastel-lavender); }\n  .ic-peach{ --chip-bg: var(--pastel-peach-soft); --chip-fg: var(--pastel-peach); }\n  .principle-text .p-head{ font-weight: 600; margin: 0 0 0.2rem; }\n  .principle-text p{ font-size: 0.92rem; color: var(--muted); margin: 0; max-width: 44ch; }\n\n  /* --- surfaces / cards --- */\n  .panel{\n    background: var(--surface);\n    border-radius: 16px;\n    box-shadow: var(--shadow);\n    padding: 1.6rem;\n  }\n  .panel + .panel{ margin-top: 1rem; }\n\n  .label-row{\n    font-size: 0.82rem;\n    color: var(--muted);\n    margin: 0 0 0.9rem;\n  }\n\n  .step-label{\n    font-size: 0.76rem;\n    font-weight: 700;\n    letter-spacing: 0.06em;\n    text-transform: uppercase;\n    color: var(--accent-strong);\n    margin: 0 0 0.35rem;\n  }\n\n  /* --- billing --- */\n  .pay-row{\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 1rem;\n    padding: 0.7rem 0;\n  }\n  .pay-row + .pay-row{ border-top: 1px solid var(--line); }\n  .pay-name{\n    display: flex;\n    align-items: center;\n    gap: 0.75rem;\n    font-weight: 600;\n    font-size: 0.95rem;\n  }\n  .pay-mark{\n    width: 32px; height: 32px;\n    border-radius: 50%;\n    display: flex; align-items: center; justify-content: center;\n    background: var(--surface-tint);\n    font-size: 0.75rem;\n    font-weight: 700;\n    color: var(--ink-soft);\n    flex: none;\n  }\n  .badge{\n    font-size: 0.72rem;\n    color: var(--muted);\n    background: var(--surface-tint);\n    padding: 0.32rem 0.6rem;\n    border-radius: 20px;\n    white-space: nowrap;\n  }\n  .note{\n    font-size: 0.86rem;\n    color: var(--muted);\n    margin: 1.1rem 0 0;\n  }\n\n  /* --- buttons --- */\n  .btn{\n    font-family: var(--font-display);\n    font-weight: 600;\n    font-size: 0.92rem;\n    border: 1px solid var(--line);\n    background: var(--surface);\n    color: var(--ink);\n    padding: 0.75rem 1.3rem;\n    border-radius: 999px;\n    cursor: pointer;\n    display: inline-flex;\n    align-items: center;\n    gap: 0.5rem;\n    text-decoration: none;\n    transition: transform 0.12s ease, opacity 0.12s ease;\n  }\n  .btn:hover{ transform: translateY(-1px); }\n  .btn:active{ transform: translateY(0); }\n  .btn:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }\n  .btn-primary{\n    background: var(--accent);\n    border-color: var(--accent);\n    color: var(--accent-ink);\n  }\n  .btn-primary:hover{ opacity: 0.92; }\n  .btn-ghost{\n    border-color: transparent;\n    background: transparent;\n    color: var(--muted);\n  }\n  .btn-row{\n    display: flex;\n    gap: 0.75rem;\n    align-items: center;\n    flex-wrap: wrap;\n    margin-top: 2rem;\n  }\n  @media (prefers-reduced-motion: reduce){ .btn{ transition: none; } }\n\n  /* --- setup steps --- */\n  .step-block{\n    display: flex;\n    gap: 1.1rem;\n    padding: 1.9rem 0;\n  }\n  .step-block + .step-block{ border-top: 1px solid var(--line); }\n  .step-icon{\n    width: 42px; height: 42px;\n    border-radius: 50%;\n    background: var(--chip-bg, var(--accent-soft));\n    display: flex; align-items: center; justify-content: center;\n    flex: none;\n  }\n  .step-icon svg{ width: 19px; height: 19px; stroke: var(--chip-fg, var(--accent)); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }\n  .step-body{ flex: 1; min-width: 0; }\n  .step-body h2{ font-size: 1.1rem; }\n  .step-body p{ color: var(--muted); max-width: 44ch; font-size: 0.94rem; }\n  .step-actions{ margin-top: 0.9rem; }\n  .step-actions .btn{ padding: 0.6rem 1.1rem; font-size: 0.86rem; }\n\n  .sub-steps{ display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1.3rem; }\n  .sub-step{\n    display: flex;\n    align-items: center;\n    gap: 0.9rem;\n    background: var(--surface-tint);\n    border-radius: 12px;\n    padding: 0.9rem 1rem;\n  }\n  .sub-step-icon{\n    width: 34px; height: 34px;\n    border-radius: 50%;\n    background: var(--surface);\n    display: flex; align-items: center; justify-content: center;\n    flex: none;\n  }\n  .sub-step-icon svg{ width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }\n  .sub-step-text{ flex: 1; min-width: 0; }\n  .sub-step-text .st-name{ font-weight: 600; font-size: 0.92rem; }\n  .sub-step-text .st-desc{ font-size: 0.82rem; color: var(--muted); margin-top: 0.1rem; }\n  .sub-step .btn{ padding: 0.55rem 1rem; font-size: 0.82rem; flex: none; }\n  @media (max-width: 520px){\n    .sub-step{ flex-wrap: wrap; }\n    .sub-step .btn{ margin-left: 3rem; }\n  }\n\n  .callout{\n    display: flex;\n    gap: 0.75rem;\n    align-items: flex-start;\n    background: var(--surface-tint);\n    border-radius: 12px;\n    padding: 1rem 1.1rem;\n    margin: 1.3rem 0;\n  }\n  .callout-icon{\n    width: 22px; height: 22px;\n    border-radius: 50%;\n    background: var(--accent-soft);\n    display: flex; align-items: center; justify-content: center;\n    flex: none;\n    margin-top: 0.1rem;\n  }\n  .callout-icon svg{ width: 11px; height: 11px; stroke: var(--accent-strong); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }\n  .callout p{ font-size: 0.86rem; color: var(--ink-soft); margin: 0; }\n  .callout strong{ color: var(--ink); }\n\n  .mock-grid{\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: 1rem;\n    margin-top: 1rem;\n  }\n  @media (max-width: 560px){\n    .mock-grid{ grid-template-columns: 1fr; }\n  }\n  .mock-shell{\n    border: 1px solid var(--line);\n    border-radius: 12px;\n    background: var(--surface-tint);\n    overflow: hidden;\n  }\n  .mock-bar{\n    display: flex;\n    align-items: center;\n    gap: 5px;\n    padding: 0.55rem 0.7rem;\n    background: var(--surface);\n    border-bottom: 1px solid var(--line);\n  }\n  .mock-dot{ width: 7px; height: 7px; border-radius: 50%; background: var(--line); }\n  .mock-url{\n    margin-left: 0.4rem;\n    font-size: 0.7rem;\n    color: var(--muted);\n    background: var(--surface-tint);\n    padding: 0.15rem 0.5rem;\n    border-radius: 6px;\n  }\n  .mock-body{ padding: 1rem; display: flex; justify-content: flex-end; }\n  .mock-popover{\n    background: var(--surface);\n    border: 1px solid var(--line);\n    border-radius: 10px;\n    padding: 0.85rem;\n    box-shadow: var(--shadow);\n    width: 100%;\n  }\n  .mock-popover p{ font-size: 0.8rem; margin: 0 0 0.75rem; color: var(--ink-soft); }\n  .mock-btn-row{ display: flex; gap: 0.4rem; flex-wrap: wrap; }\n  .mock-btn{\n    font-family: var(--font-display);\n    font-size: 0.74rem;\n    padding: 0.4rem 0.65rem;\n    border-radius: 8px;\n    border: 1px solid var(--line);\n    background: var(--surface-tint);\n    color: var(--muted);\n    opacity: 1;\n  }\n  .mock-btn.primary{\n    background: var(--accent);\n    border-color: var(--accent);\n    color: var(--accent-ink);\n    font-weight: 600;\n    box-shadow: 0 0 0 3px var(--accent-soft);\n  }\n  .mock-caption{ font-size: 0.78rem; color: var(--muted); margin: 0.6rem 0 0; }\n\n  /* --- form --- */\n  fieldset{ border: none; margin: 0; padding: 0; }\n  legend{ padding: 0; width: 100%; }\n  label{\n    display: block;\n    font-size: 0.85rem;\n    color: var(--ink-soft);\n    font-weight: 500;\n    margin-bottom: 0.4rem;\n  }\n  input[type=\"text\"], input[type=\"time\"]{\n    width: 100%;\n    font-family: var(--font-display);\n    font-size: 0.95rem;\n    color: var(--ink);\n    background: var(--surface-tint);\n    border: 1px solid transparent;\n    border-radius: 10px;\n    padding: 0.7rem 0.85rem;\n  }\n  input[type=\"text\"]:focus, input[type=\"time\"]:focus{\n    outline: none;\n    border-color: var(--accent-line);\n    background: var(--surface);\n    box-shadow: 0 0 0 3px var(--accent-soft);\n  }\n  .helper{\n    font-size: 0.8rem;\n    color: var(--muted);\n    margin: 0.5rem 0 0;\n  }\n\n  .category-card{\n    background: var(--surface-tint);\n    border-radius: 12px;\n    padding: 1.1rem 1.1rem 1.2rem;\n  }\n  .category-card + .category-card{ margin-top: 0.8rem; }\n  .category-card.hidden{ display: none; }\n\n  .add-heading-btn{\n    margin-top: 0.8rem;\n    border-style: dashed;\n    color: var(--muted);\n    background: transparent;\n    padding: 0.65rem 1.1rem;\n    font-size: 0.86rem;\n  }\n\n  .info-details{ margin-top: 1rem; }\n  .info-details summary{\n    cursor: pointer;\n    color: var(--muted);\n    font-size: 0.85rem;\n    list-style: none;\n  }\n  .info-details summary::-webkit-details-marker{ display: none; }\n  .info-details summary::before{ content: \"＋ \"; }\n  .info-details[open] summary::before{ content: \"－ \"; }\n  .info-details p{\n    font-size: 0.85rem;\n    color: var(--muted);\n    margin: 0.5rem 0 0;\n    max-width: 46ch;\n  }\n  .cat-index{\n    font-size: 0.78rem;\n    color: var(--muted);\n    margin-bottom: 0.55rem;\n  }\n  .cat-name-field{ margin-bottom: 0.85rem; }\n  .cat-accounts-row{\n    display: flex;\n    align-items: flex-end;\n    gap: 0.75rem;\n    flex-wrap: wrap;\n  }\n  .cat-accounts-field{ flex: 1; min-width: 180px; }\n\n  .switch-field{\n    display: flex;\n    align-items: center;\n    gap: 0.55rem;\n    padding-bottom: 0.7rem;\n  }\n  .switch{\n    width: 38px; height: 22px;\n    border-radius: 999px;\n    background: var(--line);\n    border: none;\n    position: relative;\n    cursor: pointer;\n    flex: none;\n    padding: 0;\n    transition: background 0.15s ease;\n  }\n  .switch::after{\n    content: \"\";\n    position: absolute;\n    top: 2px; left: 2px;\n    width: 18px; height: 18px;\n    border-radius: 50%;\n    background: var(--surface);\n    transition: transform 0.15s ease;\n    box-shadow: 0 1px 2px rgba(0,0,0,0.15);\n  }\n  .switch.on{ background: var(--accent); }\n  .switch.on::after{ transform: translateX(16px); }\n  .switch-label{ font-size: 0.82rem; color: var(--muted); white-space: nowrap; }\n  @media (prefers-reduced-motion: reduce){\n    .switch, .switch::after{ transition: none; }\n  }\n\n  /* --- frequency --- */\n  .freq-options{\n    display: flex;\n    flex-direction: column;\n    gap: 0.7rem;\n  }\n  .freq-card{\n    border: 1px solid var(--line);\n    border-radius: 12px;\n    background: var(--surface);\n    padding: 1rem 1.15rem;\n    cursor: pointer;\n  }\n  .freq-card.active{\n    border-color: var(--accent-line);\n    background: var(--accent-soft);\n  }\n  .freq-top{ display: flex; align-items: center; gap: 0.7rem; }\n  .freq-radio{\n    width: 18px; height: 18px;\n    border-radius: 50%;\n    border: 1.5px solid var(--line);\n    flex: none;\n    position: relative;\n    background: var(--surface);\n  }\n  .freq-card.active .freq-radio{ border-color: var(--accent); }\n  .freq-card.active .freq-radio::after{\n    content: \"\";\n    position: absolute;\n    inset: 4px;\n    border-radius: 50%;\n    background: var(--accent);\n  }\n  .freq-name{ font-weight: 600; font-size: 0.96rem; }\n  .freq-desc{ font-size: 0.85rem; color: var(--muted); margin: 0.2rem 0 0 1.75rem; }\n  .freq-controls{\n    margin: 1rem 0 0 1.75rem;\n    display: none;\n    flex-wrap: wrap;\n    gap: 1rem;\n    align-items: flex-end;\n  }\n  .freq-card.active .freq-controls{ display: flex; }\n  .freq-field{ min-width: 130px; }\n  .day-picker{ display: flex; gap: 0.4rem; }\n  .day-chip{\n    width: 36px; height: 36px;\n    border: 1px solid var(--line);\n    background: var(--surface);\n    border-radius: 10px;\n    font-family: var(--font-display);\n    font-weight: 600;\n    font-size: 0.85rem;\n    cursor: pointer;\n    color: var(--ink);\n  }\n  .day-chip.active{\n    background: var(--accent);\n    border-color: var(--accent);\n    color: var(--accent-ink);\n  }\n\n  .field-error{\n    font-size: 0.84rem;\n    color: var(--ink-soft);\n    background: var(--surface-tint);\n    border-radius: 10px;\n    padding: 0.7rem 0.9rem;\n    margin-top: 1rem;\n    display: none;\n  }\n  .field-error.show{ display: block; }\n\n  /* --- summary --- */\n  .confirm-badge{\n    display: inline-flex;\n    align-items: center;\n    gap: 0.5rem;\n    background: var(--accent-soft);\n    color: var(--accent-strong);\n    font-size: 0.82rem;\n    font-weight: 600;\n    padding: 0.45rem 0.85rem;\n    border-radius: 999px;\n    margin-bottom: 1.6rem;\n  }\n  .confirm-badge svg{ width: 15px; height: 15px; stroke: var(--accent-strong); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }\n\n  .brief-row + .brief-row{\n    border-top: 1px solid var(--line);\n    margin-top: 1.3rem;\n    padding-top: 1.3rem;\n  }\n  .brief-row .k{\n    font-size: 0.78rem;\n    color: var(--muted);\n    margin-bottom: 0.7rem;\n  }\n  .cat-tags{ display: flex; flex-direction: column; gap: 0.6rem; }\n  .cat-tag{\n    background: var(--surface-tint);\n    border-radius: 10px;\n    padding: 0.7rem 0.9rem;\n  }\n  .cat-tag .cn{ font-weight: 600; font-size: 0.98rem; }\n  .cat-tag .ca{ font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }\n  .schedule-line{ font-size: 1.05rem; font-weight: 600; }\n  .checklist{ display: flex; flex-direction: column; gap: 0.55rem; font-size: 0.92rem; color: var(--ink-soft); }\n  .checklist .ok{ color: var(--accent); margin-right: 0.5rem; }\n\n  /* --- prompt panel --- */\n  .cadence-highlight{ color: var(--accent-strong); font-weight: 600; }\n  .prompt-head{\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 1rem;\n    margin-bottom: 0.9rem;\n  }\n  .draft-badge{\n    font-size: 0.72rem;\n    color: var(--muted);\n    background: var(--surface-tint);\n    padding: 0.32rem 0.65rem;\n    border-radius: 20px;\n    white-space: nowrap;\n  }\n  .copy-btn{ padding: 0.55rem 1rem; font-size: 0.82rem; flex: none; }\n  pre.prompt-text{\n    background: var(--surface-tint);\n    border-radius: 12px;\n    padding: 1.15rem;\n    margin: 0;\n    font-family: var(--font-mono);\n    font-size: 0.82rem;\n    line-height: 1.6;\n    white-space: pre-wrap;\n    word-break: break-word;\n    color: var(--ink-soft);\n    max-height: 420px;\n    overflow-y: auto;\n  }\n  @media (prefers-reduced-motion: reduce){ .copy-btn{ transition: none; } }\n\n  /* --- admin preview --- */\n  .admin-layout{ display: flex; gap: 1.6rem; align-items: flex-start; }\n  .admin-list{ width: 240px; flex: none; display: flex; flex-direction: column; gap: 0.6rem; }\n  .admin-list-item{\n    display: block;\n    width: 100%;\n    text-align: left;\n    background: var(--surface);\n    border: 1px solid var(--line);\n    border-radius: 12px;\n    padding: 0.85rem 1rem;\n    cursor: pointer;\n    font-family: var(--font-display);\n  }\n  .admin-list-item.active{ border-color: var(--accent-line); background: var(--accent-soft); }\n  .admin-list-date{ font-weight: 700; font-size: 0.9rem; color: var(--ink); }\n  .admin-list-meta{ margin-top: 0.35rem; }\n  .status-pill{\n    display: inline-flex;\n    align-items: center;\n    gap: 0.35rem;\n    font-size: 0.72rem;\n    font-weight: 700;\n    padding: 0.22rem 0.6rem;\n    border-radius: 20px;\n  }\n  .status-pill.ok{ background: var(--pastel-mint-soft); color: var(--pastel-mint); }\n  .status-pill.blocked{ background: var(--accent-soft); color: var(--accent-strong); }\n  .admin-content{ flex: 1; min-width: 0; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 1.6rem; }\n  .view-tabs{ display: flex; gap: 0.5rem; margin-bottom: 1.4rem; }\n  .view-tab{\n    font-family: var(--font-display);\n    font-weight: 600;\n    font-size: 0.86rem;\n    padding: 0.55rem 1.05rem;\n    border-radius: 999px;\n    border: 1px solid var(--line);\n    background: var(--surface);\n    color: var(--muted);\n    cursor: pointer;\n  }\n  .view-tab.active{ background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }\n  .admin-panel{ display: none; }\n  .admin-panel.active{ display: block; }\n  .view-panel{ display: none; }\n  .admin-content[data-view=\"newspaper\"] .view-panel.newspaper{ display: block; }\n  .admin-content[data-view=\"magazine\"] .view-panel.magazine{ display: block; }\n  .news-section{ margin-bottom: 1.5rem; }\n  .news-section:last-child{ margin-bottom: 0; }\n  .news-section h3{ font-size: 1rem; margin: 0 0 0.5rem; }\n  .news-section p{ color: var(--ink-soft); font-size: 0.94rem; margin: 0 0 0.6rem; }\n  .news-caughtup{ font-size: 0.86rem; color: var(--muted); margin: 0; }\n  .mag-section{ margin-bottom: 1.7rem; }\n  .mag-section:last-child{ margin-bottom: 0; }\n  .mag-section h3{ font-size: 1rem; margin: 0 0 0.85rem; display: flex; align-items: center; gap: 0.55rem; }\n  .mag-dot{ width: 9px; height: 9px; border-radius: 50%; background: var(--dot-color, var(--accent)); flex: none; }\n  .mag-item{\n    display: flex;\n    gap: 0.9rem;\n    padding: 0.9rem 1rem;\n    margin-bottom: 0.7rem;\n    background: var(--surface-tint);\n    border-left: 3px solid var(--item-color, var(--accent));\n    border-radius: 0 12px 12px 0;\n  }\n  .mag-item:last-child{ margin-bottom: 0; }\n  .mag-thumb{\n    width: 54px; height: 54px;\n    border-radius: 10px;\n    flex: none;\n    background: var(--item-soft, var(--accent-soft));\n    display: flex; align-items: center; justify-content: center;\n  }\n  .mag-thumb svg{ width: 20px; height: 20px; stroke: var(--item-color, var(--accent)); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }\n  .mag-text{ flex: 1; min-width: 0; }\n  .mag-head{ font-weight: 700; font-size: 0.9rem; margin: 0 0 0.1rem; }\n  .mag-tag{ font-size: 0.76rem; color: var(--muted); margin: 0 0 0.4rem; }\n  .mag-writeup{ font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 0.45rem; }\n  .mag-link{ font-size: 0.8rem; font-weight: 600; color: var(--accent); text-decoration: none; }\n  .mag-link:hover{ text-decoration: underline; }\n  .blocked-panel{ text-align: center; padding: 3rem 1rem; }\n  .blocked-panel .callout-icon{ margin: 0 auto 1rem; }\n  .blocked-panel h3{ font-size: 1.05rem; margin: 0 0 0.5rem; }\n  .blocked-panel p{ color: var(--muted); max-width: 40ch; margin: 0 auto; }\n  .mag-thumb img{ width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }\n  .admin-empty{ text-align: center; padding: 3rem 1rem; color: var(--muted); background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); }\n  .admin-empty p{ max-width: 38ch; margin: 0 auto; font-size: 0.94rem; }\n  textarea{\n    width: 100%;\n    font-family: var(--font-mono);\n    font-size: 0.82rem;\n    line-height: 1.55;\n    color: var(--ink);\n    background: var(--surface-tint);\n    border: 1px solid transparent;\n    border-radius: 10px;\n    padding: 0.85rem;\n    resize: vertical;\n    min-height: 130px;\n  }\n  textarea:focus{\n    outline: none;\n    border-color: var(--accent-line);\n    background: var(--surface);\n    box-shadow: 0 0 0 3px var(--accent-soft);\n  }\n  .submit-status{ font-size: 0.84rem; color: var(--muted); margin: 0.8rem 0 0; }\n  .submit-status.error{ color: var(--accent-strong); }\n  .submit-status.ok{ color: var(--pastel-mint); }\n  @media (max-width: 720px){\n    .admin-layout{ flex-direction: column; }\n    .admin-list{ width: 100%; flex-direction: row; overflow-x: auto; gap: 0.6rem; }\n    .admin-list-item{ min-width: 200px; }\n  }\n\n  footer.page-foot{\n    max-width: 640px;\n    margin: 0 auto;\n    padding: 0 clamp(1.25rem, 4vw, 1.5rem) 3rem;\n    color: var(--muted);\n    font-size: 0.82rem;\n  }\n</style>";
+  var STATIC_BODY_SHELL = "\n\n<div class=\"mast\">\n  <span class=\"wordmark\">Briefly</span>\n  <div class=\"progress\">\n    <div class=\"progress-track\"><div class=\"progress-fill\" id=\"progressFill\"></div></div>\n    <span class=\"progress-label\" id=\"progressLabel\">Step 1 of 4</span>\n  </div>\n</div>\n\n<main>\n\n  <!-- SCREEN 1 -->\n  <section class=\"screen active\" id=\"s1\">\n    <p class=\"kicker\">Before you begin</p>\n    <h1>Instagram, once a day.</h1>\n    <p class=\"lede\">Briefly turns your feed from something you scroll into something you read — one organized brief, delivered on your schedule, written by Claude.</p>\n\n    <div class=\"ig-warning\" role=\"alert\">\n      <svg viewBox=\"0 0 24 24\"><path d=\"M12 3.5l9 16h-18z\"/><path d=\"M12 10v4.5\"/><circle cx=\"12\" cy=\"17.2\" r=\".6\"/></svg>\n      <p style=\"margin:0\"><strong>Please read before you continue.</strong> Briefly is not permitted by Instagram. Reading Instagram this way goes against Instagram's terms of use and will get your Instagram account suspended. Use it only if you accept that risk.</p>\n    </div>\n\n    <div class=\"principles\">\n      <div class=\"principle\">\n        <div class=\"icon-chip ic-blue\">\n          <svg viewBox=\"0 0 24 24\"><rect x=\"3.5\" y=\"4\" width=\"17\" height=\"4.5\" rx=\"1.5\"/><rect x=\"3.5\" y=\"10.25\" width=\"17\" height=\"4.5\" rx=\"1.5\"/><rect x=\"3.5\" y=\"16.5\" width=\"10\" height=\"4.5\" rx=\"1.5\"/></svg>\n        </div>\n        <div class=\"principle-text\">\n          <p class=\"p-head\">Sorted, not scrolled</p>\n          <p>Everything is filed into the categories you actually care about, instead of one long, chronological feed.</p>\n        </div>\n      </div>\n      <div class=\"principle\">\n        <div class=\"icon-chip ic-mint\">\n          <svg viewBox=\"0 0 24 24\"><path d=\"M4 20l1.1-4.2L16.6 4.3a1.5 1.5 0 012.1 0l1 1a1.5 1.5 0 010 2.1L8.2 18.9 4 20z\"/><path d=\"M14 6.7l3.3 3.3\"/></svg>\n        </div>\n        <div class=\"principle-text\">\n          <p class=\"p-head\">Written, not reposted</p>\n          <p>Your brief summarizes what happened. No re-posted photos or endless captions, just what's worth knowing.</p>\n        </div>\n      </div>\n      <div class=\"principle\">\n        <div class=\"icon-chip ic-lavender\">\n          <svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M8.5 12.3l2.4 2.4 4.6-5.4\"/></svg>\n        </div>\n        <div class=\"principle-text\">\n          <p class=\"p-head\">Finite, not endless</p>\n          <p>You read it, you're caught up, you're done — no infinite scroll designed to keep you inside the app.</p>\n        </div>\n      </div>\n    </div>\n\n    <div class=\"panel\">\n      <h2 style=\"font-size:1.05rem;\">How it reaches you</h2>\n      <p class=\"muted\" style=\"margin-bottom:0;\">Briefly isn't an app you install — it's a short, guided setup that turns Claude into your personal wire service for Instagram. Claude does the reading, sorting, and writing; you just tell it what matters and how often you want to hear from it. The next page walks you through both pieces.</p>\n\n      <p class=\"muted\" style=\"margin:12px 0 0; color:#7a3a12;\"><strong>Important:</strong> this is not permitted by Instagram. Automated reading of your feed goes against Instagram's terms of use, and your account will get suspended for it. Briefly is a personal experiment, not an Instagram-approved service.</p>\n    </div>\n\n    <div class=\"section-gap\">\n      <p class=\"label-row\">Access</p>\n      <div class=\"panel\">\n        <div class=\"pay-row\">\n          <div class=\"pay-name\"><span class=\"pay-mark\">Z</span>Zelle</div>\n          <span class=\"badge\">Testing — disabled</span>\n        </div>\n        <div class=\"pay-row\">\n          <div class=\"pay-name\"><span class=\"pay-mark\">V</span>Venmo</div>\n          <span class=\"badge\">Testing — disabled</span>\n        </div>\n        <p class=\"note\">Briefly is currently in testing, so no payment is required. This is a preview of how billing will work at launch — you'll be able to pay by Zelle or Venmo directly from this screen.</p>\n      </div>\n    </div>\n\n    <div class=\"btn-row\">\n      <button class=\"btn btn-primary\" onclick=\"goTo(2)\">Continue to setup →</button>\n    </div>\n  </section>\n\n  <!-- SCREEN 2 -->\n  <section class=\"screen\" id=\"s2\">\n    <p class=\"kicker\">Setup</p>\n    <h1 style=\"max-width:20ch\">Connect Claude and Chrome.</h1>\n    <p class=\"lede\">A few installs, then one quick step to get Instagram permission out of the way before anything is scheduled.</p>\n\n    <div class=\"step-block\">\n      <div class=\"step-icon ic-blue\">\n        <svg viewBox=\"0 0 24 24\"><rect x=\"3.5\" y=\"5\" width=\"17\" height=\"14\" rx=\"2.2\"/><path d=\"M3.5 9h17\"/></svg>\n      </div>\n      <div class=\"step-body\" style=\"width:100%;\">\n        <h2>Connect Chrome</h2>\n        <p>Claude needs its desktop app and Chrome extension installed, and needs to find you already logged into Instagram in that browser.</p>\n\n        <div class=\"sub-steps\">\n          <div class=\"sub-step\">\n            <div class=\"sub-step-icon\">\n              <svg viewBox=\"0 0 24 24\"><path d=\"M12 3.5v11.5\"/><path d=\"M7.5 11l4.5 4.5L16.5 11\"/><path d=\"M4.5 18h15\"/></svg>\n            </div>\n            <div class=\"sub-step-text\">\n              <div class=\"st-name\">Claude Desktop</div>\n              <div class=\"st-desc\">Where your brief gets written.</div>\n            </div>\n            <a class=\"btn\" href=\"https://claude.com/download\" target=\"_blank\" rel=\"noopener\">Download ↗</a>\n          </div>\n          <div class=\"sub-step\">\n            <div class=\"sub-step-icon\">\n              <svg viewBox=\"0 0 24 24\"><path d=\"M14.5 4.5v2.4a1.6 1.6 0 001.6 1.6h2.4\"/><rect x=\"4.5\" y=\"3.5\" width=\"15\" height=\"17\" rx=\"2.2\"/><path d=\"M8.4 13.2a2.6 2.6 0 105.2 0 2.6 2.6 0 00-5.2 0z\"/></svg>\n            </div>\n            <div class=\"sub-step-text\">\n              <div class=\"st-name\">Claude for Chrome</div>\n              <div class=\"st-desc\">Lets Claude open and read Instagram for you.</div>\n            </div>\n            <a class=\"btn\" href=\"https://claude.com/chrome\" target=\"_blank\" rel=\"noopener\">Add ↗</a>\n          </div>\n          <div class=\"sub-step\">\n            <div class=\"sub-step-icon\">\n              <svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"8.3\" r=\"3.3\"/><path d=\"M5.3 19.2c1-3.3 3.7-5.2 6.7-5.2s5.7 1.9 6.7 5.2\"/></svg>\n            </div>\n            <div class=\"sub-step-text\">\n              <div class=\"st-name\">Sign in to Instagram</div>\n              <div class=\"st-desc\">In that same Chrome browser — Claude reads your feed from this session, so there's nothing extra to log into inside Claude.</div>\n            </div>\n            <a class=\"btn\" href=\"https://www.instagram.com\" target=\"_blank\" rel=\"noopener\">Open Instagram ↗</a>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <div class=\"step-block\">\n      <div class=\"step-icon ic-peach\">\n        <svg viewBox=\"0 0 24 24\"><path d=\"M13 3L4 14h7l-1 7 9-11h-7l1-7z\"/></svg>\n      </div>\n      <div class=\"step-body\" style=\"width:100%;\">\n        <h2>Grant Instagram access now</h2>\n        <p class=\"muted\" style=\"font-size:0.94rem;\">The first time Claude opens Instagram, it will pause and ask permission — both the browser and Claude may show a prompt like these. Choose <strong style=\"color:var(--ink)\">“Always allow”</strong>. If you only allow it once, the brief won't be able to run again on its own later.</p>\n\n        <div class=\"mock-grid\">\n          <div>\n            <div class=\"mock-shell\">\n              <div class=\"mock-bar\"><span class=\"mock-dot\"></span><span class=\"mock-dot\"></span><span class=\"mock-dot\"></span><span class=\"mock-url\">instagram.com</span></div>\n              <div class=\"mock-body\">\n                <div class=\"mock-popover\">\n                  <p><strong style=\"color:var(--ink)\">Claude</strong> wants to use this tab to read Instagram.</p>\n                  <div class=\"mock-btn-row\">\n                    <button class=\"mock-btn\" disabled>Not now</button>\n                    <button class=\"mock-btn primary\" disabled>Always allow</button>\n                  </div>\n                </div>\n              </div>\n            </div>\n            <p class=\"mock-caption\">Browser permission — example only</p>\n          </div>\n          <div>\n            <div class=\"mock-shell\">\n              <div class=\"mock-bar\"><span class=\"mock-dot\"></span><span class=\"mock-dot\"></span><span class=\"mock-dot\"></span><span class=\"mock-url\">Claude</span></div>\n              <div class=\"mock-body\" style=\"justify-content:stretch;\">\n                <div class=\"mock-popover\">\n                  <p>Before I continue, can I open Instagram in your browser?</p>\n                  <div class=\"mock-btn-row\">\n                    <button class=\"mock-btn\" disabled>Ask every time</button>\n                    <button class=\"mock-btn primary\" disabled>Always allow for this site</button>\n                  </div>\n                </div>\n              </div>\n            </div>\n            <p class=\"mock-caption\">Claude's own prompt — example only</p>\n          </div>\n        </div>\n\n        <p style=\"margin-top:1.4rem;\">Paste this short prompt into Claude to trigger that check now, so it's out of the way before the recurring brief is set up on the next page.</p>\n\n        <div class=\"panel prompt-panel\" style=\"margin-top:1.1rem;\">\n          <div class=\"prompt-head\">\n            <p class=\"label-row\" style=\"margin:0;\">Quick prompt — do this first</p>\n          </div>\n          <pre class=\"prompt-text\" id=\"onboardPromptText\">Open Chrome and go to instagram.com, using the account I'm already signed into. Just confirm you can see my normal feed — you don't need to read or summarize anything yet.\n\nIf Chrome or you ask for permission to control this tab, choose \"Always allow,\" not \"just once,\" so this doesn't ask again when my scheduled brief runs later.</pre>\n          <div class=\"btn-row\" style=\"margin-top:1.1rem;\">\n            <button class=\"btn btn-primary copy-btn\" id=\"onboardCopyBtn\" onclick=\"copyOnboardPrompt()\">Copy prompt</button>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <div class=\"btn-row\">\n      <button class=\"btn btn-ghost\" onclick=\"goTo(1)\">← Back</button>\n      <button class=\"btn btn-primary\" onclick=\"goTo(3)\">Continue →</button>\n    </div>\n  </section>\n\n  <!-- SCREEN 3 -->\n  <section class=\"screen\" id=\"s3\">\n    <p class=\"kicker\">Setup</p>\n    <h1 style=\"max-width:20ch\">Tell Claude what to include.</h1>\n    <p class=\"lede\">Where it goes, what belongs in it, and how often you want it.</p>\n\n    <div class=\"step-block\">\n      <div class=\"step-icon ic-peach\">\n        <svg viewBox=\"0 0 24 24\"><rect x=\"3.5\" y=\"5.5\" width=\"17\" height=\"13\" rx=\"2\"/><path d=\"M4 7l8 6 8-6\"/></svg>\n      </div>\n      <div class=\"step-body\" style=\"width:100%;\">\n        <h2>Where it's delivered</h2>\n        <p>Just tell us where to send your finished brief — no extra account to connect here.</p>\n        <div style=\"max-width:360px;\">\n          <label for=\"recipientEmail\">Where should Briefly deliver your brief?</label>\n          <input type=\"text\" id=\"recipientEmail\" placeholder=\"you@example.com\">\n        </div>\n      </div>\n    </div>\n\n    <div class=\"step-block\">\n      <div class=\"step-icon ic-lavender\">\n        <svg viewBox=\"0 0 24 24\"><path d=\"M4 6.5h16\"/><path d=\"M4 12h16\"/><path d=\"M4 17.5h10\"/></svg>\n      </div>\n      <div class=\"step-body\" style=\"width:100%;\">\n        <h2>Fill in the blanks</h2>\n        <p>Tell Claude what belongs in your brief and how often you want it.</p>\n\n        <fieldset>\n          <legend class=\"label-row\" style=\"margin-top:1.4rem;\">Headings — up to six</legend>\n          <div id=\"catFields\"></div>\n          <button type=\"button\" class=\"btn add-heading-btn\" id=\"addHeadingBtn\" onclick=\"revealNextHeading()\">+ Add another heading</button>\n        </fieldset>\n\n        <fieldset style=\"margin-top:1.8rem;\">\n          <legend class=\"label-row\">How often should it arrive?</legend>\n          <div class=\"freq-options\" id=\"freqOptions\">\n\n            <div class=\"freq-card\" data-freq=\"daily\" onclick=\"setFreq('daily')\">\n              <div class=\"freq-top\"><span class=\"freq-radio\"></span><span class=\"freq-name\">Every day</span></div>\n              <p class=\"freq-desc\">One brief, same time, every day — works well for most people.</p>\n              <div class=\"freq-controls\">\n                <div class=\"freq-field\">\n                  <label for=\"dailyTime\">Delivery time</label>\n                  <input type=\"time\" id=\"dailyTime\" value=\"07:00\">\n                </div>\n              </div>\n            </div>\n\n            <div class=\"freq-card\" data-freq=\"multi\" onclick=\"setFreq('multi')\">\n              <div class=\"freq-top\"><span class=\"freq-radio\"></span><span class=\"freq-name\">Every 2–6 days</span></div>\n              <p class=\"freq-desc\">Choose how many days apart — a lighter touch than daily.</p>\n              <div class=\"freq-controls\">\n                <div class=\"freq-field\">\n                  <label>Every how many days</label>\n                  <div class=\"day-picker\" id=\"dayPicker\"></div>\n                </div>\n                <div class=\"freq-field\">\n                  <label for=\"multiTime\">Delivery time</label>\n                  <input type=\"time\" id=\"multiTime\" value=\"07:00\">\n                </div>\n              </div>\n            </div>\n\n            <div class=\"freq-card\" data-freq=\"weekly\" onclick=\"setFreq('weekly')\">\n              <div class=\"freq-top\"><span class=\"freq-radio\"></span><span class=\"freq-name\">Every week</span></div>\n              <p class=\"freq-desc\">One brief, once a week — the lightest touch.</p>\n              <div class=\"freq-controls\">\n                <div class=\"freq-field\">\n                  <label>Which day</label>\n                  <div class=\"day-picker\" id=\"weekDayPicker\"></div>\n                </div>\n                <div class=\"freq-field\">\n                  <label for=\"weeklyTime\">Delivery time</label>\n                  <input type=\"time\" id=\"weeklyTime\" value=\"07:00\">\n                </div>\n              </div>\n            </div>\n\n          </div>\n\n          <details class=\"info-details\">\n            <summary>What does delivery time mean?</summary>\n            <p>Your brief starts building around the time you set — it may take a few minutes to actually land in your inbox.</p>\n          </details>\n\n          <details class=\"info-details\">\n            <summary>What if Instagram blocks a run?</summary>\n            <p>Occasionally Instagram may ask an automated-looking session to verify it's really you. When that happens, Briefly won't guess or send a broken brief — it'll tell you plainly that a run needs your attention. This is a little more likely with daily than with every-few-days or weekly.</p>\n          </details>\n        </fieldset>\n\n        <p class=\"field-error\" id=\"formError\">Add at least one heading and an email address before continuing.</p>\n\n        <div class=\"btn-row\">\n          <button class=\"btn btn-ghost\" onclick=\"goTo(2)\">← Back</button>\n          <button class=\"btn btn-primary\" onclick=\"submitPrefs()\">Generate my prompt →</button>\n        </div>\n      </div>\n    </div>\n  </section>\n\n  <!-- SCREEN 4 -->\n  <section class=\"screen\" id=\"s4\">\n    <p class=\"kicker\">Last step</p>\n    <div class=\"confirm-badge\">\n      <svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M8.2 12.3l2.4 2.4 5-5.4\"/></svg>\n      Generated <span id=\"filedTime\"></span>\n    </div>\n    <h1>Paste this into Claude, once.</h1>\n    <p class=\"lede\">Claude sets up its own recurring schedule from this and runs today's brief right away — there's no separate scheduled-task screen for you to find or configure.</p>\n\n    <div class=\"callout\">\n      <div class=\"callout-icon\"><svg viewBox=\"0 0 24 24\"><path d=\"M6 12l4 4 8-8\"/></svg></div>\n      <p><strong>Send it in a normal conversation.</strong> Open Claude, paste in the text below, and send it. It schedules itself for every <span class=\"cadence-highlight\" id=\"cadenceText\">day at 7:00 AM</span>, confirms that back to you in one line, and writes today's brief immediately.</p>\n    </div>\n\n    <div class=\"callout\">\n      <div class=\"callout-icon\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 8v5\"/><circle cx=\"12\" cy=\"16\" r=\"0.6\" fill=\"var(--accent-strong)\" stroke=\"none\"/></svg></div>\n      <p><strong>One quick approval.</strong> Right after, Claude will ask you to approve running this on your computer — a one-time click. After that, it runs invisibly in the background from then on.</p>\n    </div>\n\n    <div class=\"callout\">\n      <div class=\"callout-icon\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 8v5\"/><circle cx=\"12\" cy=\"16\" r=\"0.6\" fill=\"var(--accent-strong)\" stroke=\"none\"/></svg></div>\n      <p><strong>Your computer needs to be on.</strong> The scheduled brief only runs while your computer is on, unlocked, and connected to Claude — it can't fire from the cloud alone, or from a phone-only setup.</p>\n    </div>\n\n    <div class=\"panel prompt-panel\">\n      <div class=\"prompt-head\">\n        <p class=\"label-row\" style=\"margin:0;\">Your prompt</p>\n        <span class=\"draft-badge\">Live — the link points at your inbox on this page</span>\n      </div>\n      <pre class=\"prompt-text\" id=\"promptText\"></pre>\n      <div class=\"btn-row\" style=\"margin-top:1.1rem;\">\n        <button class=\"btn btn-primary copy-btn\" id=\"copyBtn\" onclick=\"copyPrompt()\">Copy prompt</button>\n      </div>\n    </div>\n\n    <div class=\"btn-row\">\n      <button class=\"btn btn-ghost\" onclick=\"goTo(3)\">← Edit preferences</button>\n      <button class=\"btn\" onclick=\"startOver()\">Start over</button>\n    </div>\n  </section>\n\n  <!-- SCREEN 5: ADMIN / INBOX -->\n  <section class=\"screen\" id=\"s5\">\n    <p class=\"kicker\">Your inbox</p>\n    <h1 style=\"max-width:22ch\">Where your briefs land.</h1>\n    <p class=\"lede\">Every brief Claude submits through your personal Briefly link shows up here, most recent first.</p>\n\n    <div class=\"admin-empty\" id=\"adminEmpty\">\n      <p>No briefs yet. Once Claude submits one through your personal Briefly link, it'll show up here.</p>\n    </div>\n\n    <div class=\"admin-layout\" id=\"adminLayout\" style=\"display:none;\">\n      <div class=\"admin-list\" id=\"adminList\"></div>\n\n      <div class=\"admin-content\" id=\"adminContent\" data-view=\"newspaper\">\n        <div class=\"view-tabs\">\n          <button type=\"button\" class=\"view-tab active\" id=\"tabNewspaper\" onclick=\"setView('newspaper')\">Newspaper</button>\n          <button type=\"button\" class=\"view-tab\" id=\"tabMagazine\" onclick=\"setView('magazine')\">Magazine</button>\n        </div>\n        <div id=\"adminPanels\"></div>\n      </div>\n    </div>\n\n    <script id=\"briefsData\" type=\"application/json\">__BRIEFS_JSON__<\\/script>\n\n    <div class=\"panel prompt-panel\" style=\"margin-top:2rem;\">\n      <div class=\"prompt-head\">\n        <p class=\"label-row\" style=\"margin:0;\">Submit a brief</p>\n      </div>\n      <p class=\"muted\" style=\"font-size:0.88rem; margin:0 0 0.9rem;\">This is the same box your scheduled prompt tells Claude to paste the finished JSON brief into and submit. You can also paste one here yourself to test it.</p>\n      <textarea id=\"submitBriefInput\" placeholder='{\"status\": \"ok\", \"date\": \"...\", \"newspaper\": {...}, \"magazine\": {...}, \"note\": \"\"}'></textarea>\n      <div class=\"btn-row\" style=\"margin-top:1rem;\">\n        <button class=\"btn btn-primary\" id=\"submitBriefBtn\" onclick=\"submitBriefFromTextarea()\">Submit brief</button>\n      </div>\n      <p class=\"submit-status\" id=\"submitStatus\"></p>\n    </div>\n\n    <div class=\"btn-row\">\n      <button class=\"btn btn-ghost\" onclick=\"goTo(4)\">← Back to prompt</button>\n    </div>\n  </section>\n\n</main>\n\n<footer class=\"page-foot\">Briefly · a guided way to read Instagram, not scroll it. · <a href=\"#\" onclick=\"goTo(5);return false;\">Your inbox</a></footer>\n\n";
+
+  function buildCategoryFields(){
+    var wrap = document.getElementById('catFields');
+    wrap.innerHTML = "";
+    for (var i = 0; i < HEADING_COUNT; i++){
+      var row = document.createElement('div');
+      row.className = 'category-card' + (i >= state.visibleHeadings ? ' hidden' : '');
+      row.id = 'catCard' + i;
+      row.innerHTML =
+        '<p class="cat-index">Heading ' + (i+1) + '</p>' +
+        '<div class="cat-name-field">' +
+          '<input type="text" id="catName' + i + '" placeholder="e.g. ' + CATEGORY_HINTS[i] + '">' +
+        '</div>' +
+        '<div class="cat-accounts-row">' +
+          '<div class="cat-accounts-field">' +
+            '<label for="catAccts' + i + '">Accounts to always include (optional)</label>' +
+            '<input type="text" id="catAccts' + i + '" placeholder="@handle, @handle">' +
+          '</div>' +
+          '<div class="switch-field">' +
+            '<button type="button" class="switch" id="catSwitch' + i + '" onclick="toggleLimit(' + i + ')" aria-pressed="false"></button>' +
+            '<span class="switch-label">Only these accounts</span>' +
+          '</div>' +
+        '</div>' +
+        '<p class="helper" id="catHelper' + i + '">We\'ll still surface other relevant posts in this heading — add handles here only if there are accounts you never want to miss.</p>';
+      wrap.appendChild(row);
+    }
+    var addBtn = document.getElementById('addHeadingBtn');
+    if (addBtn) addBtn.style.display = state.visibleHeadings >= HEADING_COUNT ? 'none' : '';
+  }
+
+  function revealNextHeading(){
+    if (state.visibleHeadings >= HEADING_COUNT) return;
+    var card = document.getElementById('catCard' + state.visibleHeadings);
+    if (card) card.classList.remove('hidden');
+    state.visibleHeadings++;
+    if (state.visibleHeadings >= HEADING_COUNT){
+      document.getElementById('addHeadingBtn').style.display = 'none';
+    }
+  }
+
+  function toggleLimit(i){
+    state.limited[i] = !state.limited[i];
+    var sw = document.getElementById('catSwitch' + i);
+    var helper = document.getElementById('catHelper' + i);
+    sw.classList.toggle('on', state.limited[i]);
+    sw.setAttribute('aria-pressed', state.limited[i] ? 'true' : 'false');
+    helper.textContent = state.limited[i]
+      ? "This category will only include posts from the accounts listed above."
+      : "We'll still surface other relevant posts in this category — add handles here only if there are accounts you never want to miss.";
+  }
+
+  function buildDayPicker(){
+    var wrap = document.getElementById('dayPicker');
+    wrap.innerHTML = "";
+    for (var d = 2; d <= 6; d++){
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'day-chip' + (d === state.days ? ' active' : '');
+      chip.textContent = d;
+      chip.onclick = function(day){
+        return function(e){
+          e.stopPropagation();
+          state.days = day;
+          buildDayPicker();
+        };
+      }(d);
+      wrap.appendChild(chip);
+    }
+  }
+
+  function buildWeekDayPicker(){
+    var wrap = document.getElementById('weekDayPicker');
+    wrap.innerHTML = "";
+    for (var d = 0; d < 7; d++){
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'day-chip' + (WEEKDAYS[d] === state.weekDay ? ' active' : '');
+      chip.textContent = WEEKDAY_LABELS[d];
+      chip.title = WEEKDAYS[d];
+      chip.onclick = function(day){
+        return function(e){
+          e.stopPropagation();
+          state.weekDay = day;
+          buildWeekDayPicker();
+        };
+      }(WEEKDAYS[d]);
+      wrap.appendChild(chip);
+    }
+  }
+
+  function setFreq(freq){
+    state.freq = freq;
+    document.querySelectorAll('.freq-card').forEach(function(card){
+      card.classList.toggle('active', card.getAttribute('data-freq') === freq);
+    });
+  }
+
+  function goTo(n){
+    document.querySelectorAll('.screen').forEach(function(sec){ sec.classList.remove('active'); });
+    document.getElementById('s' + n).classList.add('active');
+    var progressWrap = document.querySelector('.progress');
+    if (n <= 4){
+      progressWrap.style.visibility = 'visible';
+      document.getElementById('progressFill').style.width = (n / 4 * 100) + '%';
+      document.getElementById('progressLabel').textContent = 'Step ' + n + ' of 4';
+    } else {
+      progressWrap.style.visibility = 'hidden';
+    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  function setView(view){
+    document.getElementById('adminContent').setAttribute('data-view', view);
+    document.getElementById('tabNewspaper').classList.toggle('active', view === 'newspaper');
+    document.getElementById('tabMagazine').classList.toggle('active', view === 'magazine');
+  }
+
+  function selectBrief(i){
+    document.querySelectorAll('.admin-list-item').forEach(function(el, idx){ el.classList.toggle('active', idx === i); });
+    document.querySelectorAll('.admin-panel').forEach(function(el, idx){ el.classList.toggle('active', idx === i); });
+    var brief = state.briefs[i];
+    var tabs = document.querySelector('#s5 .view-tabs');
+    if (tabs) tabs.style.display = (brief && brief.status === 'blocked') ? 'none' : '';
+  }
+
+  function formatReceivedLabel(iso){
+    var d;
+    try { d = new Date(iso); } catch(e) { d = null; }
+    if (!d || isNaN(d.getTime())) return 'Unknown time';
+    var now = new Date();
+    var isSameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+    var yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    var isYesterday = d.getFullYear() === yesterday.getFullYear() && d.getMonth() === yesterday.getMonth() && d.getDate() === yesterday.getDate();
+    var timeStr = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    if (isSameDay) return 'Today, ' + timeStr;
+    if (isYesterday) return 'Yesterday, ' + timeStr;
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' + timeStr;
+  }
+
+  var MAG_PALETTE = ['#2D6CDF', '#1BA672', '#E2A63A', '#C2453D', '#8A5CF6', '#0EA5A6'];
+  var MAG_PALETTE_SOFT = ['#e4edfb', '#e2f4ec', '#faf1de', '#f7e4e2', '#efe8fc', '#dff4f4'];
+
+  function loadBriefsFromDOM(){
+    var el = document.getElementById('briefsData');
+    try {
+      var parsed = JSON.parse(el && el.textContent ? el.textContent : '[]');
+      state.briefs = Array.isArray(parsed) ? parsed : [];
+    } catch(e){
+      state.briefs = [];
+    }
+  }
+
+  function renderAdminList(){
+    var wrap = document.getElementById('adminList');
+    wrap.innerHTML = state.briefs.map(function(b, i){
+      var pillClass = b.status === 'blocked' ? 'blocked' : 'ok';
+      var pillLabel = b.status === 'blocked' ? 'Blocked' : 'Delivered';
+      return '<button type="button" class="admin-list-item' + (i === 0 ? ' active' : '') + '" onclick="selectBrief(' + i + ')">' +
+        '<div class="admin-list-date">' + escapeHtml(formatReceivedLabel(b.receivedAt)) + '</div>' +
+        '<div class="admin-list-meta"><span class="status-pill ' + pillClass + '">' + pillLabel + '</span></div>' +
+        '</button>';
+    }).join('');
+  }
+
+  function renderMagazineItem(item, color, soft){
+    var thumb = (item.image_url && isSafeUrl(item.image_url))
+      ? '<img src="' + escapeAttr(item.image_url) + '" alt="">'
+      : '<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><circle cx="9" cy="10.5" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 16"/></svg>';
+    var link = (item.permalink && isSafeUrl(item.permalink))
+      ? '<a class="mag-link" href="' + escapeAttr(item.permalink) + '" target="_blank" rel="noopener">View on Instagram ↗</a>'
+      : '';
+    return '<div class="mag-item" style="--item-color:' + escapeAttr(color) + '; --item-soft:' + escapeAttr(soft) + ';">' +
+      '<div class="mag-thumb">' + thumb + '</div>' +
+      '<div class="mag-text">' +
+        '<div class="mag-head">' + escapeHtml(item.handle || '') + '</div>' +
+        '<div class="mag-tag">' + escapeHtml(item.tag || '') + '</div>' +
+        '<p class="mag-writeup">' + escapeHtml(item.write_up || '') + '</p>' +
+        link +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderBriefPanel(b){
+    if (b.status === 'blocked'){
+      return '<div class="blocked-panel">' +
+        '<div class="callout-icon"><svg viewBox="0 0 24 24"><path d="M12 8v5"/><circle cx="12" cy="16" r="0.6" fill="var(--accent-strong)" stroke="none"/></svg></div>' +
+        '<h3>This run got blocked</h3>' +
+        '<p>' + escapeHtml(b.note || "Instagram blocked this run before Claude could read anything. Clear whatever checkpoint it showed, then the next scheduled run should go through normally.") + '</p>' +
+      '</div>';
+    }
+    var newsCats = (b.newspaper && b.newspaper.categories) || [];
+    var newsHtml = newsCats.map(function(c){
+      return '<div class="news-section"><h3>' + escapeHtml(c.name || '') + '</h3><p>' + escapeHtml(c.summary || '') + '</p></div>';
+    }).join('') + '<p class="news-caughtup">' + (b.note ? escapeHtml(b.note) : "You're caught up.") + '</p>';
+
+    var magCats = (b.magazine && b.magazine.categories) || [];
+    var magHtml = magCats.map(function(c, idx){
+      var color = c.accent_color || MAG_PALETTE[idx % MAG_PALETTE.length];
+      var soft = MAG_PALETTE_SOFT[MAG_PALETTE.indexOf(color) >= 0 ? MAG_PALETTE.indexOf(color) : (idx % MAG_PALETTE_SOFT.length)];
+      var items = (c.items || []).map(function(item){ return renderMagazineItem(item, color, soft); }).join('');
+      return '<div class="mag-section"><h3><span class="mag-dot" style="--dot-color:' + escapeAttr(color) + ';"></span>' + escapeHtml(c.name || '') + '</h3>' + items + '</div>';
+    }).join('');
+
+    return '<div class="view-panel newspaper">' + newsHtml + '</div><div class="view-panel magazine">' + magHtml + '</div>';
+  }
+
+  function renderAdminPanels(){
+    var wrap = document.getElementById('adminPanels');
+    wrap.innerHTML = state.briefs.map(function(b, i){
+      return '<div class="admin-panel' + (i === 0 ? ' active' : '') + '" id="admin-panel-' + i + '">' + renderBriefPanel(b) + '</div>';
+    }).join('');
+  }
+
+  function renderAdmin(){
+    var hasBriefs = state.briefs.length > 0;
+    document.getElementById('adminEmpty').style.display = hasBriefs ? 'none' : '';
+    document.getElementById('adminLayout').style.display = hasBriefs ? '' : 'none';
+    if (!hasBriefs) return;
+    renderAdminList();
+    renderAdminPanels();
+    setView('newspaper');
+    selectBrief(0);
+  }
+
+  function setSubmitStatus(text, kind){
+    var el = document.getElementById('submitStatus');
+    el.textContent = text;
+    el.className = 'submit-status' + (kind ? ' ' + kind : '');
+  }
+
+  function submitBriefFromTextarea(){
+    var input = document.getElementById('submitBriefInput');
+    var raw = input.value.trim();
+    if (!raw){
+      setSubmitStatus('Paste a brief first.', 'error');
+      return;
+    }
+    var parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch(e){
+      setSubmitStatus("That doesn't look like valid JSON — check it and try again.", 'error');
+      return;
+    }
+    if (!parsed || (parsed.status !== 'ok' && parsed.status !== 'blocked')){
+      setSubmitStatus('Missing or unrecognized "status" field — expected "ok" or "blocked".', 'error');
+      return;
+    }
+    parsed.receivedAt = new Date().toISOString();
+    state.briefs.unshift(parsed);
+    renderAdmin();
+    input.value = '';
+    setSubmitStatus('Saving…');
+    publishBriefs();
+  }
+
+  async function publishBriefs(){
+    if (typeof claude === 'undefined' || !claude.use){
+      setSubmitStatus('Saved for this view — publishing isn\'t available here, so other viewers and future loads won\'t see it yet.', 'error');
+      return;
+    }
+    var artifact;
+    try {
+      artifact = await claude.use('artifact');
+    } catch(e){
+      artifact = null;
+    }
+    if (!artifact){
+      setSubmitStatus('Saved for this view — publishing isn\'t available here, so other viewers and future loads won\'t see it yet.', 'error');
+      return;
+    }
+    try {
+      await artifact.publish(buildPublishHtml());
+      setSubmitStatus('Saved to your Briefly page.', 'ok');
+    } catch(e){
+      var code = e && e.code;
+      if (code === 'conflict'){
+        setSubmitStatus('Someone saved a newer version — reloading…', 'ok');
+      } else if (code === 'not_writer' || code === 'not_granted'){
+        setSubmitStatus('This view can only read, not save, this page.', 'error');
+      } else {
+        setSubmitStatus('Could not save — try again.', 'error');
+      }
+    }
+  }
+
+  function jsonForScriptTag(obj){
+    return JSON.stringify(obj).replace(/<\/(script)/gi, '<\\/$1');
+  }
+
+  function buildPublishHtml(){
+    var scriptSrc = document.getElementById('mainScript').textContent;
+    var bodyHtml = STATIC_BODY_SHELL.replace('__BRIEFS_JSON__', jsonForScriptTag(state.briefs));
+    return '<!doctype html>\n<html lang="en">\n<head>\n' + STATIC_HEAD + '\n</head>\n<body>\n' + bodyHtml + '\n<script id="mainScript">' + scriptSrc + '<\/script>\n</body>\n</html>';
+  }
+
+  var PROMPT_TEMPLATE = [
+'You are my personal Instagram analyst. I want this to run automatically, unattended, on a recurring schedule — so before anything else, set yourself up to run this exact set of instructions again on your own, every {{CADENCE}}, using your recurring scheduled-task capability. This task needs my computer, not just the cloud — every run has to use my actual logged-in Chrome to read Instagram, so mark it as requiring my local device when you create it. If that means I need to approve a one-time prompt binding it to my computer, tell me that\'s expected and I\'ll approve it. Once it\'s scheduled, confirm that back to me in one line — then go ahead and run the steps below right now as well, so I get today\'s brief immediately instead of waiting for the first scheduled firing.',
+'',
+'On every run after this one — including the ones that fire on their own from the schedule you just created — don\'t wait for confirmation or ask me questions. Just complete the brief and submit it through my Briefly link as instructed below.',
+'',
+'Use my Chrome browser — I\'m logged into Instagram there — to go through my account and build me a "Daily Brief": a short, organized summary of what\'s actually worth knowing, not a copy of my feed.',
+'',
+'My categories, in this order:',
+'',
+'{{CATEGORIES}}',
+'',
+'Time window to cover: everything posted since my last brief — the last {{TIME_WINDOW}}.',
+'',
+'Here\'s how to do it:',
+'',
+'1. Open Instagram in the browser tab where I\'m already logged in. Before you start reading posts, check whether the page is actually my normal feed or a security screen — things like "Confirm it\'s you," "We suspended some activity on your account," a photo/puzzle CAPTCHA, or a code-entry screen all mean Instagram is blocking access, not that there\'s nothing new. If you see anything like that, don\'t try to guess a code, solve a puzzle, or click through repeatedly — stop immediately and report it as described below instead of producing a normal brief.',
+'2. Scroll through my home feed covering the full time window above. Also check Notifications/Activity for posts, tags, or updates from close contacts the algorithm might not have surfaced — the whole point of this is to catch things I\'d otherwise miss.',
+'3. Sort each relevant post into one of my categories above. If a post doesn\'t clearly fit, leave it out — don\'t force it in.',
+'4. Within each category, decide what\'s actually worth my attention (a real update from someone I care about, a real opportunity, real news) versus low-value filler (ads, generic reposts, unrelated suggested content), and lead with what matters most.',
+'5. Write a summary, not a reproduction: 1–3 sentences per notable item, in your own words. For each item, also note who it\'s from (name + @handle), what kind of post it is and when it was posted (e.g. "Post · 2h ago" / "Story · this morning"), the post\'s own image if one is visible, and a link back to the post on Instagram — you\'ll need all of that for the magazine version below, not just the write-up.',
+'6. Cap yourself at a reasonable number of scrolls (40–50) so this stays finite. If you hit that cap before covering the full time window, say so honestly rather than guessing at what you didn\'t see.',
+'',
+'Write the brief twice, in two styles — always both, never ask me which one. Both versions cover the same categories and the same items; only the presentation changes.',
+'',
+'Newspaper Style — format the brief like this:',
+'',
+'* One section per category, headed with the category name, in the order I give them.',
+'* Under each, a few tight paragraphs covering what happened — written like a newspaper section, not a chat log.',
+'* End with a one-line "You\'re caught up" note, plus anything you didn\'t get to if you hit the scroll cap.',
+'* Keep the whole thing skimmable in under 3 minutes.',
+'',
+'Magazine Style — format the brief like this:',
+'',
+'* One section per category, headed with the category name, in the order I give them.',
+'* Under each item: a small image, with the write-up to its right — headline (who + handle), a kind/time tag, then a couple sentences on what happened.',
+'* Mark each category with its own accent color, carried as a colored left edge on every item in that section. Assign colors in the order my categories are listed, from this palette so it stays consistent run to run: `#2D6CDF`, `#1BA672`, `#E2A63A`, `#C2453D`, `#8A5CF6`, `#0EA5A6`.',
+'* End each item with a "View on Instagram" link.',
+'* Keep it skimmable — short per-item write-ups, not full paragraphs.',
+'',
+'Package the finished brief as JSON in this shape: `{"status": "ok", "date": "[today\'s date]", "newspaper": {"categories": [{"name": "...", "summary": "..."}]}, "magazine": {"categories": [{"name": "...", "accent_color": "#2D6CDF", "items": [{"image_url": "...", "handle": "...", "tag": "Post · 2h ago", "write_up": "...", "permalink": "https://instagram.com/p/..."}]}]}, "note": "[any scroll-cap note, or blank]"}` If a post\'s image isn\'t something you can pull a real URL for, omit `image_url` for that item rather than guessing one.',
+'',
+'When you\'re done: open your personal Briefly link — {{PERSONAL_LINK}} — paste the JSON into the "Submit a brief" box near the bottom, and click Submit.',
+'',
+'If you got blocked instead (a security checkpoint, CAPTCHA, or code prompt per step 1): package it as `{"status": "blocked", "date": "[today\'s date]", "note": "[what you saw, e.g. \'Instagram showed a Confirm It\'s You checkpoint\']"}` instead, then open your personal Briefly link, paste it into the "Submit a brief" box, and click Submit.'
+  ].join('\n');
+
+  function computeCadence(){
+    if (state.freq === 'daily'){
+      return "day at " + formatTime(document.getElementById('dailyTime').value);
+    } else if (state.freq === 'multi'){
+      return state.days + " days at " + formatTime(document.getElementById('multiTime').value);
+    }
+    return state.weekDay + " at " + formatTime(document.getElementById('weeklyTime').value);
+  }
+
+  function timeWindowText(){
+    if (state.freq === 'daily') return "24 hours";
+    if (state.freq === 'multi') return state.days + " days";
+    return "7 days";
+  }
+
+  function submitPrefs(){
+    var cats = [];
+    for (var i = 0; i < HEADING_COUNT; i++){
+      var name = document.getElementById('catName' + i).value.trim();
+      var accts = document.getElementById('catAccts' + i).value.trim();
+      if (name) cats.push({ name: name, accounts: accts, limited: state.limited[i] });
+    }
+    var email = document.getElementById('recipientEmail').value.trim();
+    var errEl = document.getElementById('formError');
+    if (cats.length === 0 || !email || email.indexOf('@') === -1){
+      errEl.classList.add('show');
+      return;
+    }
+    errEl.classList.remove('show');
+
+    var categoryLines = cats.map(function(c, idx){
+      var n = idx + 1;
+      if (c.accounts && c.limited){
+        return n + '. ' + c.name + ' — only include posts from: ' + c.accounts;
+      } else if (c.accounts){
+        return n + '. ' + c.name + ' — pay extra attention to posts from: ' + c.accounts;
+      }
+      return n + '. ' + c.name;
+    }).join('\n');
+
+    var cadence = computeCadence();
+    var personalLink = window.location.origin + window.location.pathname;
+    var prompt = PROMPT_TEMPLATE
+      .replace('{{CATEGORIES}}', categoryLines)
+      .replace('{{TIME_WINDOW}}', timeWindowText())
+      .replace('{{CADENCE}}', cadence)
+      .split('{{PERSONAL_LINK}}').join(personalLink);
+
+    document.getElementById('promptText').textContent = prompt;
+    document.getElementById('cadenceText').textContent = cadence;
+    document.getElementById('filedTime').textContent = new Date().toLocaleString(undefined, {
+      weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
+    var copyBtn = document.getElementById('copyBtn');
+    copyBtn.textContent = 'Copy prompt';
+
+    goTo(4);
+  }
+
+  function copyPrompt(){
+    copyToClipboard('promptText', 'copyBtn', 'Copy prompt');
+  }
+
+  function copyOnboardPrompt(){
+    copyToClipboard('onboardPromptText', 'onboardCopyBtn', 'Copy prompt');
+  }
+
+  function copyToClipboard(textElId, btnId, btnLabel){
+    var text = document.getElementById(textElId).textContent;
+    var btn = document.getElementById(btnId);
+    function done(){
+      btn.textContent = 'Copied ✓';
+      setTimeout(function(){ btn.textContent = btnLabel; }, 1800);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(function(){ fallbackCopy(text, done, textElId, btnId); });
+    } else {
+      fallbackCopy(text, done, textElId, btnId);
+    }
+  }
+
+  function fallbackCopy(text, done, textElId, btnId){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch(e){
+      var pre = document.getElementById(textElId);
+      var range = document.createRange();
+      range.selectNodeContents(pre);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.getElementById(btnId).textContent = 'Selected — press ⌘/Ctrl+C';
+    }
+  }
+
+  function formatTime(t){
+    if (!t) return "7:00 AM";
+    var parts = t.split(':');
+    var h = parseInt(parts[0], 10);
+    var m = parts[1];
+    var suffix = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    return h12 + ':' + m + ' ' + suffix;
+  }
+
+  function escapeHtml(s){
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // escapeHtml() is only safe inside text-node content — it doesn't escape quote
+  // characters, so anything interpolated into a quoted HTML attribute (href, src,
+  // style) needs this instead, or it can be broken out of with a stray " or '.
+  function escapeAttr(s){
+    return escapeHtml(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Only allow http(s) URLs into src/href — blocks javascript: and other
+  // executable URI schemes a submitted brief could otherwise smuggle in.
+  function isSafeUrl(u){
+    return typeof u === 'string' && /^https?:\/\//i.test(u.trim());
+  }
+
+  function startOver(){
+    document.querySelectorAll('#catFields input[type="text"]').forEach(function(i){ i.value = ""; });
+    document.getElementById('recipientEmail').value = "";
+    document.getElementById('dailyTime').value = "07:00";
+    document.getElementById('multiTime').value = "07:00";
+    document.getElementById('weeklyTime').value = "07:00";
+    state.days = 3;
+    state.weekDay = "Sunday";
+    state.limited = [false, false, false, false, false, false];
+    state.visibleHeadings = DEFAULT_VISIBLE;
+    buildCategoryFields();
+    buildDayPicker();
+    buildWeekDayPicker();
+    setFreq('daily');
+    document.getElementById('formError').classList.remove('show');
+    goTo(1);
+  }
+
+  buildCategoryFields();
+  buildDayPicker();
+  buildWeekDayPicker();
+  setFreq('daily');
+  loadBriefsFromDOM();
+  renderAdmin();
+</script>
+</body>
+</html>
