@@ -247,3 +247,19 @@ footer a.label:hover{color:var(--tangerine)}
   .gallery{columns:1}
   .work-body{padding-top:48px}
 }
+
+/* works grouped into sections (Stage / Events) */
+.worksection + .worksection{margin-top:96px}
+.worksection .band{margin-bottom:34px}
+.worksection .band p{margin:0; max-width:52ch; color:var(--muted)}
+/* characters on a work page */
+.characters{padding:96px var(--gutter) 0; max-width:var(--max); margin:0 auto}
+.characters .band{margin-bottom:40px}
+.characters .band p{margin:0; max-width:52ch; color:var(--muted)}
+.charlist{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:44px 40px}
+.charlist .ch{border-top:1px solid var(--line); padding-top:18px}
+.charlist h3{font-family:var(--serif); font-weight:400; font-size:28px; line-height:1.1; margin:0 0 6px; color:var(--ink)}
+.charlist .label{display:block; margin-bottom:12px}
+.charlist p{margin:0; color:var(--ink-2)}
+@media (max-width:1100px){ .charlist{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:760px){ .charlist{grid-template-columns:1fr} .worksection + .worksection{margin-top:72px} }

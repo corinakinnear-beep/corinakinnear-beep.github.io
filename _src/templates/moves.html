@@ -7,16 +7,20 @@
     <p class="intro">{{ site.moves_intro }}</p>
   </section>
   <section class="wrap">
-    <div class="band"><h2>Works</h2><a class="more label" href="/moves/works/">All works →</a></div>
-    <div class="works">
-      {% for w in works if not w.list_only %}
+    {% for sec in sections %}
+    <div class="worksection">
+      <div class="band"><h2>{{ sec.title }}</h2>{% if loop.first %}<a class="more label" href="/moves/works/">All works →</a>{% else %}<a class="more label" href="/moves/works/#{{ sec.key }}">All {{ sec.title|lower }} →</a>{% endif %}</div>
+      <div class="works">
+      {% for w in works if not w.list_only and (w.section or 'stage') == sec.key %}
       <a class="workcard" href="/moves/works/{{ w.slug }}/">
         {% if w.images %}<img src="/moves/img/{{ w.slug }}/{{ w.card or w.images[0].file }}" alt="{{ w.images[0].alt or w.title }}" loading="lazy">{% else %}<div class="noimg" aria-hidden="true">{{ w.title[:1] }}</div>{% endif %}
         <h3>{{ w.title }}</h3>
         <span class="sub">{{ w.year }} · {{ w.venue }}</span>
       </a>
       {% endfor %}
+      </div>
     </div>
+    {% endfor %}
   </section>
   <section class="wrap" style="margin-top:108px">
     <div class="teaser">

@@ -48,9 +48,12 @@ def main():
     data = yaml.safe_load((SRC / "moves.yaml").read_text(encoding="utf-8"))
     env = Environment(loader=FileSystemLoader(str(SRC / "templates")), autoescape=select_autoescape(["html"]),
                       trim_blocks=True, lstrip_blocks=True)
-    base = dict(wordmark=WORDMARK, logo=LOGO, site=data["site"])
+    base = dict(wordmark=WORDMARK, logo=LOGO, site=data["site"], sections=data["site"].get("sections") or [{"key": "stage", "title": "Works", "intro": ""}])
     works = data["works"]
-    shown = [w for w in works if not w.get("list_only")]
+    sections = data["site"].get("sections") or [{"key": "stage", "title": "Works", "intro": ""}]
+    order = {sec["key"]: i for i, sec in enumerate(sections)}
+    # pages run section by section (Stage, then Events), newest first inside each, for the prev/next links
+    shown = sorted((w for w in works if not w.get("list_only")), key=lambda w: order.get(w.get("section", "stage"), 99))
 
     # give every image its pixel size, so pages can reserve the space before photos load
     def measure(images, folder):

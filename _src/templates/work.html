@@ -21,6 +21,14 @@
       {% for c in w.credits %}<div><dt>{{ c[0] }}</dt><dd>{{ c[1] }}</dd></div>{% endfor %}
     </dl>
   </section>
+  {% if w.characters %}
+  <section class="characters">
+    <div class="band"><h2>The characters</h2>{% if w.characters_intro %}<p>{{ w.characters_intro }}</p>{% endif %}</div>
+    <div class="charlist">
+      {% for c in w.characters %}<div class="ch"><h3>{{ c.name }}</h3>{% if c.performer %}<span class="label">{{ c.performer }}</span>{% endif %}<p>{{ c.text }}</p></div>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
   {% with v = w.video, vtitle = w.title %}{% include "_video.html" %}{% endwith %}
   {% if w.images|length > 1 %}
   <section class="gallery">
