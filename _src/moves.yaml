@@ -377,9 +377,8 @@ bio:
     - "Intensives: Springboard Danse Montréal, Steps on Broadway, Hubbard Street Dance Chicago, Cleo Parker Robinson Dance, The Edge, Ballet West, Pacific Northwest Ballet School"
   residencies:
     - "PARTS, Brussels · CND, Paris · TanzFabrik, Berlin · The Post House / Bella Lewitzky Residency, Los Angeles · MAD Art, Seattle"
-  hero: { file: corina-seated.jpg, alt: "Corina seated on a wooden floor, arms folded over one knee", pos: "50% 30%" }
-  headshot: corina-leather-coat.jpg
-  headshot_credit: "Photograph by Rory"
-  extra:
-    - { file: corina-amber.jpg, alt: "Corina in amber light, looking toward the camera" }
-  notes: "bio newly written from the 2025 CV, the 2019 teaching bio and the 2018 artist statement — Cori to approve; photos chosen by Cori 27 Oct 2026 (seated portrait: photographer unknown; amber close-up: Deutsche Oper shoot, Chris Gonz?; leather coat: Rory, May 2026 — surname wanted)"
+  hero: { file: corina-seated.jpg, alt: "Corina seated on a wooden floor, arms folded over one knee", pos: "50% 30%", credit: "Photograph by Arno" }
+  headshot: null
+  headshot_credit: ""
+  extra: []
+  notes: "bio newly written from the 2025 CV, the 2019 teaching bio and the 2018 artist statement — Cori to approve; one photo only, Cori's choice 27 Oct 2026: the seated portrait by Arno (leather-coat and amber portraits dropped; files kept in moves/img/bio/)"

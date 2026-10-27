@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block main %}
-  {% if bio.hero %}<img class="hero-img" src="/moves/img/bio/{{ bio.hero.file }}" alt="{{ bio.hero.alt }}"{% if bio.hero.w %} width="{{ bio.hero.w }}" height="{{ bio.hero.h }}"{% endif %}{% if bio.hero.pos %} style="object-position:{{ bio.hero.pos }}"{% endif %}>{% endif %}
+  {% if bio.hero %}<img class="hero-img" src="/moves/img/bio/{{ bio.hero.file }}" alt="{{ bio.hero.alt }}"{% if bio.hero.w %} width="{{ bio.hero.w }}" height="{{ bio.hero.h }}"{% endif %}{% if bio.hero.pos %} style="object-position:{{ bio.hero.pos }}"{% endif %}>{% if bio.hero.credit %}<p class="photo-credit label">{{ bio.hero.credit }}</p>{% endif %}{% endif %}
   <section class="pagehead wrap">
     <h1>Corina Kinnear</h1>
     <p class="lede">{{ bio.lede|lower }}</p>
