@@ -193,15 +193,16 @@ works:
       - [Lighting design, Bosco Flanagan]
       - [Company class, Andrew Pearson]
       - [Artistic development, Stephanie Baer]
-      - [Photography, Lilly Lawrence]
+      - [Photography, "Lilly Lawrence, Saskia Keeley"]
       - [Rehearsal space, The Post House]
       - [Premiere, "Odyssey Dance Festival, 8–9 February 2018; then Pico Union Project, 22 February – 25 March 2018"]
-    photo_credit: "Photographs by Lilly Lawrence"
+    photo_credit: "Photographs by Saskia Keeley (top) and Lilly Lawrence"
     video:
       kind: vimeo
       id: "250096790"
       caption: "naked. an art happening — the promotional film (FOXFLY, 2018)"
     images:
+      - { file: saskia-keeley-stage.jpg, alt: "The company bent forward on a dark wooden floor, stained-glass windows behind", pos: "50% 55%" }
       - { file: naked-press-photo-by-lilly-lawrence-2.jpg, alt: "Performers lying back against a pale wall, legs raised" }
       - { file: lilly-lawrence-1.jpg, alt: "Reading through notes in rehearsal" }
       - { file: l013118-036.jpg, alt: "Clasped hands" }
@@ -212,7 +213,6 @@ works:
       - { file: lilly-lawrance-5.jpg, alt: "Rehearsal at The Post House" }
       - { file: r-sean.jpg, alt: "A performer bending forward by a window" }
       - { file: l013118-030.jpg, alt: "A performer arching over an exercise ball" }
-      - { file: l013118-033.jpg, alt: "A performer drinking from a mug" }
     notes: "press photos by Lilly Lawrence (consent confirmed by Cori); more nude press portraits (r amanda, r khristina, r ryan, Lilly Lawrance 6, photo credit Lilly Lawrence) and the DSC036xx stage set (photographer unclear) left out — Cori to choose; full show recording (3 GB) in Dropbox"
 
   - slug: movmt
