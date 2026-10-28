@@ -455,23 +455,18 @@
       <p id="pClosed" class="hidden" style="margin:10px 0 0"><span class="closed">Closed to changes</span></p>
     </header>
 
-    <section class="section share" id="shareSection">
-      <div class="shead"><h3>Share this event</h3></div>
-      <p class="cap">This link will allow others to add their availability.</p>
+    <div id="shareSection">
+    <h3 class="bigtitle">Share this event</h3>
+    <section class="section share">
+      <p class="cap" style="margin-top:0">This link will allow others to add their availability.</p>
       <div class="btnrow" style="margin-top:14px">
         <button class="btn" id="copyBtn">Copy invite link</button>
         <span class="cap" id="copyState"></span>
       </div>
     </section>
+    </div>
 
     <!-- 2. Event options (coordinator) -->
-    <section class="section" id="optsSection">
-      <div class="shead"><h3>Event options</h3><span class="live" id="live"><i></i>Live</span></div>
-      <div class="btnrow">
-        <button class="btn ghost hidden" id="editBtn">Edit event</button>
-        <button class="btn ghost hidden" id="closeBtn">Close event</button>
-      </div>
-    </section>
 
     <!-- ===== MY AVAILABILITY ===== -->
     <div id="youPane" class="hidden">
@@ -559,6 +554,17 @@
         <div class="shead"><h3>Notes from the group</h3></div>
         <div class="notes" id="noteList"></div>
       </section>
+
+      <div id="optsSection">
+      <h3 class="bigtitle">Event options</h3>
+      <section class="section">
+        <div class="btnrow" style="align-items:center">
+          <button class="btn ghost hidden" id="editBtn">Edit event</button>
+          <button class="btn ghost hidden" id="closeBtn">Close event</button>
+          <span class="live" id="live" style="margin-left:auto"><i></i>Live</span>
+        </div>
+      </section>
+      </div>
 
       <h3 class="bigtitle">Additional tools</h3>
       <div class="btnrow" style="margin:-4px 0 18px"><button class="btn ghost" id="toolsToggle">Show additional tools</button></div>
@@ -709,11 +715,13 @@
       <div class="btnrow" style="margin:4px 0 8px"><button class="btn ghost small backlink" id="backFromManual2">&larr; <span class="backtxt">Back to everyone&rsquo;s answers</span></button></div>
     </div>
 
-    <section class="section" id="guestNew" style="margin-top:44px">
-      <div class="shead"><h3 id="newEventTitle">Running something of your own?</h3></div>
-      <p class="cap" id="newEventBlurb">Ensemble is free to use for your own events too. Starting one lets you propose times and locations, and everyone you invite marks what works for them.</p>
+    <div id="guestNew">
+    <h3 class="bigtitle" id="newEventTitle">Create a new event</h3>
+    <section class="section">
+      <p class="cap" id="newEventBlurb" style="margin-top:0">Ensemble is free to use for your own events too. Starting one lets you propose times and locations, and everyone you invite marks what works for them.</p>
       <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="newBtn2">Create a new event</button></div>
     </section>
+    </div>
 
   </section>
 </div>
@@ -1264,7 +1272,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     renderCohosts();
     $('#closeBtn').classList.toggle('hidden', !isOwner); $('#editBtn').classList.toggle('hidden', !isOwner);
     $('#optsSection').classList.toggle('hidden', !isOwner);
-    $('#newEventTitle').textContent = isOwner ? 'Create a new event' : 'Running something of your own?';
+    $('#newEventTitle').textContent = 'Create a new event';
     $('#newEventBlurb').textContent = isOwner
       ? 'Propose times and locations for another event.'
       : 'Ensemble is free to use for your own events too. Starting one lets you propose times and locations, and everyone you invite marks what works for them.';
