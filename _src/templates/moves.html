@@ -13,7 +13,7 @@
       <div class="works">
       {% for w in works if not w.list_only and (w.section or 'stage') == sec.key %}
       <a class="workcard" href="/moves/works/{{ w.slug }}/">
-        {% if w.images %}<img src="/moves/img/{{ w.slug }}/{{ w.card or w.images[0].file }}" alt="{{ w.images[0].alt or w.title }}" loading="lazy">{% else %}<div class="noimg" aria-hidden="true">{{ w.title[:1] }}</div>{% endif %}
+        {% if w.images %}{% set ci = (w.images|selectattr("file", "equalto", w.card)|first) if w.card else w.images[0] %}<img src="/moves/img/{{ w.slug }}/{{ ci.file }}" alt="{{ ci.alt or w.title }}" loading="lazy">{% else %}<div class="noimg" aria-hidden="true">{{ w.title[:1] }}</div>{% endif %}
         <h3>{{ w.title }}</h3>
         <span class="sub">{{ w.year }} · {{ w.venue }}</span>
       </a>

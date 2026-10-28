@@ -12,7 +12,7 @@ site:
   instagram_handle: "@parlamoves"
   contact_email: "corina.kinnear@gmail.com"
   sections:
-    - { key: stage, title: Stage, intro: "Productions, festival works and films." }
+    - { key: stage, title: Stage }
     - { key: events, title: Events, intro: "Immersive work made for galas, conferences and gatherings — for the room, the hour and the people in it." }
 
 works:
@@ -33,6 +33,7 @@ works:
       - [Premiere, "Los Angeles Dance Festival, 18 April 2026"]
       - [Photography, George Simian]
     photo_credit: "Photographs by George Simian"
+    card: corina-concert-7.jpg
     images:
       - { file: corina-concert-4.jpg, alt: "Dancers in white against a pale wall, their shadows leaping above them" }
       - { file: corina-concert-19.jpg, alt: "Two dancers in silhouette, each balanced on one leg" }
@@ -173,7 +174,7 @@ works:
     press:
       - { date: "December 2020", outlet: "DancePlug", what: "“Sharing Time in 2020: A Retrospective in Dance” by Andrew Pearson", url: "https://www.danceplug.com/article/sharing-time-in-2020-a-retrospective-in-dance" }
     photo_credit: "Frames from camera footage filmed on Santa Monica Beach, 10 September 2020"
-    card: ocean-12-c007-034s.jpg   # the image on the Works cards (default: the first image)
+    card: ocean-12-c016-131s.jpg   # the image on the Works cards (default: the first image)
     images:
       - { file: ocean-12-c013-018s.jpg, alt: "Three dancers in white on the night beach, a pale blue screen standing in the sand" }
       - { file: ocean-12-c007-034s.jpg, alt: "A dancer in a long white coat, one arm thrown up into the dark" }
