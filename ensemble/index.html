@@ -582,7 +582,7 @@
 
       <section class="section hidden" id="manualToolBlock">
         <div class="shead"><h3>Add availability manually</h3></div>
-        <p class="cap">For a space, for someone who told you their times another way, or for your own availability.</p>
+        <p class="cap">For someone who told you their times another way, or for your own availability &mdash; the times you propose count as the location&rsquo;s availability, not yours.</p>
         <div class="btnrow" style="margin-top:14px">
           <button class="btn ghost" id="goManual">Add / edit an entry</button>
         </div>
@@ -1256,8 +1256,8 @@ const PIN_SUFFIX = '::ensemble-pin';
       // real dates and times win whenever we have them; positions are only for older answers
       mine[i] = new Set(restored ? (restored[i] || []) : (own?.availability?.[i] || []));
     });
-    const firstVisit = isOwnerOf(ev) && !own; // primary only
-    if (firstVisit) { plan.config.locations.forEach((l, i) => mine[i] = new Set(l.proposed)); }
+    // The coordinator's proposed times are the location's availability, not their own.
+    // They add personal times, if any, through "Add availability manually".
     myNote = own?.note || ''; myNoteAt = own?.note_at || null; $('#noteBox').value = myNote;
     selected = null;
     $('#pTitle').textContent = plan.title;
@@ -1288,7 +1288,6 @@ const PIN_SUFFIX = '::ensemble-pin';
     renderLocTabs(); renderMeta(); renderGrids();
     if (justCreated) { justCreated = false; setTimeout(() => { $('#shareSection').scrollIntoView({ behavior: 'smooth', block: 'center' }); toast('Your event is live — copy the invite link and send it to your group'); }, 400); }
     showTab(isOwner ? 'group' : 'you', 'loadEvent:landing');
-    if (firstVisit) { await saveMine(); showTab('group', 'loadEvent:afterFirstSave'); toast('You\'re marked available at every proposed time — adjust under “My availability” if not'); }
     logPane('loadEvent:done', { seq, owner: plan.owner === user.id, hasOwnResponse: !!own });
     const { data: inv } = await sb.from('manual_invites').select('*').eq('event_id', eventId);
     hostInvites = isOwner ? (inv || []) : [];
