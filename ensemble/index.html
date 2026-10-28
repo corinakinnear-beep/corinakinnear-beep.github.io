@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ensemble — find a time that works for everyone</title>
-<meta name="description" content="Rehearse together: everyone paints the times they can make, and the overlap shows up as a heatmap.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,8 +11,8 @@
   :root{
     --paper:#FBFAF6; --ink:#17181F; --ink-2:#5B5D66; --line:#DEDCD3;
     --propose:#7ED39A; --you:#FFD24D;
-    --h0:#EEF1F8; --h1:#C5D0F2; --h2:#8FA4E8; --h3:#5470DD; --h4:#1E3FD6;
-    --radius:10px; --cell:26px; --timecol:64px;
+    --h0:#EDEFF4; --h1:#A9BCEE; --h2:#7A94E4; --h3:#4C69DA; --h4:#1E3FD6;
+    --radius:10px; --cell:30px; --timecol:64px;
     /* type scale */
     --fs-micro:12px; --fs-cap:14px; --fs-body:16px; --fs-lead:18px; --fs-h3:22px; --fs-h2:27px;
   }
@@ -95,7 +94,8 @@
   .pitch .lede{margin-bottom:28px}
   .sell{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
   .sellcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px}
-  .sellcard h4{font-size:var(--fs-body);font-weight:700;margin:0 0 8px;letter-spacing:-.01em}
+  .sellcard h4{font-size:var(--fs-body);font-weight:700;margin:0 0 8px;letter-spacing:-.01em;display:flex;align-items:baseline;gap:9px}
+  .sellcard .sellicon{font-size:19px;line-height:1;flex:none}
   .sellcard p{margin:0;font-size:var(--fs-cap);color:var(--ink-2);line-height:1.55}
   .pitch .closer{margin:26px 0 0;font-size:var(--fs-body);color:var(--ink-2)}
 
@@ -180,7 +180,8 @@
   .tabs button[aria-selected=true]{background:var(--ink);color:#fff}
   .tabs.loc button[aria-selected=true]{background:var(--h4)}
   .closed{display:inline-block;background:#F3E4E4;color:#7A2E2E;border-radius:999px;padding:5px 12px;font-size:var(--fs-cap)}
-  .live{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-cap);color:var(--ink-2)}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-cap);color:var(--ink-2);cursor:pointer;border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:#fff}
+  .live:hover{color:var(--ink)}
   .live i{width:8px;height:8px;border-radius:50%;background:#3BB273;display:inline-block}
 
   .layout{display:block}
@@ -199,12 +200,16 @@
   table.grid td.q15{height:calc(var(--cell) * .6)}
   table.grid td.dayslot{height:calc(var(--cell) * 2)}
   table.grid td.on{background:var(--you);box-shadow:none}
-  #youGrid td.offered:not(.on),#manualGrid td.offered:not(.on){background:#E4F6EA;box-shadow:inset 0 0 0 2px var(--propose)}
   .propose table.grid td.on{background:var(--propose);box-shadow:none}
   table.grid td.na{background:repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(91,93,102,.11) 4px,rgba(91,93,102,.11) 5px);cursor:default;box-shadow:none;opacity:.65}
+  /* a time the organiser no longer offers: your answer is kept but not shown */
+  table.grid td.na.on{background:repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(91,93,102,.11) 4px,rgba(91,93,102,.11) 5px);box-shadow:none;opacity:.65}
   table.grid td.l1{background:var(--h1)} table.grid td.l2{background:var(--h2)}
   table.grid td.l3{background:var(--h3)} table.grid td.l4{background:var(--h4)}
-  .heat table.grid td{cursor:default}
+  .heat table.grid td{cursor:default;text-align:center;font-size:var(--fs-cap);font-weight:700;color:var(--ink-2);line-height:var(--cell);font-variant-numeric:tabular-nums}
+  .heat table.grid td.l1{color:#2B3A6B}
+  .heat table.grid td.l2,.heat table.grid td.l3,.heat table.grid td.l4{color:#fff}
+  .heat table.grid td.q15{line-height:calc(var(--cell) * .6);font-size:11px}
   .heat table.grid td.sel{outline:2px solid var(--ink)}
   .legend{font-size:var(--fs-cap);color:var(--ink-2);margin-top:12px;line-height:1.7}
   .legend i{display:inline-block;width:16px;height:13px;border-radius:3px;vertical-align:-1px;margin:0 3px}
@@ -311,27 +316,27 @@
 
       <div class="sell">
         <div class="sellcard">
-          <h4>Propose, don&rsquo;t negotiate</h4>
+          <h4><span class="sellicon">🗓️</span>Propose, don&rsquo;t negotiate</h4>
           <p>Paint the times that could work, add up to five possible locations, and send one link. Everyone marks what works for them on the same grid.</p>
         </div>
         <div class="sellcard">
-          <h4>See exactly who can come</h4>
+          <h4><span class="sellicon">👀</span>See exactly who can come</h4>
           <p>A heat map shows where availability stacks up. Tap any slot for the names &mdash; who&rsquo;s in, who isn&rsquo;t. Narrow it to two people to find just their overlap.</p>
         </div>
         <div class="sellcard">
-          <h4>Two places, fairly compared</h4>
+          <h4><span class="sellicon">📍</span>Two places, fairly compared</h4>
           <p>Each location gets its own calendar, so someone coming from across town can say yes to one and no to the other. You&rsquo;ll see which place wins.</p>
         </div>
         <div class="sellcard">
-          <h4>No account anyone will forget</h4>
+          <h4><span class="sellicon">🔑</span>No account anyone will forget</h4>
           <p>A name and a four-digit PIN. No email required, nothing to verify, no app to install. Works the same on a phone as on a laptop.</p>
         </div>
         <div class="sellcard">
-          <h4>Answers stay changeable</h4>
+          <h4><span class="sellicon">✏️</span>Answers stay changeable</h4>
           <p>Plans shift. Anyone can sign back in and update their times, and you can enter availability yourself for a space or someone who texted you theirs.</p>
         </div>
         <div class="sellcard">
-          <h4>Free, and quiet</h4>
+          <h4><span class="sellicon">🤫</span>Free, and quiet</h4>
           <p>No cost, no ads, no notifications you didn&rsquo;t ask for. Switch on an email alert only if you want to hear the moment someone updates.</p>
         </div>
       </div>
@@ -508,11 +513,11 @@
 
       <section class="section">
         <div class="shead"><h3>Your times</h3></div>
-        <div id="youLocSection" style="margin-bottom:18px">
+        <div class="locpick" id="youLocSection" style="margin-bottom:18px">
           <p class="qf-title" style="margin-bottom:10px">Choose location</p>
           <div class="tabs loc" id="locTabs" role="tablist"></div>
         </div>
-        <p class="legend" style="margin:0 0 14px"><i style="background:var(--propose)"></i> = opened by the coordinator. <i style="background:var(--you)"></i> = you can make it here. Hatched slots weren&rsquo;t proposed.</p>
+        <p class="legend" style="margin:0 0 14px"><i style="background:var(--you)"></i> = you can make it here. Hatched slots weren&rsquo;t proposed.</p>
         <div class="gridwrap" id="youGrid"></div>
         <div class="quickfill">
           <p class="qf-title">Quick fill options</p>
@@ -544,7 +549,7 @@
     <div id="groupPane">
       <h3 class="bigtitle">Everyone&rsquo;s answers</h3>
 
-      <section class="section">
+      <section class="section locpick">
         <div class="shead"><h3>Choose location</h3></div>
         <div class="tabs loc" id="locTabsG" role="tablist"></div>
       </section>
@@ -672,7 +677,7 @@
 
       <section class="section">
         <div class="shead"><h3 id="manualTimesTitle">Their times</h3></div>
-        <div style="margin-bottom:18px" id="manualLocPicker">
+        <div class="locpick" style="margin-bottom:18px" id="manualLocPicker">
           <p class="qf-title" style="margin-bottom:10px">Choose location</p>
           <div class="tabs loc" id="locTabsM" role="tablist"></div>
         </div>
@@ -773,16 +778,21 @@ const PIN_SUFFIX = '::ensemble-pin';
     for (let k = 0; k < n; k++) {
       const h = cfg.s + k*cfg.g/60;
       html += `<tr><th class="time">${cfg.g >= 1440 ? 'All day' : (h % 1 === 0 ? fmtHour(h) : '')}</th>`;
-      cfg.d.forEach((_, day) => {
-        const idx = day*n + k, offered = proposed ? proposed.has(idx) : false, na = proposed && !offered;
-        html += `<td class="${cls}${offered ? ' offered' : ''}${na ? ' na' : ''}" data-i="${idx}" data-day="${day}"></td>`;
-      });
+      cfg.d.forEach((_, day) => { const idx = day*n + k; const na = proposed && !proposed.has(idx); html += `<td class="${cls}${na ? ' na' : ''}" data-i="${idx}" data-day="${day}"></td>`; });
       html += '</tr>';
     }
     if (cfg.g < 1440) html += `<tr><th class="time">${fmtHour(cfg.e)}</th></tr>`;
     container.innerHTML = html + '</tbody></table>';
   }
-  const paintSet = (grid, set) => grid.querySelectorAll('td').forEach(td => td.classList.toggle('on', set.has(+td.dataset.i)));
+  const paintSet = (grid, set) => {
+    let withdrawn = 0;
+    grid.querySelectorAll('td').forEach(td => {
+      const on = set.has(+td.dataset.i);
+      td.classList.toggle('on', on);
+      if (on && td.classList.contains('na')) withdrawn++;
+    });
+    return withdrawn;
+  };
 
   let paintMode = !coarse;
   function makePainter(grid, getSet, canPaint) {
@@ -890,8 +900,9 @@ const PIN_SUFFIX = '::ensemble-pin';
 
   /* ---------- routing ---------- */
   let eventId = null, plan = null, responses = [], channel = null;
-  let showAccount = false, justCreated = false, curTab = 'group', loc = 0, mine = {}, myNote = '', myNoteAt = null, dirty = false, editing = false, creating = false, isOwner = false;
+  let showAccount = false, justCreated = false, curTab = 'group', loc = 0, mine = {}, myAnchors = null, myNote = '', myNoteAt = null, dirty = false, editing = false, creating = false, isOwner = false;
   let selected = null; // Set of user_ids being viewed, null = everyone
+  const stopPolling = () => { clearInterval(pollTimer); pollTimer = null; };
   let inviteToken = null, pendingDelegate = null, myInvites = [], hostInvites = [], delegate = null;
   let cohostToken = null, coHosts = [], cohostInvites = [], isPrimary = false;
   const MAXCOHOSTS = 4;
@@ -900,7 +911,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   async function render() {
     route();
     const show = id => ['#signin','#dash','#home','#plan'].forEach(s => $(s).classList.toggle('hidden', s !== id));
-    if (!eventId || !user) { $('#savebar').classList.remove('on'); document.body.classList.remove('hasbar'); }
+    if (!eventId || !user) { $('#savebar').classList.remove('on'); document.body.classList.remove('hasbar'); stopPolling(); }
     if (!user) { $('#signinTitle').textContent = cohostToken ? 'Sign in to join as a co-host' : inviteToken ? 'Sign in to add availability for the host' : eventId ? 'Sign in to mark your availability' : 'Sign in to create an event'; show('#signin'); $('#paintbar').classList.remove('avail'); return; }
     if (editing) { show('#home'); $('#paintbar').classList.add('avail'); return; }
     if (creating) { show('#home'); $('#paintbar').classList.add('avail'); startCreate(); return; }
@@ -924,6 +935,8 @@ const PIN_SUFFIX = '::ensemble-pin';
   /* ---------- dashboard ---------- */
   const fmtStamp = iso => { if (!iso) return null; const d = new Date(iso); return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' at ' + d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); };
   const lastSeenKey = id => 'ens_seen_' + id;
+  const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
   const eventEnd = ev => new Date(ev.config.d.at(-1) + 'T23:59');
   let dashRows = [];
 
@@ -934,7 +947,8 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#eventsBlock').classList.toggle('hidden', showAccount);
     window.scrollTo(0, 0);
     $('#evlist').innerHTML = '<p class="empty">Loading…</p>';
-    const { data: mineR } = await sb.from('responses').select('event_id,updated_at,dismissed').eq('user_id', user.id);
+    const { data: mineR, error: dashErr } = await sb.from('responses').select('event_id,updated_at,dismissed').eq('user_id', user.id);
+    if (dashErr) { $('#evlist').innerHTML = '<p class="cap">Couldn\'t load your events — check your connection and try again.</p>'; return; }
     const dismissed = new Set((mineR || []).filter(r => r.dismissed).map(r => r.event_id));
     const { data: invR } = await sb.from('manual_invites').select('event_id,entry_id,loc').eq('editor', user.id);
     const ids = [...new Set([...(mineR || []).filter(r => !r.dismissed).map(r => r.event_id), ...(invR || []).map(r => r.event_id).filter(id => !dismissed.has(id))])];
@@ -953,7 +967,7 @@ const PIN_SUFFIX = '::ensemble-pin';
       const rs = (allR || []).filter(r => r.event_id === ev.id);
       const own = rs.find(r => r.user_id === user.id);
       const others = rs.filter(r => r.user_id !== user.id).sort((a,b) => (b.updated_at||'').localeCompare(a.updated_at||''));
-      const lastSeen = localStorage.getItem(lastSeenKey(ev.id)) || '';
+      const lastSeen = lsGet(lastSeenKey(ev.id)) || '';
       const fresh = others.filter(r => (r.updated_at||'') > lastSeen).length;
       const managing = (invR || []).filter(i => i.event_id === ev.id).map(i => (ev.config.manual || []).find(m => m.id === i.entry_id)?.name).filter(Boolean);
       return { ev, mineAt: own?.updated_at, hasOwn: !!own, other: others[0], others: others.length, fresh, past: eventEnd(ev) < new Date(), host: ev.owner === user.id || coIds.has(ev.id), primary: ev.owner === user.id, managing: [...new Set(managing)] };
@@ -996,7 +1010,7 @@ const PIN_SUFFIX = '::ensemble-pin';
         : `Remove “${row.ev.title}” from your list? Your answers stay with the coordinator.`;
     if (!confirm(msg)) return;
     const { error } = row.primary ? await sb.from('events').delete().eq('id', id) : await leaveEvent(row);
-    if (error) return toast(error.message);
+    if (error) return toast("Couldn't remove that: " + error.message);
     toast(row.primary ? 'Event deleted' : row.host ? 'You’ve stepped down as co-host' : 'Removed from your list');
     loadDash();
   }
@@ -1004,11 +1018,13 @@ const PIN_SUFFIX = '::ensemble-pin';
     const past = dashRows.filter(r => r.past);
     if (!past.length) return;
     if (!confirm(`Remove ${past.length} past event${past.length > 1 ? 's' : ''}? Ones you created will be deleted for everyone; ones you co-host you'll step down from.`)) return;
+    let failed = 0;
     for (const r of past) {
-      if (r.primary) await sb.from('events').delete().eq('id', r.ev.id);
-      else await leaveEvent(r);
+      const { error } = r.primary ? await sb.from('events').delete().eq('id', r.ev.id) : await leaveEvent(r);
+      if (error) failed++;
     }
-    toast('Past events removed'); loadDash();
+    toast(failed ? `${past.length - failed} removed, ${failed} couldn't be` : 'Past events removed');
+    loadDash();
   };
   async function leaveEvent(row) {
     if (row.host) { const { error } = await sb.from('event_admins').delete().eq('event_id', row.ev.id).eq('user_id', user.id); if (error) return { error }; }
@@ -1106,9 +1122,11 @@ const PIN_SUFFIX = '::ensemble-pin';
     locCount = 2; renderLocFields(null); proposed = [new Set(), new Set()]; pLoc = 0;
     renderProposeTabs(); rebuildGridOnly();
   }
+  let editBase = null;
   function startEdit() {
     editing = true;
     const c = plan.config;
+    editBase = JSON.parse(JSON.stringify(c));
     $('#createIntro').classList.add('hidden'); $('#editIntro').classList.remove('hidden');
     $('#createBtn').textContent = 'Save changes'; $('#cancelEdit').classList.remove('hidden'); $('#dangerZone').classList.toggle('hidden', !isPrimary); $('#addDaysSection').classList.remove('hidden');
     $('#title').value = plan.title;
@@ -1126,9 +1144,11 @@ const PIN_SUFFIX = '::ensemble-pin';
     buildGrid($('#proposeGrid'), draft, null); setPaintMode(paintMode); paintSet($('#proposeGrid'), proposed[pLoc]); updateCreate();
   }
   $('#deleteEvent').onclick = async () => {
-    if (!plan || !isPrimary) return;
+    if (!plan || !isPrimary || $('#deleteEvent').disabled) return;
     if (!confirm(`Delete “${plan.title}” for everyone? This removes the event and all its answers permanently.`)) return;
+    $('#deleteEvent').disabled = true;
     const { error } = await sb.from('events').delete().eq('id', eventId);
+    $('#deleteEvent').disabled = false;
     if (error) return toast(error.message);
     editing = false; dirty = false; location.hash = ''; render(); toast('Event deleted');
   };
@@ -1139,11 +1159,42 @@ const PIN_SUFFIX = '::ensemble-pin';
     const config = { ...draft, locations: names.map((name, i) => ({ name, proposed: [...(proposed[i] || [])].sort((a,b)=>a-b) })) };
     const title = $('#title').value.trim() || 'Untitled event';
     $('#createBtn').disabled = true;
-    if (editing) {
+    if (editing && editBase) {
+      const axisMoved = editBase.s !== config.s || editBase.e !== config.e
+        || editBase.g !== config.g || editBase.d[0] !== config.d[0];
+      const answered = responses.filter(r => Object.values(r.availability || {}).some(a => a.length)).length;
+      if (axisMoved) {
+        // keep the parts we're allowed to rewrite pointing at the same real times
+        config.locations = config.locations.map((l, i) => ({
+          ...l, proposed: remapSlots(editBase, config, [...(proposed[i] || [])])
+        }));
+        if (Array.isArray(config.manual)) config.manual = config.manual.map(m => {
+          const av = {};
+          Object.keys(m.availability || {}).forEach(k => { av[k] = remapSlots(editBase, config, m.availability[k]); });
+          return { ...m, availability: av };
+        });
+      }
       const { error } = await sb.from('events').update({ title, config }).eq('id', eventId);
       $('#createBtn').disabled = false;
       if (error) return toast('Could not save: ' + error.message);
-      editing = false; render(); toast('Event updated');
+
+      if (axisMoved) {
+        // Rebuild positions from each answer's real dates and times. Anything that
+        // doesn't fit the new grid stays recorded and returns if the grid grows again.
+        const n = config.g >= 1440 ? 1 : (config.e - config.s) * 60 / config.g;
+        const map = {};
+        config.d.forEach((date, day) => {
+          for (let k = 0; k < n; k++) {
+            const hour = config.s + k * config.g / 60;
+            map[date + 'T' + hour] = day * n + k;
+          }
+        });
+        const { error: rErr } = await sb.rpc('rebuild_event_slots', { p_event: eventId, p_map: map });
+        if (rErr) toast('Times saved, but answers could not be rebuilt: ' + rErr.message);
+        else toast(`Event updated — everyone's times kept their real dates and hours`);
+      }
+      editing = false; render();
+      if (!axisMoved) toast('Event updated');
     } else {
       const { data, error } = await sb.from('events').insert({ owner: user.id, title, config }).select('id').single();
       if (error) { toast('Could not create event: ' + error.message); $('#createBtn').disabled = false; return; }
@@ -1151,6 +1202,28 @@ const PIN_SUFFIX = '::ensemble-pin';
       toast('Event created — copy the invite link to share it');
     }
   };
+
+  // A saved answer is a position on the grid, so moving the grid's axis silently
+  // changes what every answer means. These let us translate between the two.
+  const slotToMoment = (cfg, idx) => {
+    const n = cfg.g >= 1440 ? 1 : (cfg.e - cfg.s) * 60 / cfg.g;
+    const day = Math.floor(idx / n), k = idx % n;
+    if (!cfg.d[day]) return null;
+    return { date: cfg.d[day], hour: cfg.s + k * cfg.g / 60 };
+  };
+  const momentToSlot = (cfg, mo) => {
+    if (!mo) return null;
+    const n = cfg.g >= 1440 ? 1 : (cfg.e - cfg.s) * 60 / cfg.g;
+    const day = cfg.d.indexOf(mo.date);
+    if (day < 0) return null;
+    if (cfg.g >= 1440) return day;
+    const k = (mo.hour - cfg.s) * 60 / cfg.g;
+    if (k < 0 || k >= n || k % 1 !== 0) return null;   // that time no longer exists on the grid
+    return day * n + k;
+  };
+  const remapSlots = (oldCfg, newCfg, idxs) =>
+    [...new Set((idxs || []).map(i => momentToSlot(newCfg, slotToMoment(oldCfg, i))).filter(i => i !== null))]
+      .sort((a, b) => a - b);
 
   /* ---------- event ---------- */
   let loadSeq = 0;
@@ -1162,10 +1235,17 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (error || !ev) { $('#plan').innerHTML = '<p class="empty">That event link doesn\'t exist any more.</p>'; return; }
     plan = ev; if (loc >= plan.config.locations.length) loc = 0;
     const isOwnerOf = e => e.owner === user.id;
-    const { data: rs } = await sb.from('responses').select('*').eq('event_id', eventId).order('name');
-    responses = rs || [];
+    const { data: rs, error: rsErr } = await sb.from('responses').select('*').eq('event_id', eventId).order('name');
+    if (rsErr) { toast("Couldn't load everyone's answers — check your connection"); }
+    responses = rsErr ? responses : (rs || []);
     const own = responses.find(r => r.user_id === user.id);
-    mine = {}; plan.config.locations.forEach((_, i) => mine[i] = new Set(own?.availability?.[i] || []));
+    mine = {};
+    myAnchors = (own?.anchors && Object.keys(own.anchors).length) ? own.anchors : null;
+    const restored = myAnchors ? fromAnchors(plan.config, myAnchors) : null;
+    plan.config.locations.forEach((_, i) => {
+      // real dates and times win whenever we have them; positions are only for older answers
+      mine[i] = new Set(restored ? (restored[i] || []) : (own?.availability?.[i] || []));
+    });
     const firstVisit = isOwnerOf(ev) && !own; // primary only
     if (firstVisit) { plan.config.locations.forEach((l, i) => mine[i] = new Set(l.proposed)); }
     myNote = own?.note || ''; myNoteAt = own?.note_at || null; $('#noteBox').value = myNote;
@@ -1187,7 +1267,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#newBtn2').textContent = isOwner ? 'Create a new event' : 'Create a new event';
     $('#copyBtn').classList.toggle('hidden', !isOwner);
     $('#paintbar').classList.add('avail');
-    if (isOwner) localStorage.setItem(lastSeenKey(eventId), new Date().toISOString());
+    if (isOwner) lsSet(lastSeenKey(eventId), new Date().toISOString());
     dirty = false;
     renderNote();
     renderSaveBar();
@@ -1213,18 +1293,64 @@ const PIN_SUFFIX = '::ensemble-pin';
     }, 50);
     subscribe();
   }
+  let liveOk = false, pollTimer = null, refreshing = false;
+
+  // Pull the latest answers without disturbing anything the person is part-way through editing.
+  async function refreshData(reason) {
+    if (!plan || !eventId || refreshing) return;
+    if (editing || creating) return;                       // mid-edit of the event itself
+    if (curTab === 'manual' && typeof manualDirty === 'function' && manualDirty()) return;
+    refreshing = true;
+    try {
+      const [{ data: ev }, { data: rs, error: rsErr }] = await Promise.all([
+        sb.from('events').select('*').eq('id', eventId).single(),
+        sb.from('responses').select('*').eq('event_id', eventId).order('name')
+      ]);
+      if (!ev || rsErr) return;   // a hiccup shouldn't wipe what's already on screen
+      const gridChanged = JSON.stringify(ev.config?.d) !== JSON.stringify(plan.config?.d)
+        || JSON.stringify(ev.config?.locations?.map(l => l.proposed)) !== JSON.stringify(plan.config?.locations?.map(l => l.proposed));
+      plan = ev;
+      responses = rs || [];
+      // a location may have been removed since this page loaded
+      if (loc >= (plan.config.locations || []).length) { loc = 0; renderGrids(); }
+      renderLocTabs(); renderMeta(); renderManaging();
+      if (curTab === 'manual') loadManual(delegate ? delegate.entry_id : mEntry ? mEntry.id : '');
+      // never redraw the grid under someone mid-edit — it would wipe their unsaved marks
+      if (gridChanged && !dirty) renderGrids(); else paintHeat();
+      markFresh();
+      lsSet(lastSeenKey(eventId), new Date().toISOString());
+    } catch (e) { /* offline or asleep — the next tick will try again */ }
+    finally { refreshing = false; }
+  }
+  function markFresh() {
+    const el = $('#live');
+    if (!el) return;
+    el.style.opacity = 1;
+    el.innerHTML = `<i></i>Updated ${new Date().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}`;
+    el.title = 'Tap to refresh now';
+  }
   function subscribe() {
     if (channel) sb.removeChannel(channel);
     channel = sb.channel('event-' + eventId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'responses', filter: 'event_id=eq.' + eventId }, async () => {
-        const before = new Map(responses.map(r => [r.user_id, r.updated_at]));
-        const { data } = await sb.from('responses').select('*').eq('event_id', eventId).order('name');
-        responses = data || []; paintHeat();
-        localStorage.setItem(lastSeenKey(eventId), new Date().toISOString());
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'events', filter: 'id=eq.' + eventId }, p => { const clean = curTab === 'manual' && !manualDirty(); plan = p.new; renderLocTabs(); renderMeta(); renderGrids(); renderManaging(); if (clean) loadManual(mEntry ? mEntry.id : ''); })
-      .subscribe(status => $('#live').style.opacity = status === 'SUBSCRIBED' ? 1 : .4);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'responses', filter: 'event_id=eq.' + eventId }, () => refreshData('realtime'))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'events', filter: 'id=eq.' + eventId }, () => refreshData('event-change'))
+      .subscribe(status => {
+        liveOk = status === 'SUBSCRIBED';
+        if (!liveOk) $('#live').style.opacity = .4;
+      });
+
+    // belt and braces: realtime sockets die quietly when a phone sleeps
+    clearInterval(pollTimer);
+    pollTimer = setInterval(() => { if (!document.hidden) refreshData('poll'); }, 45000);
   }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden || !plan) return;
+    refreshData('visible');
+    if (!liveOk) subscribe();   // reconnect a socket that died while backgrounded
+  });
+  window.addEventListener('focus', () => { if (plan) refreshData('focus'); });
+  window.addEventListener('online', () => { if (plan) { refreshData('online'); subscribe(); } });
+  document.addEventListener('click', e => { if (e.target.closest('#live')) refreshData('manual-tap'); });
   const locs = () => plan.config.locations;
   const manuals = () => (plan.config.manual ||= []);
   const manualRows = () => manuals().map(m => ({ user_id: 'm:' + m.id, name: m.name, availability: m.availability || {}, note: m.note || '', note_at: m.updated_at, updated_at: m.updated_at, manual: true }));
@@ -1234,13 +1360,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     ['#locTabs','#locTabsG','#locTabsM'].forEach(sel => {
       const el = $(sel); if (!el) return;
       el.innerHTML = html;
-      const oneLocation = locs().length < 2;
-      const locationPicker = sel === '#locTabs'
-        ? $('#youLocSection')
-        : sel === '#locTabsG'
-          ? el.closest('.section')
-          : el.parentElement;
-      locationPicker?.classList.toggle('hidden', oneLocation || (sel === '#locTabsM' && !!delegate));
+      el.closest('.locpick')?.classList.toggle('hidden', locs().length < 2 || (sel === '#locTabsM' && !!delegate));
       el.querySelectorAll('button').forEach(b => b.onclick = () => { loc = +b.dataset.i; renderLocTabs(); renderGrids(); if (!$('#manualPane').classList.contains('hidden')) renderManualGrid(); });
     });
     const multi = locs().length > 1;
@@ -1255,14 +1375,19 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#closeBtn').textContent = plan.closed ? 'Reopen event' : 'Close event';
   }
   function renderGrids() {
-    const pset = new Set(locs()[loc].proposed);
+    if (!plan || !locs().length) return;
+    if (loc >= locs().length) loc = 0;
+    const pset = new Set(locs()[loc].proposed || []);
     buildGrid($('#youGrid'), plan.config, pset); buildGrid($('#groupGrid'), plan.config, pset);
-    setPaintMode(paintMode); paintSet($('#youGrid'), mine[loc] ||= new Set()); paintHeat();
+    setPaintMode(paintMode);
+    paintSet($('#youGrid'), mine[loc] ||= new Set());
+    paintHeat();
   }
   makePainter($('#youGrid'), () => mine[loc] ||= new Set(), () => { if (plan.closed) { toast('This event is closed to changes'); return false; } return true; });
   $('#youGrid').addEventListener('painted', markDirty);
   $('#copyMine').onclick = () => {
     const o = +$('#copyMineTo').value;
+    if (!locs()[o] || !locs()[loc]) return toast('That location has changed — reload to see the latest');
     mine[o] = new Set([...mine[loc]].filter(i => locs()[o].proposed.includes(i)));
     markDirty(); toast(`Copied to ${locs()[o].name} — only times proposed there`);
   };
@@ -1312,9 +1437,39 @@ const PIN_SUFFIX = '::ensemble-pin';
     e.returnValue = 'Are you sure you want to close this page without saving your changes?';
     return e.returnValue;
   });
+  // Slot positions shift when the grid changes; real dates and times never do.
+  // We save both, so an answer can always be rebuilt even if its position disappears.
+  const toAnchors = (cfg, byLoc) => {
+    const out = {};
+    Object.keys(byLoc).forEach(k => {
+      out[k] = [...byLoc[k]].map(i => slotToMoment(cfg, i)).filter(Boolean).map(mo => mo.date + 'T' + mo.hour);
+    });
+    return out;
+  };
+  const fromAnchors = (cfg, anchors) => {
+    const out = {};
+    Object.keys(anchors || {}).forEach(k => {
+      out[k] = (anchors[k] || []).map(a => {
+        const [date, hour] = a.split('T');
+        return momentToSlot(cfg, { date, hour: parseFloat(hour) });
+      }).filter(i => i !== null);
+    });
+    return out;
+  };
+
   async function saveMine() {
     const availability = {}; Object.keys(mine).forEach(k => availability[k] = [...mine[k]].sort((a,b)=>a-b));
-    const { error } = await sb.from('responses').upsert({ event_id: eventId, user_id: user.id, name: profileName || 'Someone', availability, note: myNote, note_at: myNoteAt, updated_at: new Date().toISOString() }, { onConflict: 'event_id,user_id' });
+    const anchors = toAnchors(plan.config, mine);
+    // Times that don't fit the current grid aren't on screen, so they aren't in `mine`.
+    // Carry them through untouched, or saving would quietly delete them.
+    Object.keys(myAnchors || {}).forEach(k => {
+      const offGrid = (myAnchors[k] || []).filter(a => {
+        const [date, hour] = a.split('T');
+        return momentToSlot(plan.config, { date, hour: parseFloat(hour) }) === null;
+      });
+      if (offGrid.length) anchors[k] = [...new Set([...(anchors[k] || []), ...offGrid])];
+    });
+    const { error } = await sb.from('responses').upsert({ event_id: eventId, user_id: user.id, name: profileName || 'Someone', availability, anchors, note: myNote, note_at: myNoteAt, updated_at: new Date().toISOString() }, { onConflict: 'event_id,user_id' });
     if (error) { $('#saveState').textContent = 'Not saved — ' + error.message; $('#saveState').classList.add('dirty'); }
     return error;
   }
@@ -1346,7 +1501,11 @@ const PIN_SUFFIX = '::ensemble-pin';
     const view = shown(), max = view.length || 1;
     const per = locs().map((l, li) => {
       const counts = {}, names = {};
-      view.forEach(r => (r.availability?.[li] || []).forEach(i => { counts[i] = (counts[i]||0)+1; (names[i] ||= []).push(r.name); }));
+      const offered = new Set(l.proposed || []);
+      view.forEach(r => (r.availability?.[li] || []).forEach(i => {
+        if (!offered.has(i)) return;          // withdrawn by the organiser: kept, but not counted
+        counts[i] = (counts[i]||0)+1; (names[i] ||= []).push(r.name);
+      }));
       return { counts, names };
     });
     const cur = per[loc] || { counts:{}, names:{} };
@@ -1354,6 +1513,7 @@ const PIN_SUFFIX = '::ensemble-pin';
       const c = cur.counts[td.dataset.i] || 0;
       td.classList.remove('l1','l2','l3','l4'); if (c) td.classList.add('l' + Math.max(1, Math.ceil(c / max * 4)));
       td.dataset.c = c; td.dataset.names = (cur.names[td.dataset.i] || []).join(', ');
+      td.textContent = c ? c : '';
     });
     // Merge consecutive equally-attended slots into ranges (9–10, 9–12 …)
     const n = spd(plan.config);
@@ -1407,6 +1567,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     const i = +td.dataset.i, view = shown();
     const free = view.filter(r => (r.availability?.[loc] || []).includes(i)).map(r => r.name);
     const busy = view.filter(r => !(r.availability?.[loc] || []).includes(i)).map(r => r.name);
+    if (!locs()[loc]) return;
     $('#who').innerHTML = `<b>${slotLabel(plan.config, i)} · ${esc(locs()[loc].name)}</b>`
       + (free.length ? `<ul class="free">${free.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '<span class="none">Nobody here yet.</span>')
       + (busy.length ? `<p class="miss">Can't make it: ${esc(busy.join(', '))}</p>` : '');
@@ -1883,7 +2044,9 @@ const PIN_SUFFIX = '::ensemble-pin';
     applyManualMode();
   }
   function renderManualGrid() {
-    buildGrid($('#manualGrid'), plan.config, new Set(locs()[loc].proposed));
+    if (!plan || !locs().length) return;
+    if (loc >= locs().length) loc = 0;
+    buildGrid($('#manualGrid'), plan.config, new Set(locs()[loc].proposed || []));
     setPaintMode(paintMode); paintSet($('#manualGrid'), mSel[loc] ||= new Set());
   }
   makePainter($('#manualGrid'), () => mSel[loc] ||= new Set(), () => { if (delegate && plan.closed) { toast('This event is closed to changes'); return false; } return true; });
@@ -1928,13 +2091,16 @@ const PIN_SUFFIX = '::ensemble-pin';
   }
   $('#manualCopy').onclick = () => {
     const o = +$('#manualCopyTo').value;
+    if (!locs()[o] || !locs()[loc]) return toast('That location has changed — reload to see the latest');
     mSel[o] = new Set([...mSel[loc]].filter(i => locs()[o].proposed.includes(i)));
     toast(`Copied to ${locs()[o].name} — only times proposed there`);
   };
-  $('#manualAll').onclick = () => { mSel[loc] = new Set(locs()[loc].proposed); paintSet($('#manualGrid'), mSel[loc]); };
+  $('#manualAll').onclick = () => { if (!locs()[loc]) return; mSel[loc] = new Set(locs()[loc].proposed || []); paintSet($('#manualGrid'), mSel[loc]); };
   $('#manualClear').onclick = () => { mSel[loc].clear(); paintSet($('#manualGrid'), mSel[loc]); };
   $('#manualSave').onclick = () => saveManual();
+  let savingManual = false;
   async function saveManual() {
+    if (savingManual) return false;
     if (delegate) {
       const slots = [...(mSel[delegate.loc] || [])].sort((a,b)=>a-b);
       $('#manualState').textContent = 'Saving…';
@@ -1949,6 +2115,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     }
     const name = $('#manualName').value.trim();
     if (!name) { toast('Give this entry a name so you know whose times these are'); return false; }
+    savingManual = true; $('#manualSave').disabled = true;
     const availability = {}; Object.keys(mSel).forEach(k => availability[k] = [...mSel[k]].sort((a,b)=>a-b));
     const list = manuals();
     const note = $('#manualNote').value.trim();
@@ -1959,6 +2126,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#manualState').textContent = 'Saving…';
     const { error } = await sb.from('events').update({ config: plan.config }).eq('id', eventId);
     $('#manualState').textContent = error ? 'Not saved — ' + error.message : 'Saved';
+    savingManual = false; $('#manualSave').disabled = false;
     if (!error) {
       // log it like a real response so it appears in the change history
       sb.from('revisions').insert({ event_id: eventId, user_id: null, name: name + ' (added by you)', availability, note }).then(() => {});
