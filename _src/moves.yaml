@@ -50,27 +50,44 @@ works:
       - { file: corina-concert-1.jpg, alt: "Rehearsal in the studio" }
     notes: "cast list missing; second photo set (Denise Leitner or SAL — strong images, e.g. untitled 83, 89, 99) left out until the credit is confirmed; music not cleared so no video"
 
-  - slug: temps-oublie
-    title: Temps Oublié
-    subtitle: Forgotten Time
+  - slug: forgotten-time
+    title: Forgotten Time
+    subtitle: Temps oublié — a work in progress
     year: 2025
-    kind: Residency & performance
-    role: Choreography and direction
-    venue: Centre national de la danse
-    place: Pantin, Paris
-    when: May–June 2025
+    kind: Work in progress
+    role: Concept, choreography and direction
+    venue: Odyssey Theatre
+    place: Los Angeles
+    when: June–July 2025
     summary: >-
-      A new work developed in a creation residency at the Centre national de la danse in Pantin,
-      May 2025, with dancer Matthew Van Oss, and shown in a performance and filmed recording in
-      June 2025.
-    body: []
+      A work in progress about time and how we remember it — made in Paris in June 2025 during a
+      creation residency at the Centre national de la danse, then shown at the Odyssey Theatre in
+      Los Angeles on 6 July 2025, closing the summer edition of Dance at the Odyssey.
+    body:
+      - >-
+        Forgotten Time continues the research Corina began with Lost Time: how we perceive time,
+        and what becomes of it in memory. Its subject is the moments we forget, big and small —
+        sometimes painful, sometimes beautiful — and it draws on dance theatre so that the audience
+        sees each dancer as a person, moving, feeling and dancing.
+      - >-
+        Four dancers who made the piece in Paris travelled to Los Angeles, where dancers from the
+        city joined them for four days of rehearsal before the show. The company danced in their
+        own earth-toned clothes, socks and tennis shoes, with beige trench coats, to an original
+        score by M. Bronx. The evening was a shared bill with Jordan Saenz's duet The Shadow Poems.
+    quote:
+      text: "Our forgotten moments, big and small. Sometimes painful, sometimes beautiful."
+      cite: "Corina Kinnear, inviting dancers into the work, May 2025"
     credits:
-      - [Choreography and direction, Corina Kinnear]
-      - [Dancer, Matthew Van Oss]
-      - [Residency, "Centre national de la danse (CND), Pantin — May 2025"]
+      - ["Concept, choreography and direction", Corina Kinnear]
+      - [Dancers, "Lola Arnaud, Steph Baer, Stephanie Dai, Ann Glaviano, Yoko Hasebe, Magnolia Machado, Maiko Okajima, Matthew Van Oss, Sadie Yarrington"]
+      - [Original music, M. Bronx]
+      - [Filmed by, Josh Rose]
+      - [Residency, "Centre national de la danse (CND), Pantin — June 2025"]
+      - [Shown, "Odyssey Theatre, Los Angeles — 6 July 2025, Dance at the Odyssey"]
+    press:
+      - { date: "1 July 2025", outlet: "LA Dance Chronicle", what: "preview by Ann Haskins in “Festive Finales”", url: "https://www.ladancechronicle.com/festive-finales/" }
     images: []
-    list_only: true
-    notes: "no images or recording in Dropbox yet; composer unknown"
+    notes: "from Cori's emails (invitation 31 May 2025, logistics 29 Jun, credits sent to LA Dance Chronicle 10 Jul) and the CND attestation. CONFIRM: residency month (program says June; the Oct 2025 attestation says May at CND with the showing and captation in June); spelling Matthew Van Oss (attestation) vs 'Mathew Van Os' (her email); Sadie vs Sarah Yarrington (Ocean12 cast list). Images: the tech-filming screenshots by Josh Rose were emailed to Jeff Slayton 10 Jul 2025 — not in Dropbox; ask Cori for them or for Josh's film. Jeff Slayton's review: not found online yet. Don't publish the phone number in the CND letter."
 
   - slug: lost-time
     title: Lost Time
@@ -109,25 +126,53 @@ works:
       - { file: img-8441.jpg, alt: "A dancer turning in red light" }
       - { file: trailer-0029s.jpg, alt: "The ensemble linked in a chain" }
       - { file: screen-shot-2025-05-06-at-12-49-57-am.jpg, alt: "Dancers crowding together with clocks" }
-      - { file: img-7364.jpg, alt: "Three frames of a dancer against red" }
     notes: "trailer self-hosted (re-encoded 720p); full film (65 MB) in Dropbox; composer and cast unnamed; wardrobe 'Stevy' needs a surname; stills are from the film and phone photos — credit unknown"
 
   - slug: ocean-12
-    title: Ocean 12
+    title: Ocean12
+    subtitle: A dance happening on Santa Monica Beach
     year: 2020
-    kind: Site-specific production
-    role: Choreography and direction
+    kind: Site-specific happening
+    role: Concept, direction and choreography
     venue: Santa Monica Beach
     place: Santa Monica
-    when: September–October 2020
+    when: September–November 2020
     summary: >-
-      An outdoor production made for the beach at Santa Monica in the autumn of 2020, performed
-      across seven evenings in September and October.
-    body: []
+      In the autumn of 2020, when theatres were dark and gatherings were off-limits, Corina
+      Kinnear made a dance for the sand. Ocean12 was billed not as an event but as “a happening
+      that you may happen to be at while it is taking place.”
+    body:
+      - >-
+        Audiences RSVP'd online, were sent the exact spot two days ahead, and walked out in the
+        dark to Lifeguard Tower 29 near South Beach Park. Safety came first, so that the escape
+        could feel real: everyone wore masks, and yellow flags in the sand marked where each group
+        sat, spaced apart from one another and from the dancers. The score went out over FM radio
+        to a basket of radios with earbuds, so the music lived in each listener's ears while the
+        beach stayed quiet. The piece ran about thirty minutes. Afterwards, the invitation said,
+        “we respectfully ask you get lost.”
+      - >-
+        The dance was built for distance from the start. Corina rehearsed with each artist
+        one-on-one on the beach; the first time the company stood together as a group was the
+        first performance. What began as three shows grew to five, with fifty to sixty people at
+        each.
+    quote:
+      text: "A happening, somewhere on the beaches of Santa Monica, close to midnight, that happens to have dancers."
+      cite: "Andrew Pearson, DancePlug, December 2020"
+      url: "https://www.danceplug.com/article/sharing-time-in-2020-a-retrospective-in-dance"
     credits:
-      - [Choreography and direction, Corina Kinnear]
-      - [Performances, "Santa Monica Beach — September and October 2020"]
-    photo_credit: "Frames from the performance footage, filmed on Santa Monica Beach, 10 September 2020"
+      - ["Concept, direction and choreography", Corina Kinnear]
+      - [Dancers, "Amanda Masongsong, Hyosun Choi, Reshma Gajjar, Genevieve Zander, Sarah Yarrington, Roger Gonzalez Hibner, Alina Cutrono, Li Rothermich, Amanda MacLeod, Rachel Whiting, Luciana Johnson, Addie Lewis, Ryan Ruiz, Evan Swenson"]
+      - [Where, "Lifeguard Tower 29, near South Beach Park, Santa Monica"]
+    performances:
+      - ["12 September 2020", "11 pm — premiere"]
+      - ["26 September 2020", "11 pm"]
+      - ["3 October 2020", "11 pm"]
+      - ["10 October 2020", "9 pm"]
+      - ["28 November 2020", "7 pm — the final happening"]
+    performances_note: "All on Saturday nights. A show announced for 24 October moved to 28 November."
+    press:
+      - { date: "December 2020", outlet: "DancePlug", what: "“Sharing Time in 2020: A Retrospective in Dance” by Andrew Pearson", url: "https://www.danceplug.com/article/sharing-time-in-2020-a-retrospective-in-dance" }
+    photo_credit: "Frames from camera footage filmed on Santa Monica Beach, 10 September 2020"
     card: ocean-12-c007-034s.jpg   # the image on the Works cards (default: the first image)
     images:
       - { file: ocean-12-c013-018s.jpg, alt: "Three dancers in white on the night beach, a pale blue screen standing in the sand" }
@@ -143,7 +188,7 @@ works:
       - { file: ocean-12-c007-050s.jpg, alt: "A dancer facing the camera in a wide second position" }
       - { file: ocean-12-c016-168s.jpg, alt: "A high knee on the lit sand" }
       - { file: ocean-12-c016-144s.jpg, alt: "A dancer kicking low across the sand" }
-    notes: "frames grabbed from four of the twelve camera clips (C007, C011, C013, C016) filmed by 'SS' on 10 Sep 2020 — who owns the footage and the camera operator's name still to confirm; cast and music unknown"
+    notes: "text from Cori's doc 'Ocean12 and naked. — website pages' (27 Oct 2026). Made with twelve artists; fourteen names across the run (2 Dec 2020 cast email). Music and photography credits still to add; frames grabbed from camera clips C007, C011, C013, C016 filmed by 'SS' on 10 Sep 2020 (two days before the premiere) — owner of the footage to confirm. LA Dance Chronicle and Cultural Weekly were invited in Oct 2020; no review found. The Ocean12 photos sent to DancePlug in Dec 2020 are not in Dropbox."
 
   - slug: i-am-here
     section: events
@@ -184,37 +229,71 @@ works:
     year: 2018
     kind: Production — 17 performances
     role: Direction and choreography
-    venue: Odyssey Dance Festival · Pico Union Project
+    venue: Odyssey Theatre Dance Festival · Pico Union Project
     place: Los Angeles
     when: February–March 2018
     summary: >-
-      How are we supposed to look? NAKED premiered at the Odyssey Dance Festival on 8 and 9
-      February 2018 and ran for fifteen further evenings at the Pico Union Project in downtown
-      Los Angeles. At its centre is a thirty-minute contemporary dance for five performers of
-      differing sexes, races and ages — from 23 to 73 — performed entirely in the nude, as a way
-      of looking at non-sexualised nakedness.
+      How are we supposed to look? NAKED was an evening of art about nakedness — what it means to
+      see a body, and what we bring to the looking. At its centre is a thirty-minute contemporary
+      dance for five dancers of different sexes, races and ages, from 23 to 73, performed entirely
+      nude: a way of exploring non-sexualised nudity and of letting each audience member meet it
+      through their own life, without being told what to expect.
     body:
       - >-
-        Each evening was built as a happening in four parts: an exhibition of work by guest
-        artists at eight, the dance at half past, then an experiment in which the audience was
-        asked about its own perceptions and experience of nakedness, and finally a stripped-down,
-        unplugged set by a different Los Angeles band.
+        Around the dance, the evening moved through four parts. In naked art, guests entered a
+        space transformed by Gina Teichert's installation, with illustrations by C. W. Moss and
+        photography by Lilly Lawrence and by Andrew Grace (Second Mirror). Then came naked dance,
+        to an original score by SILENTSHOUT. In naked talk, on the upstairs balcony, Corina asked
+        the audience about their own perceptions of and experiences with nakedness. And each
+        night closed with naked music: a stripped-down, unplugged set by a different Los Angeles
+        indie band.
       - >-
-        Guest artists included the visual artist Gina Teichert, the illustrator C.W. Moss, the
-        photographer Lilly Lawrence, the sound artists SILENTSHOUT and, in the photography exhibit
-        Second Mirror, Andrew Grace. The bands included Whispertown, The Mynabirds, The Love
-        Language, Russian Red and BLONDFIRE.
+        The dance premiered at the Odyssey Theatre Dance Festival on 8 and 9 February 2018. The
+        full happening then ran for fifteen nights at the Pico Union Project, a former synagogue
+        in downtown Los Angeles, from 22 February to 25 March 2018. Five dancers performed each
+        night, drawn from a company of eight.
+    quotes:
+      - { text: "The sweat soon glistens in the light and the five different skin tones become clearer.", cite: "Jeff Slayton, LA Dance Chronicle, 1 March 2018", url: "http://www.ladancechronicle.com/corina-kinnear-presents-naked-at-pico-union-project-a-review/" }
+      - { text: "Their answers were honest and occasionally humorous.", cite: "Jeff Slayton on naked talk, LA Dance Chronicle", url: "http://www.ladancechronicle.com/corina-kinnear-presents-naked-at-pico-union-project-a-review/" }
     credits:
       - [Direction and choreography, Corina Kinnear]
-      - [Performers, "Amanda Masongsong, Khristina Cayetano, Sean Greene, Keon Saghari, Ryan Ruiz, Amanda “M.C.” MacLeod, Louie Cornejo, Roger Gonzalez Hibner"]
+      - [Produced with, "John Lambremont, who booked the bands"]
+      - [Dancers, "Amanda Masongsong, Khristina Cayetano, Sean Greene, Keon Saghari, Ryan Ruiz, Amanda “M.C.” MacLeod, Louie Cornejo, Roger Gonzalez Hibner"]
       - [Original score, "SILENTSHOUT (Alina Cutrono and Theo Karon)"]
+      - [Installation design, Gina Teichert]
+      - [Illustrations, C. W. Moss]
+      - [Second Mirror, "Andrew Grace (photography)"]
       - [Dramaturgy, Laura Karlin]
       - [Lighting design, Bosco Flanagan]
       - [Company class, Andrew Pearson]
       - [Artistic development, Stephanie Baer]
-      - [Photography, "Lilly Lawrence, Saskia Keeley"]
+      - [Photography, "Lilly Lawrence (official photographer), Saskia Keeley"]
       - [Rehearsal space, The Post House]
-      - [Premiere, "Odyssey Dance Festival, 8–9 February 2018; then Pico Union Project, 22 February – 25 March 2018"]
+      - [Performances, "Odyssey Theatre Dance Festival, 8–9 February 2018; Pico Union Project, 22 February – 25 March 2018"]
+    performances_title: Nightly music
+    performances:
+      - ["Thu 8 February", "Chris Price"]
+      - ["Fri 9 February", "Jake Bellows"]
+      - ["Thu 22 February", "Whispertown"]
+      - ["Fri 23 February", "The Mynabirds"]
+      - ["Sun 25 February", "The Love Language"]
+      - ["Thu 1 March", "Special guest"]
+      - ["Sat 3 March", "Blondfire"]
+      - ["Sun 4 March", "Ora the Molecule"]
+      - ["Thu 8 March", "Peter Bixby Ryan"]
+      - ["Sun 11 March", "Drum + Lace"]
+      - ["Thu 15 March", "Cillie Barnes"]
+      - ["Fri 16 March", "GLAARE, with Loyal Lobos"]
+      - ["Sun 18 March", "The Long Fall (Amy Rieckelman)"]
+      - ["Thu 22 March", "Special guest"]
+      - ["Fri 23 March", "M. Bronx"]
+      - ["Sat 24 March", "SILENTSHOUT"]
+      - ["Sun 25 March", "Special guest"]
+    performances_note: "8 and 9 February at the Odyssey Theatre; every other night at the Pico Union Project."
+    press:
+      - { date: "1 March 2018", outlet: "LA Dance Chronicle", what: "review by Jeff Slayton", url: "http://www.ladancechronicle.com/corina-kinnear-presents-naked-at-pico-union-project-a-review/" }
+      - { date: "28 February 2018", outlet: "Act Like A Girl", what: "audio interview with Suzee Dunn" }
+      - { date: "27 February 2018", outlet: "Fox 11 Los Angeles", what: "TV story by Elex Michaelson", url: "https://youtu.be/cby9EfUDFEo" }
     photo_credit: "Photographs by Saskia Keeley (top) and Lilly Lawrence"
     video:
       kind: vimeo
@@ -232,7 +311,7 @@ works:
       - { file: lilly-lawrance-5.jpg, alt: "Rehearsal at The Post House" }
       - { file: r-sean.jpg, alt: "A performer bending forward by a window" }
       - { file: l013118-030.jpg, alt: "A performer arching over an exercise ball" }
-    notes: "press photos by Lilly Lawrence (consent confirmed by Cori); more nude press portraits (r amanda, r khristina, r ryan, Lilly Lawrance 6, photo credit Lilly Lawrence) and the DSC036xx stage set (photographer unclear) left out — Cori to choose; full show recording (3 GB) in Dropbox"
+    notes: "text from Cori's doc 'Ocean12 and naked. — website pages' (27 Oct 2026); nude images agreed by dancers and photographers; don't quote the Fox 11 line about the audience undressing. Press photos by Lilly Lawrence; more nude press portraits and the DSC036xx stage set left out — Cori to choose; full show recording (3 GB) in Dropbox, for applications only. Act Like A Girl public link unknown."
 
   - slug: nell-ombra
     section: events
@@ -285,8 +364,15 @@ works:
       - [Producer, Nicola Davis]
       - [Photography and film, Arno]
       - [Performed, "Palazzo Pisani Moretta, Venice — 24 and 26 January 2017"]
-    images: []
-    notes: "commissioned for a corporate gala (client not named on the site, by design); title Nell'ombra from Corina's own 'Venice Show' note (the CV says 'Nella Ombra'); 'four hours' is Cori's figure; photos: Dropbox /parlā/Venice Videos Arno/Photos (6 by Arno, Jan 2017) + 46 clips + /Audition Materials/Other Dance Photos/Website/Venice011.jpg — download when the computer link is back; confirm spellings (Coraline Arnaud, Wanderson Wanderley) and Arno's surname"
+    photo_credit: "Photographs by Arno, Venice, January 2017"
+    images:
+      - { file: venice0117-702.jpg, alt: "The company in costume on a canal-side step in Venice, striped mooring poles behind", pos: "50% 38%" }
+      - { file: venice0117-304.jpg, alt: "A dancer in white lace and long black gloves on a balcony above the rooftops" }
+      - { file: venice0117-550.jpg, alt: "A dancer in a ruff and tulle reclining on a gilded sofa beneath red damask" }
+      - { file: venice0117-469.jpg, alt: "A dancer in a silver bodice and tiered tulle by a pale green canal" }
+      - { file: venice0117-582.jpg, alt: "A dancer in a black ruff and white face paint, mid-step in a narrow alley" }
+      - { file: venice0117-489.jpg, alt: "Close portrait, arms raised over the head, silver bodice" }
+    notes: "commissioned for a corporate gala (client not named on the site, by design); title Nell'ombra confirmed by Cori (correct Italian: in + la ombra → nell'ombra; the CV says 'Nella Ombra'); four hours confirmed; surnames for Arno etc. not available. Photos: the 6 by Arno in Dropbox /parlā/Venice Videos Arno/Photos (Venice011.jpg in Audition Materials is a smaller copy of 702). 46 clips by Arno not yet used — a short film excerpt is possible later."
 
   - slug: welcome-to-berlin
     section: events
@@ -330,8 +416,22 @@ works:
       - [Cabaret, "Sally Cowdin, Lia Kemendi, Coraline Arnaud, Jennifer Nagy, Ryan Page"]
       - [Producer, Nicola Davis]
       - [Dates, "Berlin — 25 to 28 January 2016; human bridge 24 May 2016"]
-    images: []
-    notes: "commissioned through Glyn Davies (client not named on the site, by design; Cori to OK naming Glyn in the quote); video: /parlā/EMF Berlin/EMF 01.1 … Welcome To Berlin (Dance Performance).mov (230 MB) — frames to grab when the computer link is back; flash mob dancers per the emails: Cora Perso?, Yoko Onodera, Lea Piontek, Leah Katz, Linda Steele, Ruban/Ruben Reniers, Telmo Branco, Wanderson Wanderley, Barnabas Von Sarkozy, Liam Scullion (spellings to confirm; a child who joined is left out); composer of the opening named only as Robert; Cori calls the human bridge a human ladder"
+    photo_credit: "Frames from the film of the opening, Berlin, January 2016"
+    images:
+      - { file: welcome-to-berlin-0112s.jpg, alt: "The company on a wide stage washed in green, a canopy of leaves projected behind them", pos: "50% 60%" }
+      - { file: welcome-to-berlin-0032s.jpg, alt: "Dancers in the dark among the audience, lights glowing in their hands" }
+      - { file: welcome-to-berlin-0127s.jpg, alt: "A dancer stretching upward in green light, another crouched behind" }
+      - { file: welcome-to-berlin-0087s.jpg, alt: "A dancer lifted high in blue light" }
+      - { file: welcome-to-berlin-0132s.jpg, alt: "A dancer in a beanie reaching out across a projected city" }
+      - { file: welcome-to-berlin-0172s.jpg, alt: "The Brandenburg Gate projected across the screen as the dancers cross the stage" }
+      - { file: welcome-to-berlin-0062s.jpg, alt: "Two dancers in silhouette against a projected compass" }
+      - { file: welcome-to-berlin-0187s.jpg, alt: "Four dancers spread across the stage under blue and magenta light" }
+      - { file: welcome-to-berlin-0042s.jpg, alt: "Dancers rising out of the seated audience, small lights held aloft" }
+      - { file: welcome-to-berlin-0167s.jpg, alt: "A dancer before a projected astronaut" }
+      - { file: welcome-to-berlin-0137s.jpg, alt: "A dancer in green light, one arm flung wide" }
+      - { file: welcome-to-berlin-0157s.jpg, alt: "Dancers in a diagonal of blue light, a red laser line crossing the stage" }
+      - { file: welcome-to-berlin-0092s.jpg, alt: "Dancers moving through the audience in blue light" }
+    notes: "commissioned through Glyn Davies (client and event name not on the site, by design; Cori OK'd naming Glyn under his quote); human bridge confirmed (not ladder). Frames from 0:32–3:12 of the opening film in /parlā/EMF Berlin (the film opens and closes with the client's branding and then a speaker — never use those parts). A 3-minute excerpt (0:12–3:16) could be self-hosted once Cori confirms the soundtrack is music only. Opening film credited to Sharon Stansfield in the emails — confirm. The Events phone videos (20 Jan 2016 flash-mob tutorial, 23 May 2016 human-bridge safety film) are low-resolution and the tutorial may show young dancers — not used. Flash mob dancers per the emails: Cora Perso?, Yoko Onodera, Lea Piontek, Leah Katz, Linda Steele, Ruban/Ruben Reniers, Telmo Branco, Wanderson Wanderley, Barnabas Von Sarkozy, Liam Scullion (spellings to confirm; a child who joined is left out); composer of the opening named only as Robert."
 
   - slug: movmt
     title: MOVMT
@@ -469,10 +569,11 @@ bio:
       time, nakedness, a crowded room, the sea — and give an audience a way to look at them again.
       Her productions have ranged from MOVMT, an immersive evening for ten dancers at MiMoDa
       Studio in Los Angeles, to NAKED: An Art Happening, seventeen performances built around a
-      nude company of five and a nightly conversation with the audience, to Ocean 12 on the beach
-      at Santa Monica and the dance film Lost Time. Her newest work, Temps Oublié, was developed
-      in residency at the Centre national de la danse in Paris in 2025; Objects in Mirror Are
-      Closer Than They Appear premiered at the Los Angeles Dance Festival in 2026.
+      nude company of five and a nightly conversation with the audience, to Ocean12, a happening
+      on the beach at Santa Monica, and the dance film Lost Time. Forgotten Time, made in Paris in
+      residency at the Centre national de la danse, was shown as a work in progress at the Odyssey
+      Theatre in 2025; Objects in Mirror Are Closer Than They Appear premiered at the Los Angeles
+      Dance Festival in 2026.
     - >-
       She trained at Parker Dance Academy, her mother's studio in Colorado, and at International
       Ballet School, and holds a BFA from Dominican University of California with Alonzo King's

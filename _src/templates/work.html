@@ -3,7 +3,7 @@
   {% if w.images %}<img class="hero-img" src="/moves/img/{{ w.slug }}/{{ w.images[0].file }}" alt="{{ w.images[0].alt or w.title }}"{% if w.images[0].w %} width="{{ w.images[0].w }}" height="{{ w.images[0].h }}"{% endif %}{% if w.images[0].pos %} style="object-position:{{ w.images[0].pos }}"{% endif %}>{% endif %}
   <section class="pagehead wrap" style="padding-bottom:0">
     <h1>{{ w.title }}</h1>
-    {% if w.subtitle %}<p class="lede">{{ w.subtitle|lower }}.</p>{% endif %}
+    {% if w.subtitle %}<p class="lede">{{ w.subtitle|lower }}{% if w.subtitle[-1] not in '.?!' %}.{% endif %}</p>{% endif %}
     <div class="meta">
       <span><b>{{ w.year }}</b></span>
       <span>{{ w.kind }}</span>
@@ -15,12 +15,25 @@
     <div class="text">
       <p>{{ w.summary }}</p>
       {% for p in w.body %}<p>{{ p }}</p>{% endfor %}
-      {% if w.quote %}<blockquote>{{ w.quote.text }}<cite>{{ w.quote.cite }}</cite></blockquote>{% endif %}
+      {% for q in ([w.quote] if w.quote else []) + (w.quotes or []) %}<blockquote>{{ q.text }}<cite>{% if q.url %}<a href="{{ q.url }}" target="_blank" rel="noopener">{{ q.cite }}</a>{% else %}{{ q.cite }}{% endif %}</cite></blockquote>{% endfor %}
     </div>
     <dl class="credits">
       {% for c in w.credits %}<div><dt>{{ c[0] }}</dt><dd>{{ c[1] }}</dd></div>{% endfor %}
     </dl>
   </section>
+  {% if w.performances or w.press %}
+  <section class="extras">
+    {% if w.performances %}<div>
+      <h2 class="label">{{ w.performances_title or 'Performances' }}</h2>
+      <dl class="credits">{% for p in w.performances %}<div><dt>{{ p[0] }}</dt><dd>{{ p[1] }}</dd></div>{% endfor %}</dl>
+      {% if w.performances_note %}<p class="note">{{ w.performances_note }}</p>{% endif %}
+    </div>{% endif %}
+    {% if w.press %}<div>
+      <h2 class="label">Press</h2>
+      <dl class="credits">{% for p in w.press %}<div><dt>{{ p.date }}</dt><dd>{% if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.outlet }}</a>{% else %}{{ p.outlet }}{% endif %}{% if p.what %} — {{ p.what }}{% endif %}</dd></div>{% endfor %}</dl>
+    </div>{% endif %}
+  </section>
+  {% endif %}
   {% if w.characters %}
   <section class="characters">
     <div class="band"><h2>The characters</h2>{% if w.characters_intro %}<p>{{ w.characters_intro }}</p>{% endif %}</div>

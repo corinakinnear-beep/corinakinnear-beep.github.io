@@ -263,3 +263,10 @@ footer a.label:hover{color:var(--tangerine)}
 .charlist p{margin:0; color:var(--ink-2)}
 @media (max-width:1100px){ .charlist{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media (max-width:760px){ .charlist{grid-template-columns:1fr} .worksection + .worksection{margin-top:72px} }
+/* performances and press on a work page */
+.extras{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:64px; padding:72px var(--gutter) 0; max-width:var(--max); margin:0 auto; align-items:start}
+.extras h2.label{margin:0 0 14px}
+.extras .note{margin:14px 0 0; color:var(--muted); font-family:var(--sans); font-weight:400; font-size:14.5px; line-height:1.6}
+.extras dd a, .work-body cite a{border-bottom:1px solid var(--line-2)}
+.extras dd a:hover, .work-body cite a:hover{color:var(--tangerine); border-color:var(--tangerine)}
+@media (max-width:860px){ .extras{grid-template-columns:1fr; gap:48px} }
