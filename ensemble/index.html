@@ -471,22 +471,6 @@
         <button class="btn ghost hidden" id="editBtn">Edit event</button>
         <button class="btn ghost hidden" id="closeBtn">Close event</button>
       </div>
-      <div class="quickfill" id="cohostBlock">
-        <p class="qf-title">Co-hosts</p>
-        <p class="cap" id="cohostCap"></p>
-        <ul class="stacklist" id="cohostList" style="margin-top:12px"></ul>
-        <div class="btnrow hidden" id="cohostInviteRow" style="margin-top:14px">
-          <button class="btn ghost" id="cohostMake">Create co-host invite link</button>
-          <span class="cap" id="cohostCount"></span>
-        </div>
-      </div>
-      <div class="quickfill">
-        <p class="qf-title">Add availability manually</p>
-        <p class="cap">For a space, for someone who told you their times another way, or for your own availability.</p>
-        <div class="btnrow" style="margin-top:14px">
-          <button class="btn ghost" id="goManual">Add / edit an entry</button>
-        </div>
-      </div>
     </section>
 
     <!-- ===== MY AVAILABILITY ===== -->
@@ -579,6 +563,24 @@
       <h3 class="bigtitle">Additional tools</h3>
       <div class="btnrow" style="margin:-4px 0 18px"><button class="btn ghost" id="toolsToggle">Show additional tools</button></div>
       <div id="toolsWrap" class="hidden">
+
+      <section class="section hidden" id="cohostBlock">
+        <div class="shead"><h3>Co-hosts</h3></div>
+        <p class="cap" id="cohostCap"></p>
+        <ul class="stacklist" id="cohostList" style="margin-top:12px"></ul>
+        <div class="btnrow hidden" id="cohostInviteRow" style="margin-top:14px">
+          <button class="btn ghost" id="cohostMake">Create co-host invite link</button>
+          <span class="cap" id="cohostCount"></span>
+        </div>
+      </section>
+
+      <section class="section hidden" id="manualToolBlock">
+        <div class="shead"><h3>Add availability manually</h3></div>
+        <p class="cap">For a space, for someone who told you their times another way, or for your own availability.</p>
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn ghost" id="goManual">Add / edit an entry</button>
+        </div>
+      </section>
 
       <section class="section">
         <div class="shead"><h3>Best times</h3></div>
@@ -1257,6 +1259,8 @@ const PIN_SUFFIX = '::ensemble-pin';
     isOwner = isPrimary || coHosts.some(c => c.user_id === user.id);
     cohostInvites = [];
     if (isPrimary) { const { data: ci } = await sb.from('admin_invites').select('*').eq('event_id', eventId).order('created_at'); cohostInvites = ci || []; }
+    $('#cohostBlock').classList.toggle('hidden', !isOwner);
+    $('#manualToolBlock').classList.toggle('hidden', !isOwner);
     renderCohosts();
     $('#closeBtn').classList.toggle('hidden', !isOwner); $('#editBtn').classList.toggle('hidden', !isOwner);
     $('#optsSection').classList.toggle('hidden', !isOwner);
