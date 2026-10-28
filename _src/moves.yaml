@@ -12,8 +12,8 @@ site:
   instagram_handle: "@parlamoves"
   contact_email: "corina.kinnear@gmail.com"
   sections:
-    - { key: stage, title: Stage }
-    - { key: events, title: Events, intro: "Immersive work made for galas, conferences and gatherings — for the room, the hour and the people in it." }
+    - { key: stage, title: Stage, intro: "Concert Dance Stage Productions" }
+    - { key: events, title: Events, intro: "Immersive work for galas, conference performances, and other movement for events" }
 
 works:
   - slug: objects-in-mirror
