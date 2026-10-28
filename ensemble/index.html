@@ -164,6 +164,7 @@
   .tag{display:inline-block;font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;font-weight:700;border-radius:999px;padding:3px 10px;margin-bottom:8px}
   .tag.host{background:#E8EDFB;color:var(--h4)}
   .tag.guest{background:#F0EFE9;color:var(--ink-2)}
+  .tag.cohost{background:#EDE6F3;color:#4B2E5E}
   .tag.manage{background:#E9EEE2;color:#3F4A33}
   .tag.past{background:#F3E4E4;color:#7A2E2E}
   .tag.new{background:var(--you);color:var(--you-ink,#4A3A00)}
@@ -464,6 +465,15 @@
       <div class="btnrow">
         <button class="btn ghost hidden" id="editBtn">Edit event</button>
         <button class="btn ghost hidden" id="closeBtn">Close event</button>
+      </div>
+      <div class="quickfill" id="cohostBlock">
+        <p class="qf-title">Co-hosts</p>
+        <p class="cap" id="cohostCap"></p>
+        <ul class="stacklist" id="cohostList" style="margin-top:12px"></ul>
+        <div class="btnrow hidden" id="cohostInviteRow" style="margin-top:14px">
+          <button class="btn ghost" id="cohostMake">Create co-host invite link</button>
+          <span class="cap" id="cohostCount"></span>
+        </div>
       </div>
       <div class="quickfill">
         <p class="qf-title">Add availability manually</p>
@@ -883,13 +893,15 @@ const PIN_SUFFIX = '::ensemble-pin';
   let showAccount = false, justCreated = false, curTab = 'group', loc = 0, mine = {}, myNote = '', myNoteAt = null, dirty = false, editing = false, creating = false, isOwner = false;
   let selected = null; // Set of user_ids being viewed, null = everyone
   let inviteToken = null, pendingDelegate = null, myInvites = [], hostInvites = [], delegate = null;
-  const route = () => { const m = location.hash.match(/^#e\/([0-9a-f-]{36})(?:\/m\/([0-9a-f-]{36}))?/); eventId = m ? m[1] : null; inviteToken = m && m[2] ? m[2] : null; };
+  let cohostToken = null, coHosts = [], cohostInvites = [], isPrimary = false;
+  const MAXCOHOSTS = 4;
+  const route = () => { const m = location.hash.match(/^#e\/([0-9a-f-]{36})(?:\/m\/([0-9a-f-]{36}))?/); eventId = m ? m[1] : null; inviteToken = m && m[2] ? m[2] : null; const h = location.hash.match(/^#e\/[0-9a-f-]{36}\/h\/([0-9a-f-]{36})/); cohostToken = h ? h[1] : null; };
 
   async function render() {
     route();
     const show = id => ['#signin','#dash','#home','#plan'].forEach(s => $(s).classList.toggle('hidden', s !== id));
     if (!eventId || !user) { $('#savebar').classList.remove('on'); document.body.classList.remove('hasbar'); }
-    if (!user) { $('#signinTitle').textContent = inviteToken ? 'Sign in to add availability for the host' : eventId ? 'Sign in to mark your availability' : 'Sign in to create an event'; show('#signin'); $('#paintbar').classList.remove('avail'); return; }
+    if (!user) { $('#signinTitle').textContent = cohostToken ? 'Sign in to join as a co-host' : inviteToken ? 'Sign in to add availability for the host' : eventId ? 'Sign in to mark your availability' : 'Sign in to create an event'; show('#signin'); $('#paintbar').classList.remove('avail'); return; }
     if (editing) { show('#home'); $('#paintbar').classList.add('avail'); return; }
     if (creating) { show('#home'); $('#paintbar').classList.add('avail'); startCreate(); return; }
     if (!eventId) { show('#dash'); $('#paintbar').classList.remove('avail'); await loadDash(); return; }
@@ -899,6 +911,12 @@ const PIN_SUFFIX = '::ensemble-pin';
       const { data, error } = await sb.rpc('claim_manual_invite', { p_token: token });
       if (error) alert(error.message);
       else pendingDelegate = token;
+    }
+    if (cohostToken) {
+      const token = cohostToken;
+      cohostToken = null; history.replaceState(null, '', '#e/' + eventId);
+      const { error } = await sb.rpc('claim_admin_invite', { p_token: token });
+      if (error) alert(error.message); else setTimeout(() => toast('You’re a co-host on this event now'), 600);
     }
     show('#plan'); await loadEvent();
   }
@@ -921,6 +939,9 @@ const PIN_SUFFIX = '::ensemble-pin';
     const { data: invR } = await sb.from('manual_invites').select('event_id,entry_id,loc').eq('editor', user.id);
     const ids = [...new Set([...(mineR || []).filter(r => !r.dismissed).map(r => r.event_id), ...(invR || []).map(r => r.event_id).filter(id => !dismissed.has(id))])];
     const { data: owned } = await sb.from('events').select('*').eq('owner', user.id);
+    const { data: coR } = await sb.from('event_admins').select('event_id').eq('user_id', user.id);
+    const coIds = new Set((coR || []).map(r => r.event_id));
+    coIds.forEach(id => ids.includes(id) || ids.push(id));
     let invited = [];
     if (ids.length) { const { data } = await sb.from('events').select('*').in('id', ids); invited = data || []; }
     const seen = new Map();
@@ -935,7 +956,7 @@ const PIN_SUFFIX = '::ensemble-pin';
       const lastSeen = localStorage.getItem(lastSeenKey(ev.id)) || '';
       const fresh = others.filter(r => (r.updated_at||'') > lastSeen).length;
       const managing = (invR || []).filter(i => i.event_id === ev.id).map(i => (ev.config.manual || []).find(m => m.id === i.entry_id)?.name).filter(Boolean);
-      return { ev, mineAt: own?.updated_at, hasOwn: !!own, other: others[0], others: others.length, fresh, past: eventEnd(ev) < new Date(), host: ev.owner === user.id, managing: [...new Set(managing)] };
+      return { ev, mineAt: own?.updated_at, hasOwn: !!own, other: others[0], others: others.length, fresh, past: eventEnd(ev) < new Date(), host: ev.owner === user.id || coIds.has(ev.id), primary: ev.owner === user.id, managing: [...new Set(managing)] };
     }).sort((a,b) => (a.past - b.past) || (b.ev.config.d[0] || '').localeCompare(a.ev.config.d[0] || ''));
     renderDash();
   }
@@ -949,7 +970,7 @@ const PIN_SUFFIX = '::ensemble-pin';
         : '';
       return `<div class="evcard">
         <div>
-          <span class="tag ${r.host ? 'host' : 'guest'}">${r.host ? 'You’re hosting' : 'Invited'}</span>
+          <span class="tag ${r.primary ? 'host' : r.host ? 'cohost' : 'guest'}">${r.primary ? 'You’re hosting' : r.host ? 'Co-hosting' : 'Invited'}</span>
           ${r.managing.map(n => `<span class="tag manage">Filling in for ${esc(n)}</span>`).join(' ')}
           ${r.past ? '<span class="tag past">Past</span>' : ''}
           ${r.fresh ? `<span class="tag new">${r.fresh} new</span>` : ''}
@@ -968,27 +989,32 @@ const PIN_SUFFIX = '::ensemble-pin';
   }
   async function removeEvent(id) {
     const row = dashRows.find(r => r.ev.id === id); if (!row) return;
-    const msg = row.host
+    const msg = row.primary
       ? `Delete “${row.ev.title}” for everyone? This removes the event and all its answers permanently.`
-      : `Remove “${row.ev.title}” from your list? Your answers stay with the coordinator.`;
+      : row.host
+        ? `Step down as co-host of “${row.ev.title}” and remove it from your list? The event stays for everyone else.`
+        : `Remove “${row.ev.title}” from your list? Your answers stay with the coordinator.`;
     if (!confirm(msg)) return;
-    const { error } = row.host
-      ? await sb.from('events').delete().eq('id', id)
-      : await sb.from('responses').update({ dismissed: true }).eq('event_id', id).eq('user_id', user.id);
+    const { error } = row.primary ? await sb.from('events').delete().eq('id', id) : await leaveEvent(row);
     if (error) return toast(error.message);
-    toast(row.host ? 'Event deleted' : 'Removed from your list');
+    toast(row.primary ? 'Event deleted' : row.host ? 'You’ve stepped down as co-host' : 'Removed from your list');
     loadDash();
   }
   $('#dashClearPast').onclick = async () => {
     const past = dashRows.filter(r => r.past);
     if (!past.length) return;
-    if (!confirm(`Remove ${past.length} past event${past.length > 1 ? 's' : ''}? Ones you host will be deleted for everyone.`)) return;
+    if (!confirm(`Remove ${past.length} past event${past.length > 1 ? 's' : ''}? Ones you created will be deleted for everyone; ones you co-host you'll step down from.`)) return;
     for (const r of past) {
-      if (r.host) await sb.from('events').delete().eq('id', r.ev.id);
-      else await sb.from('responses').update({ dismissed: true }).eq('event_id', r.ev.id).eq('user_id', user.id);
+      if (r.primary) await sb.from('events').delete().eq('id', r.ev.id);
+      else await leaveEvent(r);
     }
     toast('Past events removed'); loadDash();
   };
+  async function leaveEvent(row) {
+    if (row.host) { const { error } = await sb.from('event_admins').delete().eq('event_id', row.ev.id).eq('user_id', user.id); if (error) return { error }; }
+    if (row.hasOwn) return await sb.from('responses').update({ dismissed: true }).eq('event_id', row.ev.id).eq('user_id', user.id);
+    return { error: null };
+  }
   $('#dashNew').onclick = () => { creating = true; render(); };
   $('#acctBack').onclick = () => { showAccount = false; render(); };
 
@@ -1084,7 +1110,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     editing = true;
     const c = plan.config;
     $('#createIntro').classList.add('hidden'); $('#editIntro').classList.remove('hidden');
-    $('#createBtn').textContent = 'Save changes'; $('#cancelEdit').classList.remove('hidden'); $('#dangerZone').classList.remove('hidden'); $('#addDaysSection').classList.remove('hidden');
+    $('#createBtn').textContent = 'Save changes'; $('#cancelEdit').classList.remove('hidden'); $('#dangerZone').classList.toggle('hidden', !isPrimary); $('#addDaysSection').classList.remove('hidden');
     $('#title').value = plan.title;
     $('#start').value = c.d[0]; $('#step').value = c.g; $('#from').value = c.s; $('#to').value = c.e;
     const nOpt = [...$('#ndays').options].find(o => +o.value >= c.d.length); $('#ndays').value = nOpt ? nOpt.value : 60;
@@ -1100,7 +1126,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     buildGrid($('#proposeGrid'), draft, null); setPaintMode(paintMode); paintSet($('#proposeGrid'), proposed[pLoc]); updateCreate();
   }
   $('#deleteEvent').onclick = async () => {
-    if (!plan) return;
+    if (!plan || !isPrimary) return;
     if (!confirm(`Delete “${plan.title}” for everyone? This removes the event and all its answers permanently.`)) return;
     const { error } = await sb.from('events').delete().eq('id', eventId);
     if (error) return toast(error.message);
@@ -1140,12 +1166,18 @@ const PIN_SUFFIX = '::ensemble-pin';
     responses = rs || [];
     const own = responses.find(r => r.user_id === user.id);
     mine = {}; plan.config.locations.forEach((_, i) => mine[i] = new Set(own?.availability?.[i] || []));
-    const firstVisit = isOwnerOf(ev) && !own;
+    const firstVisit = isOwnerOf(ev) && !own; // primary only
     if (firstVisit) { plan.config.locations.forEach((l, i) => mine[i] = new Set(l.proposed)); }
     myNote = own?.note || ''; myNoteAt = own?.note_at || null; $('#noteBox').value = myNote;
     selected = null;
     $('#pTitle').textContent = plan.title;
-    isOwner = plan.owner === user.id;
+    const { data: coRows } = await sb.from('event_admins').select('*').eq('event_id', eventId).order('added_at');
+    coHosts = coRows || [];
+    isPrimary = plan.owner === user.id;
+    isOwner = isPrimary || coHosts.some(c => c.user_id === user.id);
+    cohostInvites = [];
+    if (isPrimary) { const { data: ci } = await sb.from('admin_invites').select('*').eq('event_id', eventId).order('created_at'); cohostInvites = ci || []; }
+    renderCohosts();
     $('#closeBtn').classList.toggle('hidden', !isOwner); $('#editBtn').classList.toggle('hidden', !isOwner);
     $('#optsSection').classList.toggle('hidden', !isOwner);
     $('#newEventTitle').textContent = isOwner ? 'Create a new event' : 'Running something of your own?';
@@ -1713,6 +1745,57 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#bestToggle').textContent = open ? 'Hide the full list' : 'Show the full list';
   };
   document.querySelectorAll('[data-find]').forEach(b => b.onclick = () => { $('#findBox').value = b.dataset.find; runFind(); });
+
+  /* ---------- co-hosts ---------- */
+  const cohostUrl = t => location.origin + location.pathname + '#e/' + eventId + '/h/' + t;
+  function renderCohosts() {
+    if (!plan || !isOwner) return;
+    const primaryName = isPrimary ? (profileName || 'You') : (responses.find(r => r.user_id === plan.owner)?.name || 'The event creator');
+    const slotsLeft = MAXCOHOSTS - coHosts.length - cohostInvites.length;
+    $('#cohostCap').textContent = isPrimary
+      ? `Co-hosts can do everything you can — edit times and locations, add entries, see everyone's answers — except delete the event or manage co-hosts. Up to ${MAXCOHOSTS}.`
+      : `You're a co-host. ${primaryName} is the primary host and the only one who can delete the event or manage co-hosts.`;
+    let rows = `<li><span class="n">${esc(primaryName)}${isPrimary ? ' (you)' : ''}<small>Primary host</small></span></li>`;
+    rows += coHosts.map(c => {
+      const me = c.user_id === user.id;
+      const acts = isPrimary
+        ? `<button class="btn ghost small" data-primary="${c.user_id}">Make primary</button> <button class="btn ghost small" data-rmco="${c.user_id}">Remove</button>`
+        : me ? `<button class="btn ghost small" data-rmco="${c.user_id}">Step down</button>` : '';
+      return `<li><span class="n">${esc(c.name || 'Someone')}${me ? ' (you)' : ''}<small>Co-host · added ${fmtStamp(c.added_at)}</small></span><span class="c">${acts}</span></li>`;
+    }).join('');
+    if (isPrimary) rows += cohostInvites.map(i => `<li><span class="n">Unused co-host link<small>Created ${fmtStamp(i.created_at)} · works once</small></span><span class="c"><button class="btn ghost small" data-cocopy="${i.token}">Copy link</button> <button class="btn ghost small" data-cooff="${i.token}">Turn off</button></span></li>`).join('');
+    $('#cohostList').innerHTML = rows;
+    $('#cohostInviteRow').classList.toggle('hidden', !isPrimary);
+    $('#cohostMake').disabled = slotsLeft <= 0;
+    $('#cohostCount').textContent = slotsLeft <= 0 ? `All ${MAXCOHOSTS} co-host spots are taken or have a link out` : `${slotsLeft} of ${MAXCOHOSTS} spots open`;
+    $('#cohostList').querySelectorAll('[data-cocopy]').forEach(b => b.onclick = async () => { if (await copyText(cohostUrl(b.dataset.cocopy))) toast('Co-host link copied'); });
+    $('#cohostList').querySelectorAll('[data-cooff]').forEach(b => b.onclick = async () => {
+      if (!confirm('Turn off this co-host link? It will stop working.')) return;
+      const { error } = await sb.from('admin_invites').delete().eq('token', b.dataset.cooff);
+      if (error) return toast(error.message);
+      cohostInvites = cohostInvites.filter(i => i.token !== b.dataset.cooff); renderCohosts(); toast('Link turned off');
+    });
+    $('#cohostList').querySelectorAll('[data-rmco]').forEach(b => b.onclick = async () => {
+      const c = coHosts.find(x => x.user_id === b.dataset.rmco), me = c.user_id === user.id;
+      if (!confirm(me ? 'Step down as co-host? You can still add your own availability as a guest.' : `Remove ${c.name || 'this person'} as a co-host? Their own availability stays.`)) return;
+      const { error } = await sb.from('event_admins').delete().eq('event_id', eventId).eq('user_id', c.user_id);
+      if (error) return toast(error.message);
+      toast(me ? 'You’ve stepped down as co-host' : `${c.name || 'They'} removed as co-host`); loadEvent();
+    });
+    $('#cohostList').querySelectorAll('[data-primary]').forEach(b => b.onclick = async () => {
+      const c = coHosts.find(x => x.user_id === b.dataset.primary);
+      if (!confirm(`Make ${c.name || 'this co-host'} the primary host? They'll be the only one who can delete the event or manage co-hosts. You'll stay on as a co-host.`)) return;
+      const { error } = await sb.rpc('transfer_primary', { p_event: eventId, p_new_owner: c.user_id });
+      if (error) return toast(error.message);
+      toast(`${c.name || 'They'} is now the primary host`); loadEvent();
+    });
+  }
+  $('#cohostMake').onclick = async () => {
+    const { data, error } = await sb.from('admin_invites').insert({ event_id: eventId }).select().single();
+    if (error) return toast(error.message);
+    cohostInvites.push(data); renderCohosts();
+    if (await copyText(cohostUrl(data.token))) toast('Co-host link copied — it works for one person');
+  };
 
   /* ---------- manual entries (coordinator adds availability for others) ---------- */
   let mEntry = null, mSel = {};
