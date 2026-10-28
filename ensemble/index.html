@@ -1880,7 +1880,7 @@ const PIN_SUFFIX = '::ensemble-pin';
       // log it like a real response so it appears in the change history
       sb.from('revisions').insert({ event_id: eventId, user_id: null, name: name + ' (added by you)', availability, note }).then(() => {});
       setTimeout(() => { if ($('#manualState').textContent === 'Saved') $('#manualState').textContent = ''; }, 1600);
-      renderManualPick(); renderManualList(); paintHeat(); toast(`${name} saved`);
+      renderManualPick(); renderManualList(); renderInvites(); paintHeat(); toast(`${name} saved`);
     }
     return !error;
   }
