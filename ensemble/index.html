@@ -164,6 +164,7 @@
   .tag{display:inline-block;font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;font-weight:700;border-radius:999px;padding:3px 10px;margin-bottom:8px}
   .tag.host{background:#E8EDFB;color:var(--h4)}
   .tag.guest{background:#F0EFE9;color:var(--ink-2)}
+  .tag.manage{background:#E9EEE2;color:#3F4A33}
   .tag.past{background:#F3E4E4;color:#7A2E2E}
   .tag.new{background:var(--you);color:var(--you-ink,#4A3A00)}
   .toggle{display:flex;align-items:center;gap:10px;font-size:var(--fs-body);background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:18px;max-width:620px}
@@ -478,6 +479,12 @@
       <div class="btnrow hidden" id="backFromYouRow" style="margin-bottom:8px"><button class="btn ghost small backlink" id="backFromYou">&larr; Back to everyone&rsquo;s answers</button></div>
       <h3 class="bigtitle" style="margin-top:12px">Add your availability</h3>
 
+      <section class="section hidden" id="managingSection">
+        <div class="shead"><h3>You&rsquo;re also filling in for</h3></div>
+        <p class="cap">The host invited you to enter availability on their behalf. This is separate from your own times below.</p>
+        <ul class="stacklist" id="managingList" style="margin-top:12px"></ul>
+      </section>
+
       <section class="section">
         <div class="shead"><h3>Mark the times you can make, then save</h3></div>
         <ol class="steps">
@@ -618,10 +625,10 @@
 
     <!-- ===== MANUAL ENTRY ===== -->
     <div id="manualPane" class="hidden">
-      <div class="btnrow" style="margin-bottom:8px"><button class="btn ghost small backlink" id="backFromManual">&larr; Back to everyone&rsquo;s answers</button></div>
-      <h3 class="bigtitle" style="margin-top:12px">Manually add availability</h3>
+      <div class="btnrow" style="margin-bottom:8px"><button class="btn ghost small backlink" id="backFromManual">&larr; <span class="backtxt">Back to everyone&rsquo;s answers</span></button></div>
+      <h3 class="bigtitle" style="margin-top:12px" id="manualTitle">Manually add availability</h3>
 
-      <section class="section">
+      <section class="section" id="manualEntriesSection">
         <div class="shead"><h3>Your entries</h3>
           <div class="btnrow"><button class="btn small" id="manualNew">+ Add another entry</button></div>
         </div>
@@ -634,9 +641,28 @@
         <select id="manualPick" class="hidden"></select>
       </section>
 
+      <section class="section hidden" id="inviteSection">
+        <div class="shead"><h3>Invite someone to fill this in</h3></div>
+        <p class="cap">Send a private link so a studio manager (or anyone) can paint this entry&rsquo;s times at one location. They sign in with a name and PIN, and the event shows up on their homepage &mdash; both for this entry and for their own availability.</p>
+        <div class="qf-row" style="margin-top:14px">
+          <span class="qf-label" id="inviteLocLabel">Location</span>
+          <select id="inviteLoc"></select>
+          <button class="btn small" id="inviteMake">Create invite link</button>
+        </div>
+        <ul class="stacklist" id="inviteList" style="margin-top:14px"></ul>
+      </section>
+
+      <section class="section hidden" id="delegateIntro">
+        <div class="shead"><h3 id="delegateTitle"></h3></div>
+        <p class="cap" id="delegateCap"></p>
+        <div class="form" style="max-width:640px;margin:14px 0 0">
+          <div class="field wide"><label for="delegateNote">Note <span class="hint">(optional &mdash; shown to the host)</span></label><textarea id="delegateNote" maxlength="400" placeholder="e.g. Studio is booked from 7pm on Fridays."></textarea></div>
+        </div>
+      </section>
+
       <section class="section">
-        <div class="shead"><h3>Their times</h3></div>
-        <div style="margin-bottom:18px">
+        <div class="shead"><h3 id="manualTimesTitle">Their times</h3></div>
+        <div style="margin-bottom:18px" id="manualLocPicker">
           <p class="qf-title" style="margin-bottom:10px">Choose location</p>
           <div class="tabs loc" id="locTabsM" role="tablist"></div>
         </div>
@@ -663,7 +689,7 @@
         </div>
       </section>
 
-      <div class="btnrow" style="margin:4px 0 8px"><button class="btn ghost small backlink" id="backFromManual2">&larr; Back to everyone&rsquo;s answers</button></div>
+      <div class="btnrow" style="margin:4px 0 8px"><button class="btn ghost small backlink" id="backFromManual2">&larr; <span class="backtxt">Back to everyone&rsquo;s answers</span></button></div>
     </div>
 
     <section class="section" id="guestNew" style="margin-top:44px">
@@ -677,7 +703,6 @@
 
 <div class="savebar" id="savebar"><div class="inner">
   <span class="state" id="saveState">All changes saved</span>
-  <button class="btn ghost" id="discardBtn">Discard changes</button>
   <button class="btn" id="saveAllBtn">Save changes</button>
 </div></div>
 <div class="paintbar" id="paintbar">
@@ -857,16 +882,24 @@ const PIN_SUFFIX = '::ensemble-pin';
   let eventId = null, plan = null, responses = [], channel = null;
   let showAccount = false, justCreated = false, curTab = 'group', loc = 0, mine = {}, myNote = '', myNoteAt = null, dirty = false, editing = false, creating = false, isOwner = false;
   let selected = null; // Set of user_ids being viewed, null = everyone
-  const route = () => { const m = location.hash.match(/^#e\/([0-9a-f-]{36})/); eventId = m ? m[1] : null; };
+  let inviteToken = null, pendingDelegate = null, myInvites = [], hostInvites = [], delegate = null;
+  const route = () => { const m = location.hash.match(/^#e\/([0-9a-f-]{36})(?:\/m\/([0-9a-f-]{36}))?/); eventId = m ? m[1] : null; inviteToken = m && m[2] ? m[2] : null; };
 
   async function render() {
     route();
     const show = id => ['#signin','#dash','#home','#plan'].forEach(s => $(s).classList.toggle('hidden', s !== id));
     if (!eventId || !user) { $('#savebar').classList.remove('on'); document.body.classList.remove('hasbar'); }
-    if (!user) { $('#signinTitle').textContent = eventId ? 'Sign in to mark your availability' : 'Sign in to create an event'; show('#signin'); $('#paintbar').classList.remove('avail'); return; }
+    if (!user) { $('#signinTitle').textContent = inviteToken ? 'Sign in to add availability for the host' : eventId ? 'Sign in to mark your availability' : 'Sign in to create an event'; show('#signin'); $('#paintbar').classList.remove('avail'); return; }
     if (editing) { show('#home'); $('#paintbar').classList.add('avail'); return; }
     if (creating) { show('#home'); $('#paintbar').classList.add('avail'); startCreate(); return; }
     if (!eventId) { show('#dash'); $('#paintbar').classList.remove('avail'); await loadDash(); return; }
+    if (inviteToken) {
+      const token = inviteToken;
+      inviteToken = null; history.replaceState(null, '', '#e/' + eventId);
+      const { data, error } = await sb.rpc('claim_manual_invite', { p_token: token });
+      if (error) alert(error.message);
+      else pendingDelegate = token;
+    }
     show('#plan'); await loadEvent();
   }
 
@@ -884,7 +917,9 @@ const PIN_SUFFIX = '::ensemble-pin';
     window.scrollTo(0, 0);
     $('#evlist').innerHTML = '<p class="empty">Loading…</p>';
     const { data: mineR } = await sb.from('responses').select('event_id,updated_at,dismissed').eq('user_id', user.id);
-    const ids = (mineR || []).filter(r => !r.dismissed).map(r => r.event_id);
+    const dismissed = new Set((mineR || []).filter(r => r.dismissed).map(r => r.event_id));
+    const { data: invR } = await sb.from('manual_invites').select('event_id,entry_id,loc').eq('editor', user.id);
+    const ids = [...new Set([...(mineR || []).filter(r => !r.dismissed).map(r => r.event_id), ...(invR || []).map(r => r.event_id).filter(id => !dismissed.has(id))])];
     const { data: owned } = await sb.from('events').select('*').eq('owner', user.id);
     let invited = [];
     if (ids.length) { const { data } = await sb.from('events').select('*').in('id', ids); invited = data || []; }
@@ -899,7 +934,8 @@ const PIN_SUFFIX = '::ensemble-pin';
       const others = rs.filter(r => r.user_id !== user.id).sort((a,b) => (b.updated_at||'').localeCompare(a.updated_at||''));
       const lastSeen = localStorage.getItem(lastSeenKey(ev.id)) || '';
       const fresh = others.filter(r => (r.updated_at||'') > lastSeen).length;
-      return { ev, mineAt: own?.updated_at, other: others[0], others: others.length, fresh, past: eventEnd(ev) < new Date(), host: ev.owner === user.id };
+      const managing = (invR || []).filter(i => i.event_id === ev.id).map(i => (ev.config.manual || []).find(m => m.id === i.entry_id)?.name).filter(Boolean);
+      return { ev, mineAt: own?.updated_at, hasOwn: !!own, other: others[0], others: others.length, fresh, past: eventEnd(ev) < new Date(), host: ev.owner === user.id, managing: [...new Set(managing)] };
     }).sort((a,b) => (a.past - b.past) || (b.ev.config.d[0] || '').localeCompare(a.ev.config.d[0] || ''));
     renderDash();
   }
@@ -914,6 +950,7 @@ const PIN_SUFFIX = '::ensemble-pin';
       return `<div class="evcard">
         <div>
           <span class="tag ${r.host ? 'host' : 'guest'}">${r.host ? 'You’re hosting' : 'Invited'}</span>
+          ${r.managing.map(n => `<span class="tag manage">Filling in for ${esc(n)}</span>`).join(' ')}
           ${r.past ? '<span class="tag past">Past</span>' : ''}
           ${r.fresh ? `<span class="tag new">${r.fresh} new</span>` : ''}
           <h4>${esc(r.ev.title)}</h4>
@@ -922,7 +959,7 @@ const PIN_SUFFIX = '::ensemble-pin';
         </div>
         <div class="acts">
           <button class="btn small" data-open="${r.ev.id}">Open</button>
-          <button class="btn ghost small" data-remove="${r.ev.id}">Remove</button>
+          ${r.host || r.hasOwn ? `<button class="btn ghost small" data-remove="${r.ev.id}">Remove</button>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -1129,10 +1166,18 @@ const PIN_SUFFIX = '::ensemble-pin';
     showTab(isOwner ? 'group' : 'you', 'loadEvent:landing');
     if (firstVisit) { await saveMine(); showTab('group', 'loadEvent:afterFirstSave'); toast('You\'re marked available at every proposed time — adjust under “My availability” if not'); }
     logPane('loadEvent:done', { seq, owner: plan.owner === user.id, hasOwnResponse: !!own });
+    const { data: inv } = await sb.from('manual_invites').select('*').eq('event_id', eventId);
+    hostInvites = isOwner ? (inv || []) : [];
+    myInvites = (inv || []).filter(i => i.editor === user.id);
+    renderManaging();
     if (isOwner) { renderManualPick(); }
+    if (pendingDelegate) {
+      const d = myInvites.find(i => i.token === pendingDelegate); pendingDelegate = null;
+      if (d) openDelegate(d);
+    }
     // belt and braces: a slow save or a double render must never strand the host on their own grid
     setTimeout(() => {
-      if (plan && isOwner && curTab === 'you' && !justCreated) { logPane('SAFETY-NET-FIRED', {}); showTab('group', 'safetyNet'); }
+      if (plan && isOwner && curTab === 'you' && !justCreated && !delegate) { logPane('SAFETY-NET-FIRED', {}); showTab('group', 'safetyNet'); }
     }, 50);
     subscribe();
   }
@@ -1145,7 +1190,7 @@ const PIN_SUFFIX = '::ensemble-pin';
         responses = data || []; paintHeat();
         localStorage.setItem(lastSeenKey(eventId), new Date().toISOString());
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'events', filter: 'id=eq.' + eventId }, p => { plan = p.new; renderLocTabs(); renderMeta(); renderGrids(); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'events', filter: 'id=eq.' + eventId }, p => { const clean = curTab === 'manual' && !manualDirty(); plan = p.new; renderLocTabs(); renderMeta(); renderGrids(); renderManaging(); if (clean) loadManual(mEntry ? mEntry.id : ''); })
       .subscribe(status => $('#live').style.opacity = status === 'SUBSCRIBED' ? 1 : .4);
   }
   const locs = () => plan.config.locations;
@@ -1163,7 +1208,7 @@ const PIN_SUFFIX = '::ensemble-pin';
         : sel === '#locTabsG'
           ? el.closest('.section')
           : el.parentElement;
-      locationPicker?.classList.toggle('hidden', oneLocation);
+      locationPicker?.classList.toggle('hidden', oneLocation || (sel === '#locTabsM' && !!delegate));
       el.querySelectorAll('button').forEach(b => b.onclick = () => { loc = +b.dataset.i; renderLocTabs(); renderGrids(); if (!$('#manualPane').classList.contains('hidden')) renderManualGrid(); });
     });
     const multi = locs().length > 1;
@@ -1212,7 +1257,6 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#saveState').textContent = dirty ? 'You have unsaved changes' : 'All changes saved';
     $('#saveState').classList.toggle('dirty', dirty);
     $('#saveAllBtn').disabled = !dirty;
-    $('#discardBtn').classList.toggle('hidden', !dirty);
   }
   $('#saveAllBtn').onclick = async () => {
     if (plan.closed) return toast('This event is closed to changes');
@@ -1230,7 +1274,6 @@ const PIN_SUFFIX = '::ensemble-pin';
     paintHeat();
     toast('Saved — your availability and note are in');
   };
-  $('#discardBtn').onclick = () => { if (!confirm('Discard your unsaved changes?')) return; dirty = false; loadEvent(); };
   window.addEventListener('beforeunload', e => {
     if (!dirty) return;
     e.preventDefault();
@@ -1374,7 +1417,8 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#groupPane').classList.toggle('hidden', w !== 'group');
     $('#manualPane').classList.toggle('hidden', w !== 'manual');
     $('#guestNew').classList.toggle('hidden', w === 'manual');
-    if (w === 'manual') { loadManual(mEntry ? mEntry.id : ''); }
+    if (w !== 'manual') delegate = null;
+    if (w === 'manual') { loadManual(delegate ? delegate.entry_id : mEntry ? mEntry.id : ''); }
     if (w === 'group' && plan && isOwner) paintHeat();
     $('#savebar').classList.toggle('on', w === 'you' && !!plan && !plan.closed);
     document.body.classList.toggle('hasbar', w === 'you' && !!plan && !plan.closed);
@@ -1383,7 +1427,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   const leaveOk = () => !dirty || confirm('Are you sure you want to leave without saving your changes?');
   $('#goManual').onclick = () => showTab('manual', 'button:goManual');
   $('#backFromYou').onclick = () => { if (leaveOk()) { dirty = false; showTab('group', 'button:backFromYou'); window.scrollTo(0,0); } };
-  const backToGroup = () => { showTab('group', 'button:backFromManual'); window.scrollTo(0,0); };
+  const backToGroup = () => { showTab(delegate ? 'you' : 'group', 'button:backFromManual'); window.scrollTo(0,0); };
   const backFromManual = async () => { if (await manualLeaveOk()) backToGroup(); };
   $('#backFromManual').onclick = backFromManual;
   $('#backFromManual2').onclick = backFromManual;
@@ -1672,33 +1716,99 @@ const PIN_SUFFIX = '::ensemble-pin';
 
   /* ---------- manual entries (coordinator adds availability for others) ---------- */
   let mEntry = null, mSel = {};
+  const noteEl = () => delegate ? $('#delegateNote') : $('#manualNote');
+  const inviteUrl = t => location.origin + location.pathname + '#e/' + eventId + '/m/' + t;
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch { prompt('Copy this link:', text); return false; }
+  }
+  function openDelegate(inv) { delegate = inv; loc = inv.loc; renderLocTabs(); showTab('manual', 'delegate'); window.scrollTo(0, 0); }
+  function renderManaging() {
+    const list = myInvites.map(i => ({ i, entry: manuals().find(m => m.id === i.entry_id), place: locs()[i.loc] })).filter(x => x.entry && x.place);
+    $('#managingSection').classList.toggle('hidden', !list.length);
+    $('#managingList').innerHTML = list.map(({ i, entry, place }) => {
+      const n = (entry.availability?.[i.loc] || []).length;
+      return `<li><span class="n">${esc(entry.name)}<small>${esc(place.name)} · ${n ? n + ' slot' + (n > 1 ? 's' : '') + ' marked' : 'nothing marked yet'}${entry.updated_at ? ' · ' + fmtStamp(entry.updated_at) : ''}</small></span><span class="c"><button class="btn small" data-deleg="${i.token}">Fill in times</button></span></li>`;
+    }).join('');
+    $('#managingList').querySelectorAll('[data-deleg]').forEach(b => b.onclick = () => {
+      if (dirty && !confirm('You have unsaved changes to your own availability. Leave them without saving?')) return;
+      if (dirty) { dirty = false; loadEvent(); }
+      openDelegate(myInvites.find(i => i.token === b.dataset.deleg));
+    });
+  }
+  function applyManualMode() {
+    const d = !!delegate, multi = locs().length > 1;
+    const name = mEntry ? mEntry.name : '', place = d ? (locs()[delegate.loc]?.name || '') : '';
+    $('#manualEntriesSection').classList.toggle('hidden', d);
+    $('#delegateIntro').classList.toggle('hidden', !d);
+    $('#manualLocPicker').classList.toggle('hidden', d || !multi);
+    $('#manualTitle').textContent = d ? `Availability for ${name}` : 'Manually add availability';
+    $('#manualTimesTitle').textContent = d ? (multi ? `${name} at ${place}` : `${name}'s times`) : 'Their times';
+    if (d) {
+      $('#delegateTitle').textContent = `You're filling in for ${name}`;
+      $('#delegateCap').textContent = `Paint the times ${name} is available${multi ? ' at ' + place : ''}, then press Save entry. Hatched slots weren't proposed by the host. Your own availability is kept separately.`;
+    }
+    document.querySelectorAll('#manualPane .backtxt').forEach(el => el.textContent = d ? 'Back to your availability' : 'Back to everyone’s answers');
+    renderInvites();
+  }
+  function renderInvites() {
+    const show = isOwner && !delegate && !!mEntry;
+    $('#inviteSection').classList.toggle('hidden', !show);
+    if (!show) return;
+    const multi = locs().length > 1, prev = $('#inviteLoc').value;
+    $('#inviteLoc').classList.toggle('hidden', !multi); $('#inviteLocLabel').classList.toggle('hidden', !multi);
+    $('#inviteLoc').innerHTML = locs().map((l, i) => `<option value="${i}">${esc(l.name)}</option>`).join('');
+    $('#inviteLoc').value = prev && +prev < locs().length ? prev : String(loc);
+    const list = hostInvites.filter(i => i.entry_id === mEntry.id);
+    $('#inviteList').innerHTML = list.length
+      ? list.map(i => `<li><span class="n">${multi ? esc(locs()[i.loc]?.name || 'Removed location') : 'Invite link'}<small>${i.editor ? `Linked to ${esc(i.editor_name || 'someone')}${i.claimed_at ? ' · ' + fmtStamp(i.claimed_at) : ''}` : 'Not opened yet'}</small></span><span class="c"><button class="btn ghost small" data-copy="${i.token}">Copy link</button> <button class="btn ghost small" data-off="${i.token}">Turn off</button></span></li>`).join('')
+      : '<li><span class="cap" style="white-space:normal">No invite links for this entry yet.</span></li>';
+    $('#inviteList').querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => { if (await copyText(inviteUrl(b.dataset.copy))) toast('Invite link copied'); });
+    $('#inviteList').querySelectorAll('[data-off]').forEach(b => b.onclick = async () => {
+      const inv = hostInvites.find(i => i.token === b.dataset.off);
+      if (!confirm(inv.editor ? `Turn off this link? ${inv.editor_name || 'They'} will no longer be able to edit this entry. Times already entered stay.` : 'Turn off this link? It will stop working.')) return;
+      const { error } = await sb.from('manual_invites').delete().eq('token', inv.token);
+      if (error) return toast(error.message);
+      hostInvites = hostInvites.filter(i => i.token !== inv.token); renderInvites(); toast('Link turned off');
+    });
+  }
+  $('#inviteMake').onclick = async () => {
+    if (!mEntry) return;
+    if (manualDirty()) { if (!(await saveManual())) return; }
+    const l = locs().length > 1 ? +$('#inviteLoc').value : 0;
+    const { data, error } = await sb.from('manual_invites').insert({ event_id: eventId, entry_id: mEntry.id, loc: l }).select().single();
+    if (error) return toast(error.message);
+    hostInvites.push(data); renderInvites();
+    if (await copyText(inviteUrl(data.token))) toast(`Link copied — send it to whoever's filling in ${mEntry.name}`);
+  };
   function renderManualPick() {
     const list = manuals();
     $('#manualPick').innerHTML = '<option value="">+ New entry</option>' + list.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('');
     $('#manualPick').value = mEntry ? mEntry.id : '';
-    $('#manualDelete').classList.toggle('hidden', !mEntry);
+    $('#manualDelete').classList.toggle('hidden', !mEntry || !!delegate);
     $('#manualName').value = mEntry ? mEntry.name : '';
     const multi = locs().length > 1;
-    $('#manualCopyBlock').classList.toggle('hidden', !multi);
+    $('#manualCopyBlock').classList.toggle('hidden', !multi || !!delegate);
     if (multi) $('#manualCopyTo').innerHTML = locs().map((l, i) => i === loc ? '' : `<option value="${i}">${esc(l.name)}</option>`).join('');
   }
   function loadManual(id) {
     mEntry = manuals().find(m => m.id === id) || null;
     mSel = {}; locs().forEach((_, i) => mSel[i] = new Set(mEntry?.availability?.[i] || []));
-    $('#manualNote').value = mEntry?.note || '';
+    $('#manualNote').value = mEntry?.note || ''; $('#delegateNote').value = mEntry?.note || '';
     renderManualPick(); renderManualList(); renderManualGrid();
     $('#manualDiscard').classList.toggle('hidden', !mEntry);
+    applyManualMode();
   }
   function renderManualGrid() {
     buildGrid($('#manualGrid'), plan.config, new Set(locs()[loc].proposed));
     setPaintMode(paintMode); paintSet($('#manualGrid'), mSel[loc] ||= new Set());
   }
-  makePainter($('#manualGrid'), () => mSel[loc] ||= new Set(), () => true);
+  makePainter($('#manualGrid'), () => mSel[loc] ||= new Set(), () => { if (delegate && plan.closed) { toast('This event is closed to changes'); return false; } return true; });
   const manualDirty = () => {
     if (!mEntry && !$('#manualName').value.trim() && !Object.values(mSel).some(x => x.size)) return false;
     const saved = mEntry || { name: '', note: '', availability: {} };
     if ($('#manualName').value.trim() !== (saved.name || '')) return true;
-    if ($('#manualNote').value.trim() !== (saved.note || '')) return true;
+    if (noteEl().value.trim() !== (saved.note || '')) return true;
     return locs().some((l, i) => {
       const a = [...(mSel[i] || [])].sort((x,y)=>x-y).join(',');
       const b = (saved.availability?.[i] || []).slice().sort((x,y)=>x-y).join(',');
@@ -1742,12 +1852,26 @@ const PIN_SUFFIX = '::ensemble-pin';
   $('#manualClear').onclick = () => { mSel[loc].clear(); paintSet($('#manualGrid'), mSel[loc]); };
   $('#manualSave').onclick = () => saveManual();
   async function saveManual() {
+    if (delegate) {
+      const slots = [...(mSel[delegate.loc] || [])].sort((a,b)=>a-b);
+      $('#manualState').textContent = 'Saving…';
+      const { data, error } = await sb.rpc('save_manual_invite', { p_token: delegate.token, p_slots: slots, p_note: noteEl().value.trim() });
+      if (error) { $('#manualState').textContent = 'Not saved — ' + error.message; return false; }
+      const list = manuals(), i = list.findIndex(m => m.id === data.id);
+      if (i >= 0) list[i] = data; mEntry = data;
+      $('#manualState').textContent = 'Saved';
+      setTimeout(() => { if ($('#manualState').textContent === 'Saved') $('#manualState').textContent = ''; }, 1600);
+      renderManaging(); toast(`${data.name} saved — the host can see it now`);
+      return true;
+    }
     const name = $('#manualName').value.trim();
     if (!name) { toast('Give this entry a name so you know whose times these are'); return false; }
     const availability = {}; Object.keys(mSel).forEach(k => availability[k] = [...mSel[k]].sort((a,b)=>a-b));
     const list = manuals();
     const note = $('#manualNote').value.trim();
-    if (mEntry) Object.assign(mEntry, { name, availability, note, updated_at: new Date().toISOString() });
+    // re-find the entry in the live config: a realtime update (e.g. an invitee saving) may have replaced it
+    const cur = mEntry && list.find(m => m.id === mEntry.id);
+    if (mEntry) { const keep = { ...(cur || mEntry).availability }; Object.assign(cur || mEntry, { name, availability: { ...keep, ...availability }, note, updated_at: new Date().toISOString() }); if (cur) mEntry = cur; else list.push(mEntry); }
     else { mEntry = { id: 'x' + Date.now().toString(36), name, availability, note, updated_at: new Date().toISOString() }; list.push(mEntry); }
     $('#manualState').textContent = 'Saving…';
     const { error } = await sb.from('events').update({ config: plan.config }).eq('id', eventId);
@@ -1763,6 +1887,8 @@ const PIN_SUFFIX = '::ensemble-pin';
   $('#manualDelete').onclick = async () => {
     if (!mEntry || !confirm(`Delete the entry for ${mEntry.name}?`)) return;
     plan.config.manual = manuals().filter(m => m.id !== mEntry.id);
+    sb.from('manual_invites').delete().eq('event_id', eventId).eq('entry_id', mEntry.id).then(() => {});
+    hostInvites = hostInvites.filter(i => i.entry_id !== mEntry.id);
     const { error } = await sb.from('events').update({ config: plan.config }).eq('id', eventId);
     if (error) return toast(error.message);
     mEntry = null; loadManual(''); paintHeat(); toast('Entry deleted');
@@ -1805,10 +1931,10 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (!histRows || !histRows.length) { $('#histList').innerHTML = '<p class="cap">No saves recorded yet. Changes from here on will be listed.</p>'; return; }
     // walk oldest→newest per person so each entry can be compared with the one before it
     const byUser = {};
-    [...histRows].reverse().forEach(r => { const key = r.user_id || 'manual:' + (r.name || ''); (byUser[key] ||= []).push(r); });
+    const hkey = r => r.user_id || 'manual:' + (r.name || '').replace(/ \(added by [^)]*\)$/, '');
+    [...histRows].reverse().forEach(r => { (byUser[hkey(r)] ||= []).push(r); });
     const items = histRows.map(r => {
-      const key = r.user_id || 'manual:' + (r.name || '');
-      const list = byUser[key], idx = list.findIndex(x => x.id === r.id);
+      const list = byUser[hkey(r)], idx = list.findIndex(x => x.id === r.id);
       const prev = idx > 0 ? list[idx - 1] : null;
       let inner = '';
       locs().forEach((l, i) => {
