@@ -646,7 +646,7 @@
         <p class="cap">Optional &mdash; travel time, a soft maybe, a hard stop.</p>
         <div id="noteEdit">
           <textarea id="noteBox" maxlength="400" placeholder="e.g. Tuesdays I can only stay an hour."></textarea>
-          <p class="cap" id="noteSendCap" style="margin:10px 0 0">Saved with <b>Save changes</b>.</p>
+          <p class="cap" id="noteSendCap" style="margin:10px 0 0">Share by Saving Changes.</p>
         </div>
         <div id="noteView" class="hidden">
           <div class="saved" id="noteText"></div>
@@ -1097,7 +1097,6 @@ const PIN_SUFFIX = '::ensemble-pin';
   const stopPolling = () => { clearInterval(pollTimer); pollTimer = null; };
   let inviteToken = null, pendingDelegate = null, myInvites = [], hostInvites = [], delegate = null;
   let cohostToken = null, coHosts = [], cohostInvites = [], isPrimary = false;
-  const MAXCOHOSTS = 4;
   const route = () => { const m = location.hash.match(/^#e\/([0-9a-f-]{36})(?:\/m\/([0-9a-f-]{36}))?/); eventId = m ? m[1] : null; inviteToken = m && m[2] ? m[2] : null; const h = location.hash.match(/^#e\/[0-9a-f-]{36}\/h\/([0-9a-f-]{36})/); cohostToken = h ? h[1] : null; };
 
   async function render() {
@@ -1909,7 +1908,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (guestGroup) $('#groupNoteSlot').appendChild($('#noteSection'));
     else $('#noteHome').after($('#noteSection'));
     $('#noteTitle').textContent = guestGroup ? 'Your note to the group' : 'A note about your availability';
-    $('#noteSendCap').innerHTML = guestGroup ? 'Everyone can read it. Saved with <b>Save changes</b>.' : 'Saved with <b>Save changes</b>.';
+    $('#noteSendCap').innerHTML = guestGroup ? 'Everyone can read it. Share by Saving Changes.' : 'Share by Saving Changes.';
     if (w === 'group' && plan && canSeeGroup()) paintHeat();
     const bar = (w === 'you' || guestGroup) && !!plan && !locked();
     $('#savebar').classList.toggle('on', bar);
@@ -2342,9 +2341,8 @@ const PIN_SUFFIX = '::ensemble-pin';
   function renderCohosts() {
     if (!plan || !isOwner) return;
     const primaryName = isPrimary ? (profileName || 'You') : (responses.find(r => r.user_id === plan.owner)?.name || 'The event creator');
-    const slotsLeft = MAXCOHOSTS - coHosts.length - cohostInvites.length;
     $('#cohostCap').textContent = isPrimary
-      ? `Co-hosts can do everything you can — edit times and locations, add entries, see everyone's answers — except delete the event or manage co-hosts. Up to ${MAXCOHOSTS}.`
+      ? `Co-hosts can do everything you can — edit times and locations, add entries, see everyone's answers — except delete the event or manage co-hosts.`
       : `You're a co-host. ${primaryName} is the primary host and the only one who can delete the event or manage co-hosts.`;
     let rows = `<li><span class="n">${esc(primaryName)}${isPrimary ? ' (you)' : ''}<small>Primary host</small></span></li>`;
     rows += coHosts.map(c => {
@@ -2357,8 +2355,8 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (isPrimary) rows += cohostInvites.map(i => `<li><span class="n">Unused co-host link<small>Created ${fmtStamp(i.created_at)} · works once</small></span><span class="c"><button class="btn ghost small" data-cocopy="${i.token}">Copy link</button> <button class="btn ghost small" data-cooff="${i.token}">Turn off</button></span></li>`).join('');
     $('#cohostList').innerHTML = rows;
     $('#cohostInviteRow').classList.toggle('hidden', !isPrimary);
-    $('#cohostMake').disabled = slotsLeft <= 0;
-    $('#cohostCount').textContent = slotsLeft <= 0 ? `All ${MAXCOHOSTS} co-host spots are taken or have a link out` : `${slotsLeft} of ${MAXCOHOSTS} spots open`;
+    $('#cohostMake').disabled = false;
+    $('#cohostCount').textContent = coHosts.length ? `${coHosts.length} co-host${coHosts.length > 1 ? 's' : ''}` : '';
     $('#cohostList').querySelectorAll('[data-cocopy]').forEach(b => b.onclick = async () => { if (await copyText(cohostUrl(b.dataset.cocopy))) toast('Co-host link copied'); });
     $('#cohostList').querySelectorAll('[data-cooff]').forEach(b => b.onclick = async () => {
       if (!confirm('Turn off this co-host link? It will stop working.')) return;
@@ -2650,7 +2648,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31z';
+  const BUILD = '2026-11-01a';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
