@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Ensemble — find a time that works for everyone</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&display=swap" rel="stylesheet">
@@ -208,8 +208,8 @@
   .layout{display:block}
 
   /* grid */
-  .gridwrap{overflow-x:auto;padding-bottom:6px;user-select:none;-webkit-user-select:none;touch-action:pan-x pan-y pinch-zoom;position:relative}
-  .gridwrap.painting{touch-action:pinch-zoom}   /* one finger paints, two fingers pinch-zoom */
+  .gridwrap{overflow-x:auto;padding-bottom:6px;user-select:none;-webkit-user-select:none;touch-action:pan-x pan-y;position:relative}
+  .gridwrap.painting{touch-action:none}
   table.grid{border-collapse:separate;border-spacing:3px;min-width:100%}
   table.grid th{font-weight:500;font-size:var(--fs-cap);color:var(--ink-2);padding:0 4px 6px;white-space:nowrap}
   table.grid th.day{cursor:pointer;border-radius:8px}
@@ -217,7 +217,7 @@
   table.grid th.day:active{background:var(--h0)}
   table.grid th.time,table.grid th.corner{position:sticky;left:0;z-index:3;background:var(--paper);width:var(--timecol);min-width:var(--timecol)}
   table.grid th.time{text-align:right;vertical-align:top;font-size:var(--fs-cap);padding-right:10px;line-height:1;transform:translateY(-6px)}
-  table.grid td{height:var(--cell);min-width:52px;border-radius:5px;background:var(--h0);cursor:pointer;box-shadow:inset 0 0 0 1px rgba(30,63,214,.12)}
+  table.grid td{height:var(--cell);min-width:var(--colw,52px);border-radius:5px;background:var(--h0);cursor:pointer;box-shadow:inset 0 0 0 1px rgba(30,63,214,.12)}
   table.grid td.q15{height:calc(var(--cell) * .6)}
   table.grid td.dayslot{height:calc(var(--cell) * 2)}
   table.grid td.on{background:var(--you);box-shadow:none}
@@ -236,7 +236,7 @@
   .heat table.grid td.sel{outline:2px solid var(--ink)}
   .legend{font-size:var(--fs-cap);color:var(--ink-2);margin-top:12px;line-height:1.7}
   .legend i{display:inline-block;width:16px;height:13px;border-radius:3px;vertical-align:-1px;margin:0 3px}
-  @media (pointer:coarse){ :root{--cell:40px;--timecol:58px} table.grid td{min-width:44px} table.grid th.day{padding-bottom:8px} }
+  @media (pointer:coarse){ :root{--cell:40px;--timecol:58px;--colw:44px} table.grid th.day{padding-bottom:8px} }
 
   .savebar{position:fixed;left:0;right:0;bottom:0;display:none;z-index:6;background:rgba(251,250,246,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:14px 18px;justify-content:center}
   .savebar.on{display:flex}
@@ -360,6 +360,19 @@
   .linkbtn .more{color:var(--ink-2)}
   .linkbtn:hover .more{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
   .linkbtn[aria-expanded=true] .car{display:inline-block;transform:rotate(180deg)}
+  /* page never pinch- or double-tap-zooms; each chart has its own − / + instead */
+  html, body{touch-action:pan-x pan-y}
+  table.grid th.corner{vertical-align:bottom;padding:0 4px 8px 0}
+  .zoomctl{display:inline-flex;gap:4px}
+  .zoomctl button{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:16px;font-weight:500;line-height:1;padding:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+  .zoomctl button:hover{border-color:var(--ink-2)}
+  .zoomctl button{-webkit-tap-highlight-color:transparent}
+  .zoomctl button:focus:not(:focus-visible){outline:none}
+  .zoomctl button:disabled{opacity:.35;cursor:default}
+  /* labels shrink and grow with the chart's zoom so zooming out really shows more */
+  .gridwrap table.grid th.day, .gridwrap table.grid th.time{font-size:max(10px, calc(var(--fs-cap) * var(--z, 1)))}
+  .gridwrap table.grid th.day b{font-size:max(11px, calc(var(--fs-body) * var(--z, 1)))}
+  .gridwrap.heat table.grid td{font-size:max(10px, calc(var(--fs-cap) * min(var(--z, 1), 1.3)))}
 </style>
 </head>
 <body>
@@ -591,7 +604,7 @@
 
       <section class="section hidden" id="peekSection">
         <div class="shead"><h3>See when others are free</h3></div>
-        <p class="cap" id="peekCap">Group view is on. See everyone&rsquo;s answers and mark your times right on that chart to overlap as much as possible &mdash; or below, where it&rsquo;s just yours.</p>
+        <p class="cap" id="peekCap">Group view: See everyone&rsquo;s answers and mark your times right on that chart to overlap as much as possible &mdash; or below, where it&rsquo;s just yours.</p>
         <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="goGroupGuest">See everyone&rsquo;s answers</button></div>
       </section>
 
@@ -922,7 +935,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   };
   function buildGrid(container, cfg, proposed) {
     const n = spd(cfg), cls = cfg.g >= 1440 ? 'dayslot' : cfg.g === 15 ? 'q15' : '';
-    let html = '<table class="grid"><thead><tr><th class="corner"></th>';
+    let html = '<table class="grid"><thead><tr><th class="corner"><span class="zoomctl"><button type="button" data-z="-1" aria-label="Zoom chart out" title="Zoom out">&minus;</button><button type="button" data-z="1" aria-label="Zoom chart in" title="Zoom in">+</button></span></th>';
     cfg.d.forEach((iso, day) => { const d = new Date(iso+'T00:00'); html += `<th class="day" data-day="${day}">${DOW[d.getDay()]}<b>${fmtDate(iso)}</b></th>`; });
     html += '</tr></thead><tbody>';
     for (let k = 0; k < n; k++) {
@@ -2175,6 +2188,30 @@ const PIN_SUFFIX = '::ensemble-pin';
   };
   document.querySelectorAll('[data-find]').forEach(b => b.onclick = () => { $('#findBox').value = b.dataset.find; runFind(); });
 
+  /* ---------- chart zoom: − / + in each chart's corner, remembered per chart on this device ---------- */
+  const ZOOMS = [0.6, 0.75, 0.9, 1, 1.15, 1.3, 1.5, 1.75, 2];
+  const zoomKey = w => 'ens_zoom_' + w.id;
+  function applyZoom(w) {
+    const z = +(lsGet(zoomKey(w)) || 1);
+    const cs = getComputedStyle(document.documentElement);
+    const cell = parseFloat(cs.getPropertyValue('--cell')) || 30, colw = parseFloat(cs.getPropertyValue('--colw')) || 52;
+    if (z === 1) { ['--cell', '--colw', '--z'].forEach(k => w.style.removeProperty(k)); }
+    else { w.style.setProperty('--cell', (cell * z).toFixed(1) + 'px'); w.style.setProperty('--colw', (colw * z).toFixed(1) + 'px'); w.style.setProperty('--z', String(z)); }
+    w.querySelectorAll('.zoomctl button').forEach(b => b.disabled = b.dataset.z < 0 ? z <= ZOOMS[0] : z >= ZOOMS.at(-1));
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.zoomctl button'); if (!b) return;
+    const w = b.closest('.gridwrap'); if (!w) return;
+    const z = +(lsGet(zoomKey(w)) || 1);
+    let i = ZOOMS.findIndex(v => v >= z - 0.001); if (i < 0) i = ZOOMS.indexOf(1);
+    const next = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, i + (+b.dataset.z)))];
+    lsSet(zoomKey(w), String(next)); applyZoom(w);
+  });
+  // charts are redrawn often; re-apply each chart's zoom whenever its contents change
+  document.querySelectorAll('.gridwrap').forEach(w => { applyZoom(w); new MutationObserver(() => applyZoom(w)).observe(w, { childList: true }); });
+  // older iPhones ignore the viewport setting, so stop their pinch gesture directly
+  ['gesturestart', 'gesturechange'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+
   /* ---------- tips: fold away once you know how it works (remembered on this device) ---------- */
   const TIPS_KEY = 'ens_tips';
   function applyTips() {
@@ -2211,7 +2248,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (!h) document.querySelectorAll('.toolwrap').forEach(w => w.classList.add('hidden'));
     $('#peekCap').innerHTML = isOwner
       ? 'As a host you can always see everyone&rsquo;s answers. Mark your times right on that chart to overlap as much as possible &mdash; or below, where it&rsquo;s just yours.'
-      : 'Group view is on. See everyone&rsquo;s answers and mark your times right on that chart to overlap as much as possible &mdash; or below, where it&rsquo;s just yours.';
+      : 'Group view: See everyone&rsquo;s answers and mark your times right on that chart to overlap as much as possible &mdash; or below, where it&rsquo;s just yours.';
   }
   $('#modeTabs').querySelectorAll('button').forEach(b => b.onclick = () => {
     const wantMe = b.dataset.m === 'me';
@@ -2562,7 +2599,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31w';
+  const BUILD = '2026-10-31x';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
