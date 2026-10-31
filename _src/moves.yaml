@@ -512,9 +512,9 @@ performing:
         - { work: "Q", company: "Yannis Adoniou", role: "Contemporary dancer", where: "San Francisco", when: "2010" }
     - heading: Film, television and brands
       items:
-        - { work: "Music videos", company: "Daft Punk · Lose Yourself to Dance", role: "Dancer", where: "", when: "" }
+        - { work: "Music videos / films", company: "Tessa Violet, I Like (the idea of) You · Daft Punk, Lose Yourself to Dance · Scarlett Rabe, Battle Cry · The Sometimes Island, Phantom Limb · Invertigo Dance Theatre, Illuminate · We Are Kindred, Adagio · Diplomacy · Take Back the Night, feature film", role: "Dancer", where: "", when: "2013–2021" }
         - { work: "Television", company: "Face Off · Syfy Channel", role: "Assistant choreographer", where: "Los Angeles", when: "2014" }
-        - { work: "Brands and events", company: "We Are Kindred ballet film (2018) · L'Oréal Professionnel tour · IAA Frankfurt", role: "Dancer", where: "", when: "" }
+        - { work: "Brands", company: "Netflix, Squid Game: The Challenge · Daphne · APM · Anja Gockel · TOP HAIR · Germany's Next Top Model · Lascana · Meow Wolf · DFB Cup final · Volkswagen · L'Oréal Professionnel · Otis College · Joseph Ribkoff · Holt Renfrew · Ardene · Budweiser · Samuel Adams · BIC", role: "Model and dancer", where: "", when: "2010–2026" }
     - heading: Lineage
       items:
         - { work: "Alonzo King LINES Ballet BFA", company: "Dominican University of California · with Alonzo King, Marina Hotchkiss, Arturo Fernandez, Maurya Kerr, Yannis Adoniou, Carmen Rozestraten, Gregory Dawson, Christian Burns, Kara Davis and Michael Valez", role: "BFA", where: "San Francisco", when: "2011" }
@@ -573,6 +573,10 @@ performing:
     "David Taylor Dance Theatre": "https://www.zikrdance.com/artistic-director.html"
     "David Taylor": "https://www.zikrdance.com/artistic-director.html"
     "Parker Dance Academy": "https://www.parkerdance.com"
+    "I Like (the idea of) You": "https://www.youtube.com/watch?v=oQyFFTh_YGc"
+    "Lose Yourself to Dance": "https://www.youtube.com/watch?v=NF-kLy44Hls"
+    "Battle Cry": "https://www.youtube.com/watch?v=cnH8US8QWuo"
+    "Phantom Limb": "https://www.youtube.com/watch?v=ntzrBx5_fFQ"
   photo_credit: "Photographs by Chris Gonz"
   video:
     kind: file
