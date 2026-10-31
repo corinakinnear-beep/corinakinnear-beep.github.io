@@ -223,19 +223,24 @@
   .savebar .state.dirty{color:var(--ink);font-weight:600}
   .savebar .btn{padding:14px 30px;font-size:var(--fs-body);min-height:52px}
   body.hasbar{padding-bottom:92px}
-  body.hasbar .paintbar{bottom:104px}
+  body.hasbar .paintbar{bottom:calc(var(--barh, 92px) + 12px)}
   @media (max-width:640px){
     .savebar{padding:8px 14px calc(8px + env(safe-area-inset-bottom))}
     .savebar .inner{flex-wrap:nowrap;gap:10px}
     .savebar .state{font-size:var(--fs-cap);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .savebar .btn{padding:9px 18px;min-height:40px;font-size:var(--fs-cap);white-space:nowrap}
     body.hasbar{padding-bottom:64px}
-    body.hasbar .paintbar{bottom:70px}
+    body.hasbar .paintbar{bottom:calc(var(--barh, 58px) + 10px)}
   }
   .paintbar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:none;gap:6px;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:6px;box-shadow:0 8px 30px rgba(23,24,31,.18);z-index:5;align-items:center}
   .paintbar button{border:0;background:transparent;border-radius:999px;padding:16px 34px;min-height:58px;font-size:var(--fs-lead);font-weight:600}
   .paintbar button[aria-pressed=true]{background:var(--ink);color:#fff}
   @media (pointer:coarse){.paintbar.avail{display:inline-flex}}
+  @media (max-width:640px){
+    /* same size as the Save changes button */
+    .paintbar{bottom:calc(16px + env(safe-area-inset-bottom));padding:3px;gap:3px;border-width:1px}
+    .paintbar button{padding:9px 18px;min-height:40px;font-size:var(--fs-cap);font-weight:600}
+  }
 
   .sideold h3{font-size:var(--fs-body);font-weight:600;margin:0 0 8px;color:var(--ink-2)}
   .side ul{list-style:none;margin:0 0 22px;padding:0}
@@ -2290,8 +2295,14 @@ const PIN_SUFFIX = '::ensemble-pin';
   }
 
 
+  /* ---------- keep Scroll / Paint just above the save bar, whatever its height ---------- */
+  const syncBarHeight = () => document.documentElement.style.setProperty('--barh', $('#savebar').offsetHeight + 'px');
+  if ('ResizeObserver' in window) new ResizeObserver(syncBarHeight).observe($('#savebar'), { box: 'border-box' });
+  window.addEventListener('resize', syncBarHeight);
+  if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
+
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31c';
+  const BUILD = '2026-10-31d';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
