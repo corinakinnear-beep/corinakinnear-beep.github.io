@@ -501,7 +501,6 @@ performing:
     - heading: Companies and choreographers
       items:
         - { work: "Fish", company: "Mike Tyus", role: "Dancer", where: "Los Angeles", when: "2021" }
-        - { work: "Dream Eaters", company: "Invertigo Dance Theatre", role: "Contemporary dancer", where: "Los Angeles", when: "2021" }
         - { work: "Formula and Fairy Tales", company: "Invertigo Dance Theatre", role: "Contemporary dancer", where: "Gainesville", when: "2020" }
         - { work: "Beef", company: "Luke Zender", role: "Dancer", where: "New York and Jackson, Wyoming", when: "2018–2019" }
         - { work: "Impaired Judgment in Slow Motion", company: "MiMoDa Movement Theater", role: "Dance-theatre dancer", where: "Los Angeles", when: "2013–2015" }
@@ -514,7 +513,7 @@ performing:
     - heading: Film, television and brands
       items:
         - { work: "Music videos", company: "Daft Punk · Lose Yourself to Dance", role: "Dancer", where: "", when: "" }
-        - { work: "Television", company: "Face Off · Syfy", role: "Assistant choreographer", where: "Los Angeles", when: "2014" }
+        - { work: "Television", company: "Face Off · Syfy Channel", role: "Assistant choreographer", where: "Los Angeles", when: "2014" }
         - { work: "Brands and events", company: "We Are Kindred ballet film (2018) · L'Oréal Professionnel tour · IAA Frankfurt", role: "Dancer", where: "", when: "" }
     - heading: Lineage
       items:
@@ -581,8 +580,8 @@ performing:
     poster: /moves/img/video/reel-2025.jpg
     caption: "Performance reel, 2025"
   images:
-    - { file: corina-deutscheoper-60.jpg, alt: "Corina at the barre in a red dress", pos: "50% 12%" }
-    - { file: corina-deutscheoper-56.jpg, alt: "An arabesque on the empty stage of the Deutsche Oper Berlin" }
+    - { file: corina-deutscheoper-56.jpg, alt: "An arabesque on the empty stage of the Deutsche Oper Berlin", portrait: true }
+    - { file: corina-deutscheoper-60.jpg, alt: "Corina at the barre in a red dress" }
     - { file: corina-deutscheoper-54.jpg, alt: "Dancing on the opera stage, the auditorium behind" }
     - { file: corina-deutscheoper-50.jpg, alt: "Backstage among the stage lights" }
     - { file: corina-deutscheoper-36.jpg, alt: "A backbend in warm light" }
