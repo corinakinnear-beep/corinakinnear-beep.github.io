@@ -112,6 +112,11 @@
   .facts{display:grid;grid-template-columns:auto 1fr;gap:8px 22px;margin:0;align-items:baseline}
   .facts dt{font-size:var(--fs-cap);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:700;white-space:nowrap}
   .facts dd{margin:0;font-size:var(--fs-body)}
+  .modepick{display:inline-flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .modepick button{font:inherit;border:0;background:none;padding:2px 0;cursor:pointer;color:var(--ink-2)}
+  .modepick button:hover{color:var(--ink)}
+  .modepick button[aria-selected=true]{color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1.5px}
+  .modepick .sep{color:var(--ink-2)}
   @media (max-width:560px){.facts{grid-template-columns:1fr;gap:2px 0}.facts dd{margin-bottom:10px}}
   #groupPane #youLocSection{display:none}
   .bigtitle{font-size:var(--fs-h2);font-weight:600;letter-spacing:-.02em;margin:44px 0 18px}
@@ -487,17 +492,12 @@
       <dl class="facts">
         <dt>Dates / Times</dt><dd id="pDates"></dd>
         <dt>Location options</dt><dd id="pLocs"></dd>
+        <dt class="modefact hidden">View</dt>
+        <dd class="modefact hidden"><span class="modepick" role="tablist" id="modeTabs" aria-label="View"><button role="tab" data-m="host" aria-selected="true">Host view</button><span class="sep" aria-hidden="true">&middot;</span><button role="tab" data-m="me" aria-selected="false">My availability</button></span></dd>
       </dl>
       <p id="pClosed" class="hidden" style="margin:10px 0 0"><span class="closed">Closed to changes</span></p>
     </header>
 
-    <div id="modeRow" class="hidden" style="margin:0 0 6px">
-      <div class="tabs" role="tablist" id="modeTabs" aria-label="View">
-        <button role="tab" data-m="host" aria-selected="true">Host view</button>
-        <button role="tab" data-m="me" aria-selected="false">My availability</button>
-      </div>
-      <p class="cap" id="modeCap" style="margin:10px 0 0"></p>
-    </div>
 
     <div id="shareSection">
     <h3 class="bigtitle">Share this event</h3>
@@ -2099,11 +2099,12 @@ const PIN_SUFFIX = '::ensemble-pin';
   /* ---------- host view / my availability ---------- */
   function applyRoleUi() {
     const h = hostUi();
-    $('#modeRow').classList.toggle('hidden', !isOwner);
-    $('#modeTabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String((b.dataset.m === 'me') === personalMode)));
-    $('#modeCap').textContent = personalMode
-      ? 'You’re seeing the event the way your invitees do. Your times count as your own answer.'
-      : 'Run the event: share it, propose times, and see everyone’s answers.';
+    document.querySelectorAll('.modefact').forEach(el => el.classList.toggle('hidden', !isOwner));
+    $('#modeTabs').querySelectorAll('button').forEach(b => {
+      const on = (b.dataset.m === 'me') === personalMode;
+      b.setAttribute('aria-selected', String(on));
+      b.title = b.dataset.m === 'me' ? 'See the event the way invitees do and add your own times' : 'Share the event, propose times and see everyone’s answers';
+    });
     ['#cohostBlock', '#manualToolBlock', '#groupViewBlock', '#toolsTitle', '#toolsToggleRow', '#optsSection', '#shareSection', '#backFromYouRow']
       .forEach(sel => $(sel).classList.toggle('hidden', !h));
     $('#closeBtn').classList.toggle('hidden', !h); $('#editBtn').classList.toggle('hidden', !h);
@@ -2462,7 +2463,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31l';
+  const BUILD = '2026-10-31m';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
