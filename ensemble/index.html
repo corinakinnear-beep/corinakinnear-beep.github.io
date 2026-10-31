@@ -473,6 +473,12 @@
       <div class="btnrow hidden" id="backFromYouRow" style="margin-bottom:8px"><button class="btn ghost small backlink" id="backFromYou">&larr; Back to everyone&rsquo;s answers</button></div>
       <h3 class="bigtitle" style="margin-top:12px">Add your availability</h3>
 
+      <section class="section hidden" id="peekSection">
+        <div class="shead"><h3>See when others are free</h3></div>
+        <p class="cap">The host has turned on group view. Look at everyone&rsquo;s answers, then come back and mark times that overlap as much as you can.</p>
+        <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="goGroupGuest">See everyone&rsquo;s answers</button></div>
+      </section>
+
       <section class="section hidden" id="managingSection">
         <div class="shead"><h3>You&rsquo;re also filling in for</h3></div>
         <p class="cap">The host invited you to enter availability on their behalf. This is separate from your own times below.</p>
@@ -526,6 +532,7 @@
 
     <!-- ===== EVERYONE'S ANSWERS ===== -->
     <div id="groupPane">
+      <div class="btnrow hidden" id="backToMineRow" style="margin-bottom:8px"><button class="btn ghost small backlink" id="backToMine">&larr; Back to my availability</button></div>
       <h3 class="bigtitle">Everyone&rsquo;s answers</h3>
 
       <section class="section locpick">
@@ -566,8 +573,8 @@
       </section>
       </div>
 
-      <h3 class="bigtitle">Additional tools</h3>
-      <div class="btnrow" style="margin:-4px 0 18px"><button class="btn ghost" id="toolsToggle">Show additional tools</button></div>
+      <h3 class="bigtitle" id="toolsTitle">Additional tools</h3>
+      <div class="btnrow" id="toolsToggleRow" style="margin:-4px 0 18px"><button class="btn ghost" id="toolsToggle">Show additional tools</button></div>
       <div id="toolsWrap" class="hidden">
 
       <section class="section hidden" id="cohostBlock">
@@ -585,6 +592,15 @@
         <p class="cap">For someone who told you their times another way, or for your own availability &mdash; the times you propose count as the location&rsquo;s availability, not yours.</p>
         <div class="btnrow" style="margin-top:14px">
           <button class="btn ghost" id="goManual">Add / edit an entry</button>
+        </div>
+      </section>
+
+      <section class="section hidden" id="groupViewBlock">
+        <div class="shead"><h3>Group view</h3></div>
+        <p class="cap">Let everyone invited see everyone&rsquo;s answers &mdash; the overlap grid, names and notes &mdash; so they can line their times up with each other. The change history and these tools stay with you and your co-hosts.</p>
+        <div class="btnrow" style="margin-top:14px;align-items:center">
+          <button class="btn ghost" id="groupViewBtn">Turn on group view</button>
+          <span class="cap" id="groupViewState"></span>
         </div>
       </section>
 
@@ -1166,7 +1182,9 @@ const PIN_SUFFIX = '::ensemble-pin';
 
   $('#createBtn').onclick = async () => {
     const names = locNames();
-    const config = { ...draft, locations: names.map((name, i) => ({ name, proposed: [...(proposed[i] || [])].sort((a,b)=>a-b) })) };
+    // keep everything else stored with the event (manual entries, group view…) when editing
+    const extras = editing && plan ? Object.fromEntries(Object.entries(plan.config || {}).filter(([k]) => !['d','s','e','g','locations'].includes(k))) : {};
+    const config = { ...extras, ...draft, locations: names.map((name, i) => ({ name, proposed: [...(proposed[i] || [])].sort((a,b)=>a-b) })) };
     const title = $('#title').value.trim() || 'Untitled event';
     $('#createBtn').disabled = true;
     if (editing && editBase) {
@@ -1269,7 +1287,10 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (isPrimary) { const { data: ci } = await sb.from('admin_invites').select('*').eq('event_id', eventId).order('created_at'); cohostInvites = ci || []; }
     $('#cohostBlock').classList.toggle('hidden', !isOwner);
     $('#manualToolBlock').classList.toggle('hidden', !isOwner);
-    renderCohosts();
+    $('#groupViewBlock').classList.toggle('hidden', !isOwner);
+    ['#toolsTitle', '#toolsToggleRow'].forEach(sel => $(sel).classList.toggle('hidden', !isOwner));
+    if (!isOwner) $('#toolsWrap').classList.add('hidden');
+    renderCohosts(); renderGroupView();
     $('#closeBtn').classList.toggle('hidden', !isOwner); $('#editBtn').classList.toggle('hidden', !isOwner);
     $('#optsSection').classList.toggle('hidden', !isOwner);
     $('#newEventTitle').textContent = 'Create a new event';
@@ -1324,7 +1345,7 @@ const PIN_SUFFIX = '::ensemble-pin';
       responses = rs || [];
       // a location may have been removed since this page loaded
       if (loc >= (plan.config.locations || []).length) { loc = 0; renderGrids(); }
-      renderLocTabs(); renderMeta(); renderManaging();
+      renderLocTabs(); renderMeta(); renderManaging(); renderGroupView();
       if (curTab === 'manual') loadManual(delegate ? delegate.entry_id : mEntry ? mEntry.id : '');
       // never redraw the grid under someone mid-edit — it would wipe their unsaved marks
       if (gridChanged && !dirty) renderGrids(); else paintHeat();
@@ -1506,8 +1527,10 @@ const PIN_SUFFIX = '::ensemble-pin';
       : n === 1 ? 'Showing one person on their own.' : `Showing where these ${n} overlap.`;
   }
 
+  const groupViewOn = () => !!plan?.config?.groupView;
+  const canSeeGroup = () => isOwner || groupViewOn();
   function paintHeat() {
-    if (!plan || !isOwner) return;
+    if (!plan || !canSeeGroup()) return;
     renderChips();
     const view = shown(), max = view.length || 1;
     const per = locs().map((l, li) => {
@@ -1623,7 +1646,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#guestNew').classList.toggle('hidden', w === 'manual');
     if (w !== 'manual') delegate = null;
     if (w === 'manual') { loadManual(delegate ? delegate.entry_id : mEntry ? mEntry.id : ''); }
-    if (w === 'group' && plan && isOwner) paintHeat();
+    if (w === 'group' && plan && canSeeGroup()) paintHeat();
     $('#savebar').classList.toggle('on', w === 'you' && !!plan && !plan.closed);
     document.body.classList.toggle('hasbar', w === 'you' && !!plan && !plan.closed);
     $('#paintbar').classList.toggle('avail', w === 'you' || w === 'manual');
@@ -1917,6 +1940,32 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#bestToggle').textContent = open ? 'Hide the full list' : 'Show the full list';
   };
   document.querySelectorAll('[data-find]').forEach(b => b.onclick = () => { $('#findBox').value = b.dataset.find; runFind(); });
+
+  /* ---------- group view (guests can see everyone's answers) ---------- */
+  function renderGroupView() {
+    if (!plan) return;
+    const on = groupViewOn();
+    $('#groupViewBtn').textContent = on ? 'Turn off group view' : 'Turn on group view';
+    $('#groupViewState').textContent = on ? 'On — everyone invited can see all answers' : 'Off — guests only see their own answers';
+    const guest = !isOwner && on;
+    $('#peekSection').classList.toggle('hidden', !guest);
+    $('#backToMineRow').classList.toggle('hidden', !guest);
+    if (!isOwner && !on && curTab === 'group') { showTab('you', 'groupViewOff'); renderSaveBar(); }
+  }
+  $('#groupViewBtn').onclick = async () => {
+    const next = !groupViewOn();
+    $('#groupViewBtn').disabled = true;
+    // start from the latest saved settings so nothing someone else just saved is lost
+    const { data: ev, error: rErr } = await sb.from('events').select('config').eq('id', eventId).single();
+    const { error } = rErr ? { error: rErr } : await sb.from('events').update({ config: { ...ev.config, groupView: next } }).eq('id', eventId);
+    $('#groupViewBtn').disabled = false;
+    if (error) return toast("Couldn't change group view: " + error.message);
+    plan.config = { ...ev.config, groupView: next };
+    renderGroupView();
+    toast(next ? 'Group view is on — everyone invited can now see all answers' : 'Group view is off — guests only see their own answers');
+  };
+  $('#goGroupGuest').onclick = () => { showTab('group', 'button:goGroupGuest'); window.scrollTo(0, 0); };
+  $('#backToMine').onclick = () => { showTab('you', 'button:backToMine'); renderSaveBar(); window.scrollTo(0, 0); };
 
   /* ---------- co-hosts ---------- */
   const cohostUrl = t => location.origin + location.pathname + '#e/' + eventId + '/h/' + t;
