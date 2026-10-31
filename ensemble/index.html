@@ -179,7 +179,7 @@
   .toggle{display:flex;align-items:center;gap:10px;font-size:var(--fs-body);background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:18px;max-width:620px}
   .toggle input{width:20px;height:20px;accent-color:var(--h4);flex:none}
   .toggle span{color:var(--ink-2);font-size:var(--fs-cap);display:block}
-  @media (max-width:600px){.evcard{grid-template-columns:1fr}.evcard .acts{flex-direction:row;align-items:center}}
+  @media (max-width:600px){.evcard{grid-template-columns:1fr}.evcard .acts{flex-direction:row;align-items:center;flex-wrap:wrap}}
 
   .planhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -491,6 +491,14 @@
       <p id="pClosed" class="hidden" style="margin:10px 0 0"><span class="closed">Closed to changes</span></p>
     </header>
 
+    <div id="modeRow" class="hidden" style="margin:0 0 6px">
+      <div class="tabs" role="tablist" id="modeTabs" aria-label="View">
+        <button role="tab" data-m="host" aria-selected="true">Host view</button>
+        <button role="tab" data-m="me" aria-selected="false">My availability</button>
+      </div>
+      <p class="cap" id="modeCap" style="margin:10px 0 0"></p>
+    </div>
+
     <div id="shareSection">
     <h3 class="bigtitle">Share this event</h3>
     <section class="section share">
@@ -511,7 +519,7 @@
 
       <section class="section hidden" id="peekSection">
         <div class="shead"><h3>See when others are free</h3></div>
-        <p class="cap">The host has turned on group view. See everyone&rsquo;s answers and mark your own times right on the same chart, so you can overlap as much as possible.</p>
+        <p class="cap" id="peekCap">The host has turned on group view. See everyone&rsquo;s answers and mark your own times right on the same chart, so you can overlap as much as possible.</p>
         <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="goGroupGuest">See everyone&rsquo;s answers</button></div>
       </section>
 
@@ -1021,6 +1029,10 @@ const PIN_SUFFIX = '::ensemble-pin';
   const lastSeenKey = id => 'ens_seen_' + id;
   const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+  // hosts can switch between running the event and answering it like an invitee
+  let personalMode = false;
+  const modeKey = id => 'ens_mode_' + id;
+  const hostUi = () => isOwner && !personalMode;
   const eventEnd = ev => new Date(ev.config.d.at(-1) + 'T23:59');
   let dashRows = [];
 
@@ -1077,12 +1089,18 @@ const PIN_SUFFIX = '::ensemble-pin';
           <ul class="stamps">${stamps}</ul>
         </div>
         <div class="acts">
-          <button class="btn small" data-open="${r.ev.id}">Open</button>
+          ${r.host
+            ? `<button class="btn small" data-open="${r.ev.id}" data-mode="host">Manage</button>
+               <button class="btn ghost small" data-open="${r.ev.id}" data-mode="me">My availability</button>`
+            : `<button class="btn small" data-open="${r.ev.id}">Open</button>`}
           ${r.host || r.hasOwn ? `<button class="btn ghost small" data-remove="${r.ev.id}">Remove</button>` : ''}
         </div>
       </div>`;
     }).join('');
-    $('#evlist').querySelectorAll('[data-open]').forEach(b => b.onclick = () => { location.hash = '#e/' + b.dataset.open; });
+    $('#evlist').querySelectorAll('[data-open]').forEach(b => b.onclick = () => {
+      if (b.dataset.mode) lsSet(modeKey(b.dataset.open), b.dataset.mode);
+      location.hash = '#e/' + b.dataset.open;
+    });
     $('#evlist').querySelectorAll('[data-remove]').forEach(b => b.onclick = () => removeEvent(b.dataset.remove));
   }
   async function removeEvent(id) {
@@ -1367,30 +1385,22 @@ const PIN_SUFFIX = '::ensemble-pin';
     isOwner = isPrimary || coHosts.some(c => c.user_id === user.id);
     cohostInvites = [];
     if (isPrimary) { const { data: ci } = await sb.from('admin_invites').select('*').eq('event_id', eventId).order('created_at'); cohostInvites = ci || []; }
-    $('#cohostBlock').classList.toggle('hidden', !isOwner);
-    $('#manualToolBlock').classList.toggle('hidden', !isOwner);
-    $('#groupViewBlock').classList.toggle('hidden', !isOwner);
-    ['#toolsTitle', '#toolsToggleRow'].forEach(sel => $(sel).classList.toggle('hidden', !isOwner));
-    if (!isOwner) $('#toolsWrap').classList.add('hidden');
+    personalMode = isOwner && lsGet(modeKey(eventId)) === 'me';
+    applyRoleUi();
     renderCohosts(); renderGroupView();
-    $('#closeBtn').classList.toggle('hidden', !isOwner); $('#editBtn').classList.toggle('hidden', !isOwner);
-    $('#optsSection').classList.toggle('hidden', !isOwner);
     $('#newEventTitle').textContent = 'Create a new event';
     $('#newEventBlurb').textContent = isOwner
       ? 'Propose times and locations for another event.'
       : 'Ensemble is free to use for your own events too. Starting one lets you propose times and locations, and everyone you invite marks what works for them.';
     $('#newBtn2').textContent = isOwner ? 'Create a new event' : 'Create a new event';
-    $('#copyBtn').classList.toggle('hidden', !isOwner);
     $('#paintbar').classList.add('avail');
     if (isOwner) lsSet(lastSeenKey(eventId), new Date().toISOString());
     dirty = false;
     renderNote();
     renderSaveBar();
-    $('#shareSection').classList.toggle('hidden', !isOwner);
-    $('#backFromYouRow').classList.toggle('hidden', !isOwner);
     renderLocTabs(); renderMeta(); renderGrids();
     if (justCreated) { justCreated = false; setTimeout(() => { $('#shareSection').scrollIntoView({ behavior: 'smooth', block: 'center' }); toast('Your event is live — copy the invite link and send it to your group'); }, 400); }
-    showTab(isOwner ? 'group' : 'you', 'loadEvent:landing');
+    showTab(hostUi() ? 'group' : 'you', 'loadEvent:landing');
     logPane('loadEvent:done', { seq, owner: plan.owner === user.id, hasOwnResponse: !!own });
     const { data: inv } = await sb.from('manual_invites').select('*').eq('event_id', eventId);
     hostInvites = isOwner ? (inv || []) : [];
@@ -1403,7 +1413,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     }
     // belt and braces: a slow save or a double render must never strand the host on their own grid
     setTimeout(() => {
-      if (plan && isOwner && curTab === 'you' && !justCreated && !delegate) { logPane('SAFETY-NET-FIRED', {}); showTab('group', 'safetyNet'); }
+      if (plan && hostUi() && curTab === 'you' && !justCreated && !delegate) { logPane('SAFETY-NET-FIRED', {}); showTab('group', 'safetyNet'); }
     }, 50);
     subscribe();
   }
@@ -1639,7 +1649,8 @@ const PIN_SUFFIX = '::ensemble-pin';
   }
 
   const groupViewOn = () => !!plan?.config?.groupView;
-  const guestEditingInGroup = () => curTab === 'group' && !!plan && !isOwner && groupViewOn();
+  const peekAllowed = () => groupViewOn() || isOwner;   // hosts can always see the overlap
+  const guestEditingInGroup = () => curTab === 'group' && !!plan && !hostUi() && peekAllowed();
   const canSeeGroup = () => isOwner || groupViewOn();
   function paintHeat() {
     if (!plan || !canSeeGroup()) return;
@@ -1779,7 +1790,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (w !== 'manual') delegate = null;
     if (w === 'manual') { loadManual(delegate ? delegate.entry_id : mEntry ? mEntry.id : ''); }
     // a guest in group view edits their own times right under the overlap grid
-    const guestGroup = w === 'group' && !!plan && !isOwner && groupViewOn();
+    const guestGroup = w === 'group' && !!plan && !hostUi() && peekAllowed();
     renderHeatMode();
     // a guest in group view can write or edit their note right under the group's notes
     if (guestGroup) $('#groupNoteSlot').appendChild($('#noteSection'));
@@ -2085,16 +2096,43 @@ const PIN_SUFFIX = '::ensemble-pin';
   };
   document.querySelectorAll('[data-find]').forEach(b => b.onclick = () => { $('#findBox').value = b.dataset.find; runFind(); });
 
+  /* ---------- host view / my availability ---------- */
+  function applyRoleUi() {
+    const h = hostUi();
+    $('#modeRow').classList.toggle('hidden', !isOwner);
+    $('#modeTabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String((b.dataset.m === 'me') === personalMode)));
+    $('#modeCap').textContent = personalMode
+      ? 'You’re seeing the event the way your invitees do. Your times count as your own answer.'
+      : 'Run the event: share it, propose times, and see everyone’s answers.';
+    ['#cohostBlock', '#manualToolBlock', '#groupViewBlock', '#toolsTitle', '#toolsToggleRow', '#optsSection', '#shareSection', '#backFromYouRow']
+      .forEach(sel => $(sel).classList.toggle('hidden', !h));
+    $('#closeBtn').classList.toggle('hidden', !h); $('#editBtn').classList.toggle('hidden', !h);
+    $('#copyBtn').classList.toggle('hidden', !h);
+    if (!h) $('#toolsWrap').classList.add('hidden');
+    $('#peekCap').innerHTML = isOwner
+      ? 'As a host you can always see everyone&rsquo;s answers. Mark your own times right on the same chart, so you can overlap as much as possible.'
+      : 'The host has turned on group view. See everyone&rsquo;s answers and mark your own times right on the same chart, so you can overlap as much as possible.';
+  }
+  $('#modeTabs').querySelectorAll('button').forEach(b => b.onclick = () => {
+    const wantMe = b.dataset.m === 'me';
+    if (wantMe === personalMode) return;
+    if (dirty && !confirm('You have unsaved changes to your times. Switch without saving?')) return;
+    dirty = false;
+    lsSet(modeKey(eventId), wantMe ? 'me' : 'host');
+    window.scrollTo(0, 0);
+    loadEvent();
+  });
+
   /* ---------- group view (guests can see everyone's answers) ---------- */
   function renderGroupView() {
     if (!plan) return;
     const on = groupViewOn();
     $('#groupViewBtn').textContent = on ? 'Turn off group view' : 'Turn on group view';
     $('#groupViewState').textContent = on ? 'On — everyone invited can see all answers' : 'Off — guests only see their own answers';
-    const guest = !isOwner && on;
+    const guest = !hostUi() && peekAllowed();
     $('#peekSection').classList.toggle('hidden', !guest);
     $('#backToMineRow').classList.toggle('hidden', !guest);
-    if (!isOwner && !on && curTab === 'group') { showTab('you', 'groupViewOff'); renderSaveBar(); }
+    if (!hostUi() && !peekAllowed() && curTab === 'group') { showTab('you', 'groupViewOff'); renderSaveBar(); }
   }
   $('#groupViewBtn').onclick = async () => {
     const next = !groupViewOn();
@@ -2424,7 +2462,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31k';
+  const BUILD = '2026-10-31l';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
