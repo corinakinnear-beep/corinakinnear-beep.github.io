@@ -85,10 +85,10 @@
   .quickfill{margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
   .qf-title{margin:0 0 12px;font-size:var(--fs-cap);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
   .qf-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-  #copyMineBlock,#manualCopyBlock{flex-wrap:nowrap;overflow-x:auto}
   #copyMineBlock .btn,#manualCopyBlock .btn,#proposeCopyBlock .btn{flex:none;white-space:nowrap}
-  #copyMineBlock select,#manualCopyBlock select{flex:none}
-  #proposeCopyBlock select{width:auto;max-width:100%}
+  #copyMineBlock select,#manualCopyBlock select,#proposeCopyBlock select{width:auto;max-width:100%;flex:none}
+  .copylbl{color:var(--ink);font-size:var(--fs-body)}
+  .copylbl b{font-weight:600}
   .qf-row:last-child{margin-bottom:0}
   .qf-label{font-size:var(--fs-cap);color:var(--ink-2)}
   .qf-row select{width:auto;min-width:150px;padding:8px 10px;font-size:var(--fs-cap)}
@@ -444,8 +444,9 @@
           <button class="btn ghost small" id="proposeNone">Unselect all</button>
         </div>
         <div class="qf-row" id="proposeCopyBlock">
-          <button class="btn ghost small" id="copyPropose">Copy these times to</button>
-          <select id="copyProposeTo"></select>
+          <span class="qf-label copylbl" id="copyProposeLbl">Copy times to</span>
+          <select id="copyProposeTo" aria-labelledby="copyProposeLbl"></select>
+          <button class="btn small" id="copyPropose">Copy</button>
         </div>
       </div>
     </div>
@@ -543,8 +544,9 @@
         <div class="quickfill">
           <p class="qf-title">Quick fill options</p>
           <div class="qf-row hidden" id="copyMineBlock">
-            <button class="btn ghost small" id="copyMine">Copy my times to</button>
-            <select id="copyMineTo"></select>
+            <span class="qf-label copylbl" id="copyMineLbl">Copy my times to</span>
+            <select id="copyMineTo" aria-labelledby="copyMineLbl"></select>
+            <button class="btn small" id="copyMine">Copy</button>
           </div>
           <button id="clearMine" class="hidden"></button>
         </div>
@@ -758,8 +760,9 @@
             <button class="btn ghost small" id="manualAll">Select all proposed times</button>
           </div>
           <div class="qf-row hidden" id="manualCopyBlock">
-            <button class="btn ghost small" id="manualCopy">Copy these times to</button>
-            <select id="manualCopyTo"></select>
+            <span class="qf-label copylbl" id="manualCopyLbl">Copy times to</span>
+            <select id="manualCopyTo" aria-labelledby="manualCopyLbl"></select>
+            <button class="btn small" id="manualCopy">Copy</button>
           </div>
           <button id="manualClear" class="hidden"></button>
         </div>
@@ -1170,6 +1173,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#proposeQfFor').textContent = multi ? `For ${names[pLoc]}:` : '';
     $('#proposeQfFor').classList.toggle('hidden', !multi);
     $('#copyProposeTo').innerHTML = names.map((n, i) => i === pLoc ? '' : `<option value="${i}">${esc(n)}</option>`).join('');
+    $('#copyProposeLbl').innerHTML = `Copy <b>${esc(names[pLoc])}</b>&rsquo;s times to`;
   }
   function rebuildGridOnly() {
     draft = draftConfig();
@@ -1206,6 +1210,8 @@ const PIN_SUFFIX = '::ensemble-pin';
   $('#copyPropose').onclick = () => {
     const to = +$('#copyProposeTo').value, names = locNames();
     if (!names[to]) return;
+    const had = (proposed[to] || new Set()).size;
+    if (had && !confirm(`Replace ${names[to]}'s ${had} proposed time${had > 1 ? 's' : ''} with ${names[pLoc]}'s?`)) return;
     proposed[to] = new Set(proposed[pLoc]); updateCreate();
     toast(`Copied ${names[pLoc]}'s times to ${names[to]} — open its tab to adjust`);
   };
@@ -1473,7 +1479,10 @@ const PIN_SUFFIX = '::ensemble-pin';
     });
     const multi = locs().length > 1;
     $('#copyMineBlock').classList.toggle('hidden', !multi);
-    if (multi) $('#copyMineTo').innerHTML = locs().map((l, i) => i === loc ? '' : `<option value="${i}">${esc(l.name)}</option>`).join('');
+    if (multi) {
+      $('#copyMineTo').innerHTML = locs().map((l, i) => i === loc ? '' : `<option value="${i}">${esc(l.name)}</option>`).join('');
+      $('#copyMineLbl').innerHTML = `Copy my <b>${esc(locs()[loc]?.name || '')}</b> times to`;
+    }
   }
   function renderMeta() {
     const c = plan.config, when = c.g >= 1440 ? 'all day' : `${fmtHour(c.s)} – ${fmtHour(c.e)}`;
@@ -1496,8 +1505,10 @@ const PIN_SUFFIX = '::ensemble-pin';
   $('#copyMine').onclick = () => {
     const o = +$('#copyMineTo').value;
     if (!locs()[o] || !locs()[loc]) return toast('That location has changed — reload to see the latest');
+    const had = (mine[o] || new Set()).size;
+    if (had && !confirm(`Replace your ${had} time${had > 1 ? 's' : ''} at ${locs()[o].name} with your ${locs()[loc].name} times?`)) return;
     mine[o] = new Set([...mine[loc]].filter(i => locs()[o].proposed.includes(i)));
-    markDirty(); toast(`Copied to ${locs()[o].name} — only times proposed there`);
+    markDirty(); toast(`Copied to ${locs()[o].name} (only times offered there) — press Save changes`);
   };
   $('#clearMine').onclick = () => { mine[loc].clear(); paintSet($('#youGrid'), mine[loc]); markDirty(); };
   function renderNote(edit) {
@@ -2203,7 +2214,10 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#manualName').value = mEntry ? mEntry.name : '';
     const multi = locs().length > 1;
     $('#manualCopyBlock').classList.toggle('hidden', !multi || !!delegate);
-    if (multi) $('#manualCopyTo').innerHTML = locs().map((l, i) => i === loc ? '' : `<option value="${i}">${esc(l.name)}</option>`).join('');
+    if (multi) {
+      $('#manualCopyTo').innerHTML = locs().map((l, i) => i === loc ? '' : `<option value="${i}">${esc(l.name)}</option>`).join('');
+      $('#manualCopyLbl').innerHTML = `Copy the <b>${esc(locs()[loc]?.name || '')}</b> times to`;
+    }
   }
   function loadManual(id) {
     mEntry = manuals().find(m => m.id === id) || null;
@@ -2262,8 +2276,10 @@ const PIN_SUFFIX = '::ensemble-pin';
   $('#manualCopy').onclick = () => {
     const o = +$('#manualCopyTo').value;
     if (!locs()[o] || !locs()[loc]) return toast('That location has changed — reload to see the latest');
+    const had = (mSel[o] || new Set()).size;
+    if (had && !confirm(`Replace the ${had} time${had > 1 ? 's' : ''} at ${locs()[o].name} with the ${locs()[loc].name} times?`)) return;
     mSel[o] = new Set([...mSel[loc]].filter(i => locs()[o].proposed.includes(i)));
-    toast(`Copied to ${locs()[o].name} — only times proposed there`);
+    toast(`Copied to ${locs()[o].name} (only times offered there) — press Save entry`);
   };
   $('#manualAll').onclick = () => { if (!locs()[loc]) return; mSel[loc] = new Set(locs()[loc].proposed || []); paintSet($('#manualGrid'), mSel[loc]); };
   $('#manualClear').onclick = () => { mSel[loc].clear(); paintSet($('#manualGrid'), mSel[loc]); };
@@ -2385,7 +2401,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31i';
+  const BUILD = '2026-10-31j';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
