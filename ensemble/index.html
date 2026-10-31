@@ -81,7 +81,7 @@
   .updbar span{white-space:nowrap}
   .updbar .btn{background:#fff;color:var(--ink);min-height:34px;padding:6px 16px;font-size:var(--fs-cap)}
   .qfpanel{margin-top:10px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;max-width:640px}
-  #proposeQfToggle[aria-expanded=true] span{display:inline-block;transform:rotate(180deg)}
+  #proposeQfToggle[aria-expanded=true] span,#youQfToggle[aria-expanded=true] span{display:inline-block;transform:rotate(180deg)}
   .quickfill{margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
   .qf-title{margin:0 0 12px;font-size:var(--fs-cap);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
   .qf-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
@@ -446,7 +446,7 @@
         <div class="qf-row" id="proposeCopyBlock">
           <span class="qf-label copylbl" id="copyProposeLbl">Copy times to</span>
           <select id="copyProposeTo" aria-labelledby="copyProposeLbl"></select>
-          <button class="btn small" id="copyPropose">Copy</button>
+          <button class="btn ghost small" id="copyPropose">Copy</button>
         </div>
       </div>
     </div>
@@ -535,21 +535,28 @@
       <div id="youTimesHome"></div>
       <section class="section" id="youTimesSection">
         <div class="shead"><h3>Your times</h3></div>
+        <div style="margin-bottom:16px">
+          <button class="btn ghost small" id="youQfToggle" aria-expanded="false" aria-controls="youQuickfill">Quick fill options <span aria-hidden="true">&#9662;</span></button>
+          <div class="qfpanel hidden" id="youQuickfill">
+            <p class="cap" id="youQfFor" style="margin:0 0 10px"></p>
+            <div class="qf-row">
+              <button class="btn ghost small" id="youAll">Select all</button>
+              <button class="btn ghost small" id="youNone">Unselect all</button>
+            </div>
+            <div class="qf-row hidden" id="copyMineBlock">
+              <span class="qf-label copylbl" id="copyMineLbl">Copy my times to</span>
+              <select id="copyMineTo" aria-labelledby="copyMineLbl"></select>
+              <button class="btn ghost small" id="copyMine">Copy</button>
+            </div>
+          </div>
+        </div>
         <div class="locpick" id="youLocSection" style="margin-bottom:18px">
           <p class="qf-title" style="margin-bottom:10px">Choose location</p>
           <div class="tabs loc" id="locTabs" role="tablist"></div>
         </div>
         <p class="legend" style="margin:0 0 14px"><i style="background:var(--you)"></i> = you can make it here. Hatched slots weren&rsquo;t proposed.</p>
         <div class="gridwrap" id="youGrid"></div>
-        <div class="quickfill">
-          <p class="qf-title">Quick fill options</p>
-          <div class="qf-row hidden" id="copyMineBlock">
-            <span class="qf-label copylbl" id="copyMineLbl">Copy my times to</span>
-            <select id="copyMineTo" aria-labelledby="copyMineLbl"></select>
-            <button class="btn small" id="copyMine">Copy</button>
-          </div>
-          <button id="clearMine" class="hidden"></button>
-        </div>
+        <button id="clearMine" class="hidden"></button>
       </section>
 
       <div id="noteHome"></div>
@@ -762,7 +769,7 @@
           <div class="qf-row hidden" id="manualCopyBlock">
             <span class="qf-label copylbl" id="manualCopyLbl">Copy times to</span>
             <select id="manualCopyTo" aria-labelledby="manualCopyLbl"></select>
-            <button class="btn small" id="manualCopy">Copy</button>
+            <button class="btn ghost small" id="manualCopy">Copy</button>
           </div>
           <button id="manualClear" class="hidden"></button>
         </div>
@@ -1483,6 +1490,8 @@ const PIN_SUFFIX = '::ensemble-pin';
       $('#copyMineTo').innerHTML = locs().map((l, i) => i === loc ? '' : `<option value="${i}">${esc(l.name)}</option>`).join('');
       $('#copyMineLbl').innerHTML = `Copy my <b>${esc(locs()[loc]?.name || '')}</b> times to`;
     }
+    $('#youQfFor').textContent = multi ? `For ${locs()[loc]?.name || ''}:` : '';
+    $('#youQfFor').classList.toggle('hidden', !multi);
   }
   function renderMeta() {
     const c = plan.config, when = c.g >= 1440 ? 'all day' : `${fmtHour(c.s)} – ${fmtHour(c.e)}`;
@@ -1511,6 +1520,20 @@ const PIN_SUFFIX = '::ensemble-pin';
     markDirty(); toast(`Copied to ${locs()[o].name} (only times offered there) — press Save changes`);
   };
   $('#clearMine').onclick = () => { mine[loc].clear(); paintSet($('#youGrid'), mine[loc]); markDirty(); };
+  $('#youQfToggle').onclick = () => {
+    const open = $('#youQuickfill').classList.toggle('hidden') === false;
+    $('#youQfToggle').setAttribute('aria-expanded', String(open));
+  };
+  const youFill = all => {
+    if (plan.closed) return toast('This event is closed to changes');
+    if (!locs()[loc]) return;
+    mine[loc] = all ? new Set(locs()[loc].proposed || []) : new Set();
+    paintSet($('#youGrid'), mine[loc]); markDirty();
+    const where = locs().length > 1 ? ` at ${locs()[loc].name}` : '';
+    toast(all ? `Marked every offered time${where} — press Save changes` : `Cleared your times${where} — press Save changes`);
+  };
+  $('#youAll').onclick = () => youFill(true);
+  $('#youNone').onclick = () => youFill(false);
   function renderNote(edit) {
     const has = !!(myNote && myNote.trim());
     const showEdit = edit !== undefined ? edit : !has;
@@ -2401,7 +2424,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31j';
+  const BUILD = '2026-10-31k';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
