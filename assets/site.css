@@ -218,6 +218,9 @@ footer a.label:hover{color:var(--tangerine)}
 .credlist .row .w{font-family:var(--serif); font-size:22px; color:var(--ink)}
 .credlist .row .c{color:var(--ink-2)}
 .credlist .row .r, .credlist .row .y{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+/* names that link out: look like the text at rest; a faint hairline draws in on hover */
+.credlist a.xl{color:inherit; text-decoration:none; background-image:linear-gradient(var(--line-2),var(--line-2)); background-size:0 1px; background-position:0 100%; background-repeat:no-repeat; padding-bottom:1px; transition:background-size .35s ease}
+.credlist a.xl:hover, .credlist a.xl:focus-visible{background-size:100% 1px; outline:none}
 
 /* teaching */
 .where{list-style:none; margin:0; padding:0; columns:2 360px; column-gap:48px}
