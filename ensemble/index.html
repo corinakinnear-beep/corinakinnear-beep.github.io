@@ -354,6 +354,12 @@
   .toolgroup .toolcap{margin:8px 0 0}
   .toolwrap{margin-top:16px}
   .toolToggle[aria-expanded=true] span{display:inline-block;transform:rotate(180deg)}
+  /* Everyone's answers: one box — mode, people filter, legend, location, chart */
+  .peoplefilter{margin:0 0 14px}
+  .linkbtn{border:0;background:none;padding:4px 0;cursor:pointer;color:var(--ink);text-align:left}
+  .linkbtn .more{color:var(--ink-2)}
+  .linkbtn:hover .more{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+  .linkbtn[aria-expanded=true] .car{display:inline-block;transform:rotate(180deg)}
 </style>
 </head>
 <body>
@@ -638,18 +644,6 @@
       <div class="btnrow hidden" id="backToMineRow" style="margin-bottom:8px"><button class="btn ghost small backlink" id="backToMine">&larr; Back to my availability</button></div>
       <h3 class="bigtitle">Everyone&rsquo;s answers</h3>
 
-      <section class="section locpick">
-        <div class="shead"><h3>Choose location</h3></div>
-        <div class="tabs loc" id="locTabsG" role="tablist"></div>
-      </section>
-
-      <section class="section">
-        <div class="shead"><h3>Whose availability am I looking at?</h3></div>
-        <p class="cap" style="margin:0 0 14px">Tap names to show overlap.</p>
-        <div class="chips" id="peopleChips"></div>
-        <p class="cap" id="filterHint" style="margin:12px 0 0"></p>
-      </section>
-
       <section class="section">
         <div class="shead"><h3>When everyone can make it</h3></div>
         <div id="heatModeRow" class="hidden" style="margin:0 0 14px">
@@ -659,7 +653,15 @@
           </div>
           <p class="cap" id="heatModeCap" style="margin:10px 0 0"></p>
         </div>
+        <div class="peoplefilter">
+          <button class="linkbtn" id="peopleToggle" aria-expanded="false" aria-controls="peopleWrap"><span id="filterHint"></span> <span class="more">&middot; Choose people <span class="car" aria-hidden="true">&#9662;</span></span></button>
+          <div id="peopleWrap" class="hidden">
+            <p class="cap" style="margin:10px 0 10px">Tap names to show where just those people overlap.</p>
+            <div class="chips" id="peopleChips"></div>
+          </div>
+        </div>
         <p class="legend" style="margin:0 0 14px">Fewer free <i style="background:var(--h0)"></i><i style="background:var(--h1)"></i><i style="background:var(--h2)"></i><i style="background:var(--h3)"></i><i style="background:var(--h4)"></i> More free</p>
+        <div class="locpick" style="margin:0 0 14px"><div class="tabs loc" id="locTabsG" role="tablist" aria-label="Location"></div></div>
         <div class="gridwrap heat" id="groupGrid"></div>
         <div class="quickfill">
           <p class="qf-title">Tap slot to see who can make it</p>
@@ -1702,11 +1704,15 @@ const PIN_SUFFIX = '::ensemble-pin';
     });
     const n = shown().length;
     $('#filterHint').textContent = !rows.length ? ''
-      : selected === null ? `Showing everyone (${n}).`
-      : n === 0 ? 'Nobody selected — tap a name to show them again.'
-      : n === 1 ? 'Showing one person on their own.' : `Showing where these ${n} overlap.`;
+      : selected === null ? `Showing everyone (${n})`
+      : n === 0 ? 'Nobody selected'
+      : n === 1 ? 'Showing one person' : `Showing ${n} people`;
   }
 
+  $('#peopleToggle').onclick = () => {
+    const open = $('#peopleWrap').classList.toggle('hidden') === false;
+    $('#peopleToggle').setAttribute('aria-expanded', String(open));
+  };
   const groupViewOn = () => !!plan?.config?.groupView;
   const peekAllowed = () => groupViewOn() || isOwner;   // hosts can always see the overlap
   const guestEditingInGroup = () => curTab === 'group' && !!plan && !hostUi() && peekAllowed();
@@ -2542,7 +2548,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31u';
+  const BUILD = '2026-10-31v';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
