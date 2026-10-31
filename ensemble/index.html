@@ -768,7 +768,7 @@
       </div>
       <div class="toolgroup">
         <button class="btn ghost toolToggle" aria-expanded="false" aria-controls="hostWrap">Hosting tools <span aria-hidden="true">&#9662;</span></button>
-        <p class="cap toolcap">Co-hosts, group view, people and adding availability for others.</p>
+        <p class="cap toolcap">Co-hosts, adding availability for others, group view and people.</p>
         <div id="hostWrap" class="toolwrap hidden">
 
       <section class="section hidden" id="cohostBlock">
@@ -778,6 +778,14 @@
         <div class="btnrow hidden" id="cohostInviteRow" style="margin-top:14px">
           <button class="btn ghost" id="cohostMake">Create co-host invite link</button>
           <span class="cap" id="cohostCount"></span>
+        </div>
+      </section>
+
+      <section class="section hidden" id="manualToolBlock">
+        <div class="shead"><h3>Add availability manually</h3></div>
+        <p class="cap">For someone who told you their times another way, or for your own availability &mdash; the times you propose count as the location&rsquo;s availability, not yours.</p>
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn ghost" id="goManual">Add / edit an entry</button>
         </div>
       </section>
 
@@ -796,14 +804,6 @@
         <ul class="stacklist" id="peopleList" style="margin-top:12px"></ul>
         <p class="qf-title hidden" id="removedTitle" style="margin:20px 0 4px">Removed</p>
         <ul class="stacklist" id="removedList"></ul>
-      </section>
-
-      <section class="section hidden" id="manualToolBlock">
-        <div class="shead"><h3>Add availability manually</h3></div>
-        <p class="cap">For someone who told you their times another way, or for your own availability &mdash; the times you propose count as the location&rsquo;s availability, not yours.</p>
-        <div class="btnrow" style="margin-top:14px">
-          <button class="btn ghost" id="goManual">Add / edit an entry</button>
-        </div>
       </section>
         </div>
       </div>
@@ -2648,7 +2648,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-11-01a';
+  const BUILD = '2026-11-01b';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
