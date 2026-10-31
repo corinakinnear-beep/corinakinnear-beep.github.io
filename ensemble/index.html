@@ -317,6 +317,28 @@
   .toast.show{opacity:1;transform:translateX(-50%)}
   .hidden{display:none!important}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  /* ===== Type clean-up: one small set of text styles used everywhere =====
+     titles 27 · box headings 18 · main text & buttons 16 · longer explanations 14 (grey) · uppercase labels 12 */
+  .section > .shead h3, .help h4, h3.sec{font-size:var(--fs-lead);font-weight:600;letter-spacing:-.01em}
+  .help{font-size:var(--fs-body)}
+  .help h4{margin:0 0 14px}
+  .cap, .legend, .hint, label, .stepfoot, .steps li span, .who .none, .who .miss,
+  .notebox p.cap, .stacklist .n small, .evcard .meta, .evcard .stamps, .help .foot, .savestate, .askList li{font-size:var(--fs-cap);line-height:1.55}
+  .cap, .legend, .stepfoot, .steps li span{color:var(--ink-2)}
+  .stepfoot em{font-style:normal}
+  .steps li strong{font-size:var(--fs-body)}
+  .steps li .ico{font-size:17px}
+  .facts dt, .qf-title, .tag{font-size:var(--fs-micro);letter-spacing:.09em}
+  .chip, .tabs button, .who, .notes .note, .empty, .qf-row select, .qf-label{font-size:var(--fs-body)}
+  /* Quick fill: everything the same size as "Copy my times to" */
+  .qfpanel, .qfpanel .cap, .qfpanel .btn, .qfpanel select, .qfpanel .copylbl,
+  #youQfToggle, #proposeQfToggle{font-size:var(--fs-body)}
+  .qfpanel .cap{color:var(--ink-2)}
+  /* Location choices: no outline around the group; the unselected one gets a soft fill */
+  .tabs.loc{border:0;padding:0;background:transparent;gap:8px;display:inline-flex;flex-wrap:wrap}
+  .tabs.loc button{background:var(--h0)}
+  .tabs.loc button[aria-selected=true]{background:var(--h4)}
 </style>
 </head>
 <body>
@@ -2497,7 +2519,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31q';
+  const BUILD = '2026-10-31r';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
