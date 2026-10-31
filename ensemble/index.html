@@ -349,6 +349,11 @@
     .savebar .btn, .paintbar button{font-size:var(--fs-body)}
     .savebar .btn, .paintbar button{padding:8px 18px}
   }
+  /* Additional tools: two drop-downs */
+  .toolgroup{margin:0 0 22px}
+  .toolgroup .toolcap{margin:8px 0 0}
+  .toolwrap{margin-top:16px}
+  .toolToggle[aria-expanded=true] span{display:inline-block;transform:rotate(180deg)}
 </style>
 </head>
 <body>
@@ -681,35 +686,11 @@
       </div>
 
       <h3 class="bigtitle" id="toolsTitle">Additional tools</h3>
-      <div class="btnrow" id="toolsToggleRow" style="margin:-4px 0 18px"><button class="btn ghost" id="toolsToggle">Show additional tools</button></div>
-      <div id="toolsWrap" class="hidden">
-
-      <section class="section hidden" id="cohostBlock">
-        <div class="shead"><h3>Co-hosts</h3></div>
-        <p class="cap" id="cohostCap"></p>
-        <ul class="stacklist" id="cohostList" style="margin-top:12px"></ul>
-        <div class="btnrow hidden" id="cohostInviteRow" style="margin-top:14px">
-          <button class="btn ghost" id="cohostMake">Create co-host invite link</button>
-          <span class="cap" id="cohostCount"></span>
-        </div>
-      </section>
-
-      <section class="section hidden" id="manualToolBlock">
-        <div class="shead"><h3>Add availability manually</h3></div>
-        <p class="cap">For someone who told you their times another way, or for your own availability &mdash; the times you propose count as the location&rsquo;s availability, not yours.</p>
-        <div class="btnrow" style="margin-top:14px">
-          <button class="btn ghost" id="goManual">Add / edit an entry</button>
-        </div>
-      </section>
-
-      <section class="section hidden" id="groupViewBlock">
-        <div class="shead"><h3>Group view</h3></div>
-        <p class="cap">Let everyone invited see everyone&rsquo;s answers &mdash; the overlap grid, names and notes &mdash; so they can line their times up with each other. The change history and these tools stay with you and your co-hosts.</p>
-        <div class="btnrow" style="margin-top:14px;align-items:center">
-          <button class="btn ghost" id="groupViewBtn">Turn on group view</button>
-          <span class="cap" id="groupViewState"></span>
-        </div>
-      </section>
+      <div id="toolGroups">
+      <div class="toolgroup">
+        <button class="btn ghost toolToggle" aria-expanded="false" aria-controls="schedWrap">Scheduling support <span aria-hidden="true">&#9662;</span></button>
+        <p class="cap toolcap">Best times, search and the history of changes.</p>
+        <div id="schedWrap" class="toolwrap hidden">
 
       <section class="section">
         <div class="shead"><h3>Best times</h3></div>
@@ -763,9 +744,41 @@
         </div>
         <div id="histList" class="hidden" style="margin-top:16px"></div>
       </section>
+        </div>
+      </div>
+      <div class="toolgroup">
+        <button class="btn ghost toolToggle" aria-expanded="false" aria-controls="hostWrap">Hosting tools <span aria-hidden="true">&#9662;</span></button>
+        <p class="cap toolcap">Co-hosts, group view and adding availability for others.</p>
+        <div id="hostWrap" class="toolwrap hidden">
 
+      <section class="section hidden" id="cohostBlock">
+        <div class="shead"><h3>Co-hosts</h3></div>
+        <p class="cap" id="cohostCap"></p>
+        <ul class="stacklist" id="cohostList" style="margin-top:12px"></ul>
+        <div class="btnrow hidden" id="cohostInviteRow" style="margin-top:14px">
+          <button class="btn ghost" id="cohostMake">Create co-host invite link</button>
+          <span class="cap" id="cohostCount"></span>
+        </div>
+      </section>
 
+      <section class="section hidden" id="groupViewBlock">
+        <div class="shead"><h3>Group view</h3></div>
+        <p class="cap">Let everyone invited see everyone&rsquo;s answers &mdash; the overlap grid, names and notes &mdash; so they can line their times up with each other. The change history and these tools stay with you and your co-hosts.</p>
+        <div class="btnrow" style="margin-top:14px;align-items:center">
+          <button class="btn ghost" id="groupViewBtn">Turn on group view</button>
+          <span class="cap" id="groupViewState"></span>
+        </div>
+      </section>
 
+      <section class="section hidden" id="manualToolBlock">
+        <div class="shead"><h3>Add availability manually</h3></div>
+        <p class="cap">For someone who told you their times another way, or for your own availability &mdash; the times you propose count as the location&rsquo;s availability, not yours.</p>
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn ghost" id="goManual">Add / edit an entry</button>
+        </div>
+      </section>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -2132,10 +2145,10 @@ const PIN_SUFFIX = '::ensemble-pin';
     const open = $('#findHelp').classList.toggle('hidden') === false;
     $('#findHelpToggle').textContent = open ? 'Hide examples' : 'What can I ask?';
   };
-  $('#toolsToggle').onclick = () => {
-    const open = $('#toolsWrap').classList.toggle('hidden') === false;
-    $('#toolsToggle').textContent = open ? 'Hide additional tools' : 'Show additional tools';
-  };
+  document.querySelectorAll('.toolToggle').forEach(b => b.onclick = () => {
+    const open = $('#' + b.getAttribute('aria-controls')).classList.toggle('hidden') === false;
+    b.setAttribute('aria-expanded', String(open));
+  });
   $('#bestToggle').onclick = () => {
     const open = $('#best').classList.toggle('hidden') === false;
     $('#bestToggle').textContent = open ? 'Hide the full list' : 'Show the full list';
@@ -2171,11 +2184,11 @@ const PIN_SUFFIX = '::ensemble-pin';
       b.setAttribute('aria-selected', String(on));
       b.title = b.dataset.m === 'me' ? 'See the event the way invitees do and add your own times' : 'Share the event, propose times and see everyone’s answers';
     });
-    ['#cohostBlock', '#manualToolBlock', '#groupViewBlock', '#toolsTitle', '#toolsToggleRow', '#optsSection', '#shareSection', '#backFromYouRow']
+    ['#cohostBlock', '#manualToolBlock', '#groupViewBlock', '#toolsTitle', '#toolGroups', '#optsSection', '#shareSection', '#backFromYouRow']
       .forEach(sel => $(sel).classList.toggle('hidden', !h));
     $('#closeBtn').classList.toggle('hidden', !h); $('#editBtn').classList.toggle('hidden', !h);
     $('#copyBtn').classList.toggle('hidden', !h);
-    if (!h) $('#toolsWrap').classList.add('hidden');
+    if (!h) document.querySelectorAll('.toolwrap').forEach(w => w.classList.add('hidden'));
     $('#peekCap').innerHTML = isOwner
       ? 'As a host you can always see everyone&rsquo;s answers. Mark your times right on that chart to overlap as much as possible &mdash; or below, where it&rsquo;s just yours.'
       : 'Group view is on. See everyone&rsquo;s answers and mark your times right on that chart to overlap as much as possible &mdash; or below, where it&rsquo;s just yours.';
@@ -2529,7 +2542,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31t';
+  const BUILD = '2026-10-31u';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
