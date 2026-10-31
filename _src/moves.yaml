@@ -513,8 +513,8 @@ performing:
         - { work: "Salon K Privé", company: "Johan King Silverhult and Patrick King", role: "Immersive dance theatre", where: "Berlin", when: "" }
     - heading: Lineage
       items:
-        - { work: "Alonzo King LINES Ballet BFA", company: "Dominican University of California · with Alonzo King, Marina Hotchkiss, Arturo Fernandez, Maurya Kerr, Yannis Adoniou, Carmen Rozestraten, Gregory Dawson, Christian Burn, Kara Davis and Michael Valez", role: "BFA", where: "San Francisco", when: "2011" }
-        - { work: "Jack in the Box by Aszure Barton", company: "Springboard Danse Montréal", role: "Contemporary ballet dancer", where: "Montreal", when: "2010" }
+        - { work: "Alonzo King LINES Ballet BFA", company: "Dominican University of California · with Alonzo King, Marina Hotchkiss, Arturo Fernandez, Maurya Kerr, Yannis Adoniou, Carmen Rozestraten, Gregory Dawson, Christian Burns, Kara Davis and Michael Valez", role: "BFA", where: "San Francisco", when: "2011" }
+        - { work: "Jack in the Box by Aszure Barton", company: "Springboard Danse Montréal", role: "Contemporary ballet dancer", where: "Montreal", when: "2011" }
         - { work: "Works by Jiří Kylián, Toru Shimazaki and Alejandro Cerrudo", company: "Hubbard Street Dance Chicago", role: "Contemporary dancer", where: "Chicago", when: "2009" }
     - heading: Training and influences
       items:
@@ -523,12 +523,11 @@ performing:
         - { work: "Ballet West", company: "", role: "Summer intensive", where: "Salt Lake City", when: "2006, 2007" }
         - { work: "Cleo Parker Robinson Dance", company: "", role: "Summer intensive", where: "Denver", when: "2008" }
         - { work: "The Edge", company: "", role: "Summer intensive", where: "Los Angeles", when: "2008" }
-        - { work: "DTDT", company: "", role: "Summer intensive", where: "", when: "2004" }
+        - { work: "David Taylor Dance Theatre", company: "", role: "Summer intensive", where: "Denver", when: "2004" }
     - heading: Foundations
       items:
-        - { work: "International Ballet School", company: "German Zamuel, Mark Carlson and Sandra Carlson", role: "Classical ballet", where: "", when: "2000–2007" }
-        - { work: "Parker Dance Academy", company: "Ballet, tap, jazz, hip-hop, contemporary and pointe", role: "Early training", where: "", when: "1991–2007" }
-        - { work: "Early teachers", company: "Kim Kinnear, Beverly Pinkerton, Nicolle Ament, Julie Curley, Christina, Lisa Rebik, David Taylor and Julie Anderson", role: "", where: "", when: "" }
+        - { work: "International Ballet School", company: "German Zamuel, Mark Carlson and Sandra Kerr", role: "Classical ballet", where: "", when: "2000–2007" }
+        - { work: "Parker Dance Academy", company: "Ballet, tap, jazz, hip-hop, contemporary and pointe · with Kim Kinnear, Beverly Pinkerton, Nicolle Ament, Julie Curley, Christina, Lisa Rebik, David Taylor and Julie Anderson", role: "Early training", where: "", when: "1991–2007" }
     - heading: Film, television and brands
       items:
         - { work: "Lose Yourself to Dance", company: "Daft Punk", role: "Dancer", where: "", when: "" }
@@ -571,6 +570,18 @@ performing:
     "Ballet West": "https://www.academy.balletwest.org/summer"
     "Pacific Northwest Ballet School": "https://www.pnb.org/pnb-school/"
     "International Ballet School": "https://internationalballetschool.net/"
+    "Marina Hotchkiss": "https://www.dominican.edu/directory-people/marina-hotchkiss"
+    "Arturo Fernandez": "https://www.peridance.com/faculty/arturo-fernandez"
+    "Carmen Rozestraten": "https://hjs.amsterdam/dance/carmen-rozestraten"
+    "Christian Burns": "https://localnewsmatters.org/2024/07/16/a-chat-with-innovative-dancer-choreographer-improviser-coach-christian-burns/"
+    "Kara Davis": "https://www.usfca.edu/faculty/kara-davis"
+    "Camille H. Bonnenfant": "https://www.linkedin.com/in/camille-bonnenfant-9593811a8/"
+    "Gibson Muriva": "https://leifnorman.net/?p=21036"
+    "Deutsches Fernsehballett": "https://de.wikipedia.org/wiki/Deutsches_Fernsehballett"
+    "The Edge": "https://www.danceplug.com/article/the-edge-is-bowing-out-what-this-studio-meant-to-the-dance-community"
+    "David Taylor Dance Theatre": "https://www.zikrdance.com/artistic-director.html"
+    "David Taylor": "https://www.zikrdance.com/artistic-director.html"
+    "Parker Dance Academy": "https://www.parkerdance.com"
   photo_credit: "Photographs by Chris Gonz"
   video:
     kind: file
@@ -646,7 +657,7 @@ bio:
       a body moves through a room, applied to the room itself.
   training:
     - "BFA, Dominican University of California with Alonzo King's LINES Ballet (2011) — Alonzo King, Marina Hotchkiss, Arturo Fernandez, Maurya Kerr, Yannis Adoniou, Gregory Dawson, Kara Davis"
-    - "International Ballet School (2000–2007) — German Zamuel, Mark Carlson, Sandra Carlson"
+    - "International Ballet School (2000–2007) — German Zamuel, Mark Carlson, Sandra Kerr"
     - "Parker Dance Academy (1991–2007) — ballet, pointe, tap, jazz, hip-hop, contemporary"
     - "Intensives: Springboard Danse Montréal, Steps on Broadway, Hubbard Street Dance Chicago, Cleo Parker Robinson Dance, The Edge, Ballet West, Pacific Northwest Ballet School"
   residencies:
