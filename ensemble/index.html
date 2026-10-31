@@ -339,6 +339,16 @@
   .tabs.loc{border:0;padding:0;background:transparent;gap:8px;display:inline-flex;flex-wrap:wrap}
   .tabs.loc button{background:var(--h0)}
   .tabs.loc button[aria-selected=true]{background:var(--h4)}
+  /* Buttons: one size (16px), two weights — bold when filled, medium for everything else */
+  button, .btn, .btn.small, .chip, .tabs button, .modepick button, .menutrigger, .menu .mbtn, .updbar .btn{font-size:var(--fs-body)}
+  button, .chip, .tabs button, .btn.ghost, .modepick button, .menutrigger, .menu .mbtn{font-weight:500}
+  .btn:not(.ghost), .tabs button[aria-selected=true], .modepick button[aria-selected=true]{font-weight:600}
+  .tipsToggle{font-size:20px}
+  .paintbar button{font-weight:500} .paintbar button[aria-pressed=true]{font-weight:600}
+  @media (max-width:640px){
+    .savebar .btn, .paintbar button{font-size:var(--fs-body)}
+    .savebar .btn, .paintbar button{padding:8px 18px}
+  }
 </style>
 </head>
 <body>
@@ -2519,7 +2529,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31r';
+  const BUILD = '2026-10-31s';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
