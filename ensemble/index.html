@@ -79,9 +79,9 @@
   .quickfill{margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
   .qf-title{margin:0 0 12px;font-size:var(--fs-cap);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
   .qf-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-  #copyMineBlock,#manualCopyBlock{flex-wrap:nowrap;overflow-x:auto}
-  #copyMineBlock .btn,#manualCopyBlock .btn{flex:none;white-space:nowrap}
-  #copyMineBlock select,#manualCopyBlock select{flex:none}
+  #copyMineBlock,#manualCopyBlock,#proposeCopyBlock{flex-wrap:nowrap;overflow-x:auto}
+  #copyMineBlock .btn,#manualCopyBlock .btn,#proposeCopyBlock .btn{flex:none;white-space:nowrap}
+  #copyMineBlock select,#manualCopyBlock select,#proposeCopyBlock select{flex:none;width:auto}
   .qf-row:last-child{margin-bottom:0}
   .qf-label{font-size:var(--fs-cap);color:var(--ink-2)}
   .qf-row select{width:auto;min-width:150px;padding:8px 10px;font-size:var(--fs-cap)}
@@ -430,11 +430,16 @@
     </div>
     <div class="row" style="margin-bottom:12px">
       <div class="tabs loc" id="proposeTabs" role="tablist"></div>
-      <select id="copyProposeTo" class="hidden" style="width:auto"></select>
-      <button class="btn ghost small hidden" id="copyPropose">Copy times to…</button>
     </div>
     <div class="gridwrap propose" id="proposeGrid"></div>
     <div class="legend"><i style="background:var(--propose)"></i> = proposed. At least two slots per location.</div>
+    <div class="quickfill hidden" id="proposeQuickfill">
+      <p class="qf-title">Quick fill options</p>
+      <div class="qf-row" id="proposeCopyBlock">
+        <button class="btn ghost small" id="copyPropose">Copy these times to</button>
+        <select id="copyProposeTo"></select>
+      </div>
+    </div>
 
     <div class="actions">
       <button class="btn" id="createBtn" disabled>Create event</button>
@@ -1146,7 +1151,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#proposeTabs').innerHTML = names.map((n, i) => `<button role="tab" data-i="${i}" aria-selected="${i === pLoc}">${esc(n)}</button>`).join('');
     $('#proposeTabs').querySelectorAll('button').forEach(b => b.onclick = () => { pLoc = +b.dataset.i; renderProposeTabs(); paintSet($('#proposeGrid'), proposed[pLoc] ||= new Set()); });
     const multi = names.length > 1;
-    $('#copyPropose').classList.toggle('hidden', !multi); $('#copyProposeTo').classList.toggle('hidden', !multi);
+    $('#proposeQuickfill').classList.toggle('hidden', !multi);
     $('#copyProposeTo').innerHTML = names.map((n, i) => i === pLoc ? '' : `<option value="${i}">${esc(n)}</option>`).join('');
   }
   function rebuildGridOnly() {
@@ -1167,7 +1172,12 @@ const PIN_SUFFIX = '::ensemble-pin';
   ['#start','#ndays','#from','#to','#step'].forEach(s => $(s).addEventListener('change', () => { proposed = proposed.map(() => new Set()); rebuildGridOnly(); }));
   makePainter($('#proposeGrid'), () => proposed[pLoc] ||= new Set(), () => true);
   $('#proposeGrid').addEventListener('painted', updateCreate);
-  $('#copyPropose').onclick = () => { const to = +$('#copyProposeTo').value; proposed[to] = new Set(proposed[pLoc]); updateCreate(); toast(`Copied to ${locNames()[to]}`); };
+  $('#copyPropose').onclick = () => {
+    const to = +$('#copyProposeTo').value, names = locNames();
+    if (!names[to]) return;
+    proposed[to] = new Set(proposed[pLoc]); updateCreate();
+    toast(`Copied ${names[pLoc]}'s times to ${names[to]} — open its tab to adjust`);
+  };
 
   function startCreate() {
     editing = false;
@@ -2344,7 +2354,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31f';
+  const BUILD = '2026-10-31g';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
