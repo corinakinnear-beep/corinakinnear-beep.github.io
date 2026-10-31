@@ -526,12 +526,6 @@
       <div class="btnrow hidden" id="backFromYouRow" style="margin-bottom:8px"><button class="btn ghost small backlink" id="backFromYou">&larr; Back to everyone&rsquo;s answers</button></div>
       <h3 class="bigtitle" style="margin-top:12px">Add your availability</h3>
 
-      <section class="section hidden" id="peekSection">
-        <div class="shead"><h3>See when others are free</h3></div>
-        <p class="cap" id="peekCap">The host has turned on group view. See everyone&rsquo;s answers and mark your own times right on the same chart, so you can overlap as much as possible.</p>
-        <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="goGroupGuest">See everyone&rsquo;s answers</button></div>
-      </section>
-
       <section class="section hidden" id="managingSection">
         <div class="shead"><h3>You&rsquo;re also filling in for</h3></div>
         <p class="cap">The host invited you to enter availability on their behalf. This is separate from your own times below.</p>
@@ -550,6 +544,12 @@
         <p class="stepfoot"><em>When you&rsquo;re done, press <b>Save changes</b> at the bottom of the page. You can sign back in with the same name and PIN, on any device, to change your answer any time.</em></p>
         </div>
         <div class="tipsfoot"><button class="tipsToggle" aria-expanded="true" aria-label="Hide tips" title="Hide tips">&minus;</button></div>
+      </section>
+
+      <section class="section hidden" id="peekSection">
+        <div class="shead"><h3>See when others are free</h3></div>
+        <p class="cap" id="peekCap">Group view is on. See everyone&rsquo;s answers and mark your times right on that chart to overlap as much as possible &mdash; or below, where it&rsquo;s just yours.</p>
+        <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="goGroupGuest">See everyone&rsquo;s answers</button></div>
       </section>
 
       <div id="youTimesHome"></div>
@@ -2145,8 +2145,8 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#copyBtn').classList.toggle('hidden', !h);
     if (!h) $('#toolsWrap').classList.add('hidden');
     $('#peekCap').innerHTML = isOwner
-      ? 'As a host you can always see everyone&rsquo;s answers. Mark your own times right on the same chart, so you can overlap as much as possible.'
-      : 'The host has turned on group view. See everyone&rsquo;s answers and mark your own times right on the same chart, so you can overlap as much as possible.';
+      ? 'As a host you can always see everyone&rsquo;s answers. Mark your times right on that chart to overlap as much as possible &mdash; or below, where it&rsquo;s just yours.'
+      : 'Group view is on. See everyone&rsquo;s answers and mark your times right on that chart to overlap as much as possible &mdash; or below, where it&rsquo;s just yours.';
   }
   $('#modeTabs').querySelectorAll('button').forEach(b => b.onclick = () => {
     const wantMe = b.dataset.m === 'me';
@@ -2497,7 +2497,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31o';
+  const BUILD = '2026-10-31p';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
