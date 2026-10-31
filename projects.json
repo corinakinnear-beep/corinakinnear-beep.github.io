@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-27",
+  "generated": "2026-10-31",
   "projects": [
     {
       "slug": "briefly",
@@ -24,9 +24,9 @@
       "title": "Ensemble",
       "description": "Rehearse together: everyone paints the times they can make, and the overlap shows up as a heatmap.",
       "url": "/ensemble/",
-      "cover": "/ensemble/cover.jpg",
+      "cover": "/assets/covers/ensemble.jpg",
       "added": "2026-09-08",
-      "updated": "2026-09-08"
+      "updated": "2026-10-31"
     }
   ]
 }

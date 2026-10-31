@@ -1,1 +1,5 @@
-{ "title": "Ensemble" }
+{
+  "title": "Ensemble",
+  "description": "Rehearse together: everyone paints the times they can make, and the overlap shows up as a heatmap.",
+  "cover": "/assets/covers/ensemble.jpg"
+}
