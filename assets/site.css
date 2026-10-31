@@ -191,6 +191,8 @@ footer a.label:hover{color:var(--tangerine)}
 .hero-img{display:block; width:100%; height:auto; max-height:78vh; object-fit:cover}
 /* a tall photo at the top: shown whole, at its own shape, never cropped */
 .hero-img.hero-portrait{width:auto; max-width:min(100%, calc(84vh * 2 / 3)); max-height:none; margin:0 auto}
+/* a wide, short band across the top; pos in moves.yaml keeps the face in frame */
+.hero-img.hero-ribbon{height:clamp(240px, 46vh, 560px); max-height:none; object-fit:cover}
 .work-body{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:64px; padding:72px var(--gutter) 0; max-width:var(--max); margin:0 auto}
 .work-body .text p{margin:0 0 20px; max-width:62ch}
 .work-body .text p:first-child{font-family:var(--serif); font-weight:300; font-size:clamp(23px,2.3vw,30px); line-height:1.32; color:var(--ink)}
