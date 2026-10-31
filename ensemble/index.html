@@ -638,10 +638,10 @@
       <div id="noteHome"></div>
       <section class="section notebox" id="noteSection">
         <div class="shead"><h3 id="noteTitle">A note about your availability</h3></div>
-        <p class="cap">Optional. Anything the grid can&rsquo;t say &mdash; travel time, a soft maybe, a hard stop.</p>
+        <p class="cap">Optional &mdash; travel time, a soft maybe, a hard stop.</p>
         <div id="noteEdit">
-          <textarea id="noteBox" maxlength="400" placeholder="e.g. Tuesdays I can only stay for the first hour, and I&rsquo;d need 45 minutes to get to Pasadena after work."></textarea>
-          <p class="cap" id="noteSendCap" style="margin:10px 0 0">Your note and the availability you provided above are sent when you press <b>Save changes</b> at the bottom of the page.</p>
+          <textarea id="noteBox" maxlength="400" placeholder="e.g. Tuesdays I can only stay an hour."></textarea>
+          <p class="cap" id="noteSendCap" style="margin:10px 0 0">Saved with <b>Save changes</b>.</p>
         </div>
         <div id="noteView" class="hidden">
           <div class="saved" id="noteText"></div>
@@ -723,10 +723,10 @@
           <textarea id="findBox" maxlength="240" placeholder="e.g. I want 3 evenings everyone can make, for as long as possible"></textarea>
         </div>
         <div class="btnrow" style="margin-top:12px">
-          <button class="btn" id="findGo">Find times</button>
-          <button class="btn ghost small" id="findHelpToggle">What can I ask?</button>
+          <button class="btn ghost" id="findGo">Find times</button>
         </div>
-        <div id="findHelp" class="hidden" style="margin-top:16px">
+        <button class="linkbtn" id="findHelpToggle" aria-expanded="false" aria-controls="findHelp" style="margin-top:12px">What can I ask? <span class="car" aria-hidden="true">&#9662;</span></button>
+        <div id="findHelp" class="hidden" style="margin-top:10px">
           <p class="qf-title" style="margin-bottom:10px">Things it understands</p>
           <ul class="askList">
             <li><b>How many and how long</b><span>&ldquo;two 2-hour sessions&rdquo; &middot; &ldquo;90 minutes&rdquo;</span></li>
@@ -1888,9 +1888,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (guestGroup) $('#groupNoteSlot').appendChild($('#noteSection'));
     else $('#noteHome').after($('#noteSection'));
     $('#noteTitle').textContent = guestGroup ? 'Your note to the group' : 'A note about your availability';
-    $('#noteSendCap').innerHTML = guestGroup
-      ? 'Everyone can read it. It&rsquo;s sent with your times when you press <b>Save changes</b> at the bottom of the page.'
-      : 'Your note and the availability you provided above are sent when you press <b>Save changes</b> at the bottom of the page.';
+    $('#noteSendCap').innerHTML = guestGroup ? 'Everyone can read it. Saved with <b>Save changes</b>.' : 'Saved with <b>Save changes</b>.';
     if (w === 'group' && plan && canSeeGroup()) paintHeat();
     const bar = (w === 'you' || guestGroup) && !!plan && !plan.closed;
     $('#savebar').classList.toggle('on', bar);
@@ -2176,7 +2174,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   $('#findGo').onclick = runFind;
   $('#findHelpToggle').onclick = () => {
     const open = $('#findHelp').classList.toggle('hidden') === false;
-    $('#findHelpToggle').textContent = open ? 'Hide examples' : 'What can I ask?';
+    $('#findHelpToggle').setAttribute('aria-expanded', String(open));
   };
   document.querySelectorAll('.toolToggle').forEach(b => b.onclick = () => {
     const open = $('#' + b.getAttribute('aria-controls')).classList.toggle('hidden') === false;
@@ -2599,7 +2597,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31x';
+  const BUILD = '2026-10-31y';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
