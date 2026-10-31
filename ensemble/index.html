@@ -1775,7 +1775,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#heatModeTabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.m === heatMode)));
     $('#heatModeCap').textContent = heatMode === 'mark'
       ? 'Tap or drag to add or remove yourself — your times are outlined in yellow. Press Save changes when you’re done.'
-      : 'Tap a time to see who can and can’t make it.';
+      : 'Tap a time to see who can and can’t make it — the names are listed below the chart.';
   }
   $('#heatModeTabs').querySelectorAll('button').forEach(b => b.onclick = () => { heatMode = b.dataset.m; renderHeatMode(); });
   makePainter($('#groupGrid'), () => mine[loc] ||= new Set(), marking, {
@@ -2529,7 +2529,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31s';
+  const BUILD = '2026-10-31t';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
