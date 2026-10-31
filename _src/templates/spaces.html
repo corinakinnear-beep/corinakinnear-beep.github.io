@@ -29,7 +29,7 @@
   .sp .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:56px;margin-top:54px}
   .sp .two h3{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:500;margin:0 0 14px}
   .sp .two p{margin:0 0 14px}
-  .sp .notlist{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 0}
+  .sp .notlist{margin:4px 0 0; color:var(--muted)}
   .sp .contact{margin-top:72px;border-top:1px solid var(--line);padding-top:22px}
   .sp .contact a{color:var(--tangerine);border-bottom:1px solid currentColor}
   @media(max-width:900px){.sp .proj{grid-template-columns:1fr;gap:24px}}
@@ -144,14 +144,7 @@
       <div>
         <h3>What I don't do</h3>
         <p>I'm not the architect of record. The firm stays the firm. I'll recommend the drafters, contractors and suppliers I've vetted, and sit in the meetings.</p>
-        <div class="notlist">
-          <span class="tag">Permit drawings</span>
-          <span class="tag">Structural</span>
-          <span class="tag">Title 24</span>
-          <span class="tag">Engineering</span>
-          <span class="tag">Contractor management</span>
-          <span class="tag">Purchasing</span>
-        </div>
+        <p class="notlist">Permit drawings · Structural · Title 24 · Engineering · Contractor management · Purchasing</p>
       </div>
     </div>
     <p class="contact">Working on a project that could use this? <a href="mailto:{{ site.contact_email }}?subject=Space%20design">Write to me</a>.</p>
