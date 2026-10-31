@@ -601,7 +601,8 @@ performing:
     poster: /moves/img/video/reel-2025.jpg
     caption: "Performance reel, 2025"
   images:
-    - { file: corina-deutscheoper-56.jpg, alt: "An arabesque on the empty stage of the Deutsche Oper Berlin", portrait: true }
+    - { file: corina-water-stage.jpg, alt: "Corina, arms raised and smiling, in a burst of water on stage", ribbon: true, pos: "35% 14%" }
+    - { file: corina-deutscheoper-56.jpg, alt: "An arabesque on the empty stage of the Deutsche Oper Berlin" }
     - { file: corina-deutscheoper-60.jpg, alt: "Corina at the barre in a red dress" }
     - { file: corina-deutscheoper-54.jpg, alt: "Dancing on the opera stage, the auditorium behind" }
     - { file: corina-deutscheoper-50.jpg, alt: "Backstage among the stage lights" }
