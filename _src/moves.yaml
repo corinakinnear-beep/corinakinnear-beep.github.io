@@ -511,29 +511,22 @@ performing:
         - { work: "InterContinental Paris", company: "Lia Kemendi", role: "Contemporary and ballet dancer", where: "Paris", when: "" }
         - { work: "APM event", company: "brand-contente · Camille H. Bonnenfant", role: "Contemporary dancer", where: "", when: "" }
         - { work: "Salon K Privé", company: "Johan King Silverhult and Patrick King", role: "Immersive dance theatre", where: "Berlin", when: "" }
-    - heading: Lineage
-      items:
-        - { work: "Alonzo King LINES Ballet BFA", company: "Dominican University of California · with Alonzo King, Marina Hotchkiss, Arturo Fernandez, Maurya Kerr, Yannis Adoniou, Carmen Rozestraten, Gregory Dawson, Christian Burns, Kara Davis and Michael Valez", role: "BFA", where: "San Francisco", when: "2011" }
-        - { work: "Jack in the Box by Aszure Barton", company: "Springboard Danse Montréal", role: "Contemporary ballet dancer", where: "Montreal", when: "2011" }
-        - { work: "Works by Jiří Kylián, Toru Shimazaki and Alejandro Cerrudo", company: "Hubbard Street Dance Chicago", role: "Contemporary dancer", where: "Chicago", when: "2009" }
-    - heading: Training and influences
-      items:
-        - { work: "Pacific Northwest Ballet School", company: "", role: "Summer intensive", where: "Seattle", when: "2005" }
-        - { work: "Steps on Broadway", company: "", role: "Summer intensive", where: "New York", when: "2010" }
-        - { work: "Ballet West", company: "", role: "Summer intensive", where: "Salt Lake City", when: "2006, 2007" }
-        - { work: "Cleo Parker Robinson Dance", company: "", role: "Summer intensive", where: "Denver", when: "2008" }
-        - { work: "The Edge", company: "", role: "Summer intensive", where: "Los Angeles", when: "2008" }
-        - { work: "David Taylor Dance Theatre", company: "", role: "Summer intensive", where: "Denver", when: "2004" }
-    - heading: Foundations
-      items:
-        - { work: "International Ballet School", company: "German Zamuel, Mark Carlson and Sandra Kerr", role: "Classical ballet", where: "", when: "2000–2007" }
-        - { work: "Parker Dance Academy", company: "Ballet, tap, jazz, hip-hop, contemporary and pointe · with Kim Kinnear, Beverly Pinkerton, Nicolle Ament, Julie Curley, Christina, Lisa Rebik, David Taylor and Julie Anderson", role: "Early training", where: "", when: "1991–2007" }
     - heading: Film, television and brands
       items:
         - { work: "Lose Yourself to Dance", company: "Daft Punk", role: "Dancer", where: "", when: "" }
         - { work: "We Are Kindred — ballet film", company: "", role: "Dancer", where: "", when: "2018" }
         - { work: "L'Oréal Professionnel tour · IAA Frankfurt", company: "", role: "Dancer", where: "", when: "" }
         - { work: "Face Off", company: "Syfy", role: "Assistant choreographer", where: "Los Angeles", when: "2014" }
+    - heading: Lineage
+      items:
+        - { work: "Alonzo King LINES Ballet BFA", company: "Dominican University of California · with Alonzo King, Marina Hotchkiss, Arturo Fernandez, Maurya Kerr, Yannis Adoniou, Carmen Rozestraten, Gregory Dawson, Christian Burns, Kara Davis and Michael Valez", role: "BFA", where: "San Francisco", when: "2011" }
+        - { work: "Jack in the Box by Aszure Barton", company: "Springboard Danse Montréal", role: "Contemporary ballet dancer", where: "Montreal", when: "2011" }
+        - { work: "Works by Jiří Kylián, Toru Shimazaki and Alejandro Cerrudo", company: "Hubbard Street Dance Chicago", role: "Contemporary dancer", where: "Chicago", when: "2009" }
+        - { work: "Training and influences", company: "Pacific Northwest Ballet School, Steps on Broadway, Ballet West, Cleo Parker Robinson Dance, The Edge and David Taylor Dance Theatre", role: "Summer intensives", where: "", when: "2004–2010" }
+    - heading: Foundations
+      items:
+        - { work: "International Ballet School", company: "German Zamuel, Mark Carlson and Sandra Kerr", role: "Classical ballet", where: "", when: "2000–2007" }
+        - { work: "Parker Dance Academy", company: "Ballet, tap, jazz, hip-hop, contemporary and pointe · with Kim Kinnear, Beverly Pinkerton, Nicolle Ament, Julie Curley, Christina, Lisa Rebik, David Taylor and Julie Anderson", role: "Early training", where: "", when: "1991–2007" }
   # names on the Performing page that link to their own website (quiet links, see .credlist a.xl)
   links:
     "Deutsche Oper Berlin": "https://deutscheoperberlin.de"
