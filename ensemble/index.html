@@ -224,6 +224,14 @@
   .savebar .btn{padding:14px 30px;font-size:var(--fs-body);min-height:52px}
   body.hasbar{padding-bottom:92px}
   body.hasbar .paintbar{bottom:104px}
+  @media (max-width:640px){
+    .savebar{padding:8px 14px calc(8px + env(safe-area-inset-bottom))}
+    .savebar .inner{flex-wrap:nowrap;gap:10px}
+    .savebar .state{font-size:var(--fs-cap);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .savebar .btn{padding:9px 18px;min-height:40px;font-size:var(--fs-cap);white-space:nowrap}
+    body.hasbar{padding-bottom:64px}
+    body.hasbar .paintbar{bottom:70px}
+  }
   .paintbar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:none;gap:6px;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:6px;box-shadow:0 8px 30px rgba(23,24,31,.18);z-index:5;align-items:center}
   .paintbar button{border:0;background:transparent;border-radius:999px;padding:16px 34px;min-height:58px;font-size:var(--fs-lead);font-weight:600}
   .paintbar button[aria-pressed=true]{background:var(--ink);color:#fff}
@@ -1447,7 +1455,8 @@ const PIN_SUFFIX = '::ensemble-pin';
     const show = !!plan && !plan.closed && (curTab === 'you' || guestEditingInGroup());
     $('#savebar').classList.toggle('on', show);
     document.body.classList.toggle('hasbar', show);
-    $('#saveState').textContent = dirty ? 'You have unsaved changes' : 'All changes saved';
+    const narrow = matchMedia('(max-width:640px)').matches;
+    $('#saveState').textContent = dirty ? (narrow ? 'Unsaved changes' : 'You have unsaved changes') : (narrow ? 'All saved' : 'All changes saved');
     $('#saveState').classList.toggle('dirty', dirty);
     $('#saveAllBtn').disabled = !dirty;
   }
@@ -2282,7 +2291,7 @@ const PIN_SUFFIX = '::ensemble-pin';
 
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31b';
+  const BUILD = '2026-10-31c';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
