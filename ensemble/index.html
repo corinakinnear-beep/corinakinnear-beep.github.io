@@ -1102,7 +1102,7 @@ const PIN_SUFFIX = '::ensemble-pin';
         </div>
         <div class="acts">
           ${r.host
-            ? `<button class="btn small" data-open="${r.ev.id}" data-mode="host">Manage</button>
+            ? `<button class="btn small" data-open="${r.ev.id}" data-mode="host">Manage event</button>
                <button class="btn ghost small" data-open="${r.ev.id}" data-mode="me">My availability</button>`
             : `<button class="btn small" data-open="${r.ev.id}">Open</button>`}
           ${r.host || r.hasOwn ? `<button class="btn ghost small" data-remove="${r.ev.id}">Remove</button>` : ''}
@@ -2497,7 +2497,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31p';
+  const BUILD = '2026-10-31q';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
