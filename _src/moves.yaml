@@ -486,6 +486,12 @@ performing:
     Twenty years on stage, in opera houses, theatres, television studios and on the road —
     classical and contemporary, pointe and floor.
   groups:
+    - heading: Events and immersive theatre
+      items:
+        - { work: "UN Biodiversity Conference", company: "Ilya Jivoy", role: "Soloist and ensemble, contemporary", where: "Yerevan, Armenia", when: "2026" }
+        - { work: "InterContinental Paris", company: "Lia Kemendi", role: "Contemporary and ballet dancer", where: "Paris", when: "2026" }
+        - { work: "APM event", company: "brand-contente · Camille H. Bonnenfant", role: "Contemporary dancer", where: "Paris", when: "2026" }
+        - { work: "Salon K Privé", company: "Johan King Silverhult and Patrick King", role: "Immersive dance theatre", where: "Berlin", when: "2026" }
     - heading: Opera and ballet
       items:
         - { work: "Elektra · La Rondine · Parsifal · Les Huguenots", company: "Deutsche Oper Berlin", role: "Contemporary dancer", where: "Berlin", when: "2015–2018" }
@@ -505,24 +511,17 @@ performing:
         - { work: "Nyau", company: "Gibson Muriva", role: "Contemporary and African dancer", where: "Montreal", when: "2011–2012" }
         - { work: "Dynamic Inquiry", company: "Nathan Trice", role: "Contemporary dancer", where: "San Francisco", when: "2010" }
         - { work: "Q", company: "Yannis Adoniou", role: "Contemporary dancer", where: "San Francisco", when: "2010" }
-    - heading: Events and immersive theatre
-      items:
-        - { work: "UN Biodiversity Conference", company: "Ilya Jivoy", role: "Soloist and ensemble, contemporary", where: "", when: "" }
-        - { work: "InterContinental Paris", company: "Lia Kemendi", role: "Contemporary and ballet dancer", where: "Paris", when: "" }
-        - { work: "APM event", company: "brand-contente · Camille H. Bonnenfant", role: "Contemporary dancer", where: "", when: "" }
-        - { work: "Salon K Privé", company: "Johan King Silverhult and Patrick King", role: "Immersive dance theatre", where: "Berlin", when: "" }
     - heading: Film, television and brands
       items:
-        - { work: "Lose Yourself to Dance", company: "Daft Punk", role: "Dancer", where: "", when: "" }
-        - { work: "We Are Kindred — ballet film", company: "", role: "Dancer", where: "", when: "2018" }
-        - { work: "L'Oréal Professionnel tour · IAA Frankfurt", company: "", role: "Dancer", where: "", when: "" }
-        - { work: "Face Off", company: "Syfy", role: "Assistant choreographer", where: "Los Angeles", when: "2014" }
+        - { work: "Music videos", company: "Daft Punk · Lose Yourself to Dance", role: "Dancer", where: "", when: "" }
+        - { work: "Television", company: "Face Off · Syfy", role: "Assistant choreographer", where: "Los Angeles", when: "2014" }
+        - { work: "Brands and events", company: "We Are Kindred ballet film (2018) · L'Oréal Professionnel tour · IAA Frankfurt", role: "Dancer", where: "", when: "" }
     - heading: Lineage
       items:
         - { work: "Alonzo King LINES Ballet BFA", company: "Dominican University of California · with Alonzo King, Marina Hotchkiss, Arturo Fernandez, Maurya Kerr, Yannis Adoniou, Carmen Rozestraten, Gregory Dawson, Christian Burns, Kara Davis and Michael Valez", role: "BFA", where: "San Francisco", when: "2011" }
         - { work: "Jack in the Box by Aszure Barton", company: "Springboard Danse Montréal", role: "Contemporary ballet dancer", where: "Montreal", when: "2011" }
         - { work: "Works by Jiří Kylián, Toru Shimazaki and Alejandro Cerrudo", company: "Hubbard Street Dance Chicago", role: "Contemporary dancer", where: "Chicago", when: "2009" }
-        - { work: "Training and influences", company: "Pacific Northwest Ballet School, Steps on Broadway, Ballet West, Cleo Parker Robinson Dance, The Edge and David Taylor Dance Theatre", role: "Summer intensives", where: "", when: "2004–2010" }
+        - { work: "Summer intensives", company: "Pacific Northwest Ballet School, Steps on Broadway, Ballet West, Cleo Parker Robinson Dance, The Edge and David Taylor Dance Theatre", role: "Training and influences", where: "", when: "2004–2010" }
     - heading: Foundations
       items:
         - { work: "International Ballet School", company: "German Zamuel, Mark Carlson and Sandra Kerr", role: "Classical ballet", where: "", when: "2000–2007" }
