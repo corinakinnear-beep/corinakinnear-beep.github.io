@@ -58,6 +58,11 @@
   /* help / instructions */
   .help{background:#fff;border:1px solid var(--line);border-radius:14px;padding:clamp(14px,2.4vw,22px);margin-bottom:22px;font-size:clamp(14px,1.35vw,16px)}
   .help .eyebrow{font-size:var(--fs-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);font-weight:600;margin:0 0 4px}
+  .helphead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .tipsbox.collapsed .tipsbody{display:none}
+  .tipsbox.collapsed > .shead{margin-bottom:0}
+  .help.collapsed h4{margin:0}
+  .tipsToggle{flex:none}
   .help h4{font-size:clamp(17px,2vw,22px);font-weight:600;letter-spacing:-.02em;margin:0 0 clamp(10px,1.6vw,16px)}
   .help ol{list-style:none;margin:0;padding:0;display:grid;gap:clamp(9px,1.4vw,14px);grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
   .help li{display:grid;grid-template-columns:12px 1fr;gap:11px;align-items:start;font-size:inherit;line-height:1.4}
@@ -432,9 +437,9 @@
     <div class="row" style="margin-bottom:20px"><button class="btn ghost small" id="addLoc">+ Add a location</button></div>
 
     <h3 class="sec">Propose your times</h3>
-    <div class="help">
-      <h4>Marking times on the grid</h4>
-      <ol class="steps">
+    <div class="help tipsbox" id="proposeTips">
+      <div class="helphead"><h4>Marking times on the grid</h4><button class="btn ghost small tipsToggle" aria-expanded="true">Hide tips</button></div>
+      <ol class="steps tipsbody">
         <li><span class="ico">🖐️</span><div><strong>Drag across the times you'd offer</strong><span>Click again to remove one.</span></div></li>
         <li><span class="ico">📅</span><div><strong>Tap a date to take the whole day</strong><span>Tap it again to clear it.</span></div></li>
         <li><span class="ico">📱</span><div><strong>On a phone, use the bar at the bottom</strong><span><kbd>Scroll</kbd> taps one slot; <kbd>Paint</kbd> drags across many.</span></div></li>
@@ -529,8 +534,9 @@
         <ul class="stacklist" id="managingList" style="margin-top:12px"></ul>
       </section>
 
-      <section class="section">
-        <div class="shead"><h3>Mark the times you can make, then save</h3></div>
+      <section class="section tipsbox" id="youTips">
+        <div class="shead"><h3>Mark the times you can make, then save</h3><button class="btn ghost small tipsToggle" aria-expanded="true">Hide tips</button></div>
+        <div class="tipsbody">
         <ol class="steps">
           <li><span class="ico">📍</span><div><strong>Pick a location first</strong><span>Answer each place separately.</span></div></li>
           <li><span class="ico">🖐️</span><div><strong>Drag across the times you can make</strong><span>Click again to remove. Hatched slots weren't offered.</span></div></li>
@@ -538,6 +544,7 @@
           <li><span class="ico">📱</span><div><strong>On a phone, use the bar at the bottom</strong><span><kbd>Scroll</kbd> taps one slot; <kbd>Paint</kbd> drags across many.</span></div></li>
         </ol>
         <p class="stepfoot"><em>When you&rsquo;re done, press <b>Save changes</b> at the bottom of the page. You can sign back in with the same name and PIN, on any device, to change your answer any time.</em></p>
+        </div>
       </section>
 
       <div id="youTimesHome"></div>
@@ -1242,6 +1249,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   };
 
   function startCreate() {
+    applyTips();
     editing = false;
     $('#createIntro').classList.remove('hidden'); $('#editIntro').classList.add('hidden');
     $('#createBtn').textContent = 'Create event'; $('#cancelEdit').classList.add('hidden'); $('#dangerZone').classList.add('hidden'); $('#addDaysSection').classList.add('hidden');
@@ -1250,6 +1258,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   }
   let editBase = null;
   function startEdit() {
+    applyTips();
     editing = true;
     const c = plan.config;
     editBase = JSON.parse(JSON.stringify(c));
@@ -1386,7 +1395,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     cohostInvites = [];
     if (isPrimary) { const { data: ci } = await sb.from('admin_invites').select('*').eq('event_id', eventId).order('created_at'); cohostInvites = ci || []; }
     personalMode = isOwner && lsGet(modeKey(eventId)) === 'me';
-    applyRoleUi();
+    applyRoleUi(); applyTips();
     renderCohosts(); renderGroupView();
     $('#newEventTitle').textContent = 'Create a new event';
     $('#newEventBlurb').textContent = isOwner
@@ -2096,6 +2105,25 @@ const PIN_SUFFIX = '::ensemble-pin';
   };
   document.querySelectorAll('[data-find]').forEach(b => b.onclick = () => { $('#findBox').value = b.dataset.find; runFind(); });
 
+  /* ---------- tips: fold away once you know how it works (remembered on this device) ---------- */
+  const TIPS_KEY = 'ens_tips';
+  function applyTips() {
+    const pref = lsGet(TIPS_KEY);                      // 'hide' / 'show' once someone has chosen
+    const answered = !!(user && responses.some(r => r.user_id === user.id));
+    document.querySelectorAll('.tipsbox').forEach(box => {
+      const hide = pref ? pref === 'hide' : (box.id === 'youTips' && answered);
+      box.classList.toggle('collapsed', hide);
+      const b = box.querySelector('.tipsToggle');
+      b.textContent = hide ? 'Show tips' : 'Hide tips';
+      b.setAttribute('aria-expanded', String(!hide));
+    });
+  }
+  document.querySelectorAll('.tipsToggle').forEach(b => b.onclick = () => {
+    const hideNow = !b.closest('.tipsbox').classList.contains('collapsed');
+    lsSet(TIPS_KEY, hideNow ? 'hide' : 'show');
+    applyTips();
+  });
+
   /* ---------- host view / my availability ---------- */
   function applyRoleUi() {
     const h = hostUi();
@@ -2463,7 +2491,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31m';
+  const BUILD = '2026-10-31n';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
