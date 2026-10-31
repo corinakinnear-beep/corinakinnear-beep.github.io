@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block main %}
-  {% if performing.images %}<img class="hero-img" src="/moves/img/performing/{{ performing.images[0].file }}" alt="{{ performing.images[0].alt }}"{% if performing.images[0].w %} width="{{ performing.images[0].w }}" height="{{ performing.images[0].h }}"{% endif %}{% if performing.images[0].pos %} style="object-position:{{ performing.images[0].pos }}"{% endif %}>{% endif %}
+  {% if performing.images %}<img class="hero-img{% if performing.images[0].portrait %} hero-portrait{% endif %}" src="/moves/img/performing/{{ performing.images[0].file }}" alt="{{ performing.images[0].alt }}"{% if performing.images[0].w %} width="{{ performing.images[0].w }}" height="{{ performing.images[0].h }}"{% endif %}{% if performing.images[0].pos %} style="object-position:{{ performing.images[0].pos }}"{% endif %}>{% endif %}
   <section class="pagehead wrap">
     <h1>Performing</h1>
     <p class="intro">{{ performing.intro }}</p>
