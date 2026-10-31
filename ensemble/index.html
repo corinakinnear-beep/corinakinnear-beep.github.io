@@ -582,6 +582,11 @@
       <div class="btnrow hidden" id="backFromYouRow" style="margin-bottom:8px"><button class="btn ghost small backlink" id="backFromYou">&larr; Back to everyone&rsquo;s answers</button></div>
       <h3 class="bigtitle" style="margin-top:12px">Add your availability</h3>
 
+      <section class="section hidden" id="removedNotice">
+        <div class="shead"><h3>You&rsquo;ve been taken off this event</h3></div>
+        <p class="cap">The host removed your answers. Your times and note are saved but don&rsquo;t count right now, and can&rsquo;t be changed. If that&rsquo;s a mistake, ask the host to restore you.</p>
+      </section>
+
       <section class="section hidden" id="managingSection">
         <div class="shead"><h3>You&rsquo;re also filling in for</h3></div>
         <p class="cap">The host invited you to enter availability on their behalf. This is separate from your own times below.</p>
@@ -763,7 +768,7 @@
       </div>
       <div class="toolgroup">
         <button class="btn ghost toolToggle" aria-expanded="false" aria-controls="hostWrap">Hosting tools <span aria-hidden="true">&#9662;</span></button>
-        <p class="cap toolcap">Co-hosts, group view and adding availability for others.</p>
+        <p class="cap toolcap">Co-hosts, group view, people and adding availability for others.</p>
         <div id="hostWrap" class="toolwrap hidden">
 
       <section class="section hidden" id="cohostBlock">
@@ -783,6 +788,14 @@
           <button class="btn ghost" id="groupViewBtn">Turn on group view</button>
           <span class="cap" id="groupViewState"></span>
         </div>
+      </section>
+
+      <section class="section hidden" id="peopleBlock">
+        <div class="shead"><h3>People</h3></div>
+        <p class="cap">Remove someone&rsquo;s answers from this event. Nothing is deleted &mdash; you can restore them anytime.</p>
+        <ul class="stacklist" id="peopleList" style="margin-top:12px"></ul>
+        <p class="qf-title hidden" id="removedTitle" style="margin:20px 0 4px">Removed</p>
+        <ul class="stacklist" id="removedList"></ul>
       </section>
 
       <section class="section hidden" id="manualToolBlock">
@@ -1078,6 +1091,7 @@ const PIN_SUFFIX = '::ensemble-pin';
 
   /* ---------- routing ---------- */
   let eventId = null, plan = null, responses = [], channel = null;
+  let everyone = [], iAmRemoved = false;     // everyone = all answers incl. removed; responses = the ones that count
   let showAccount = false, justCreated = false, curTab = 'group', loc = 0, mine = {}, myAnchors = null, myNote = '', myNoteAt = null, dirty = false, editing = false, creating = false, isOwner = false;
   let selected = null; // Set of user_ids being viewed, null = everyone
   const stopPolling = () => { clearInterval(pollTimer); pollTimer = null; };
@@ -1453,8 +1467,9 @@ const PIN_SUFFIX = '::ensemble-pin';
     const isOwnerOf = e => e.owner === user.id;
     const { data: rs, error: rsErr } = await sb.from('responses').select('*').eq('event_id', eventId).order('name');
     if (rsErr) { toast("Couldn't load everyone's answers — check your connection"); }
-    responses = rsErr ? responses : (rs || []);
-    const own = responses.find(r => r.user_id === user.id);
+    if (!rsErr) { everyone = rs || []; responses = everyone.filter(r => !r.removed); }
+    const own = everyone.find(r => r.user_id === user.id);
+    iAmRemoved = !!own?.removed;
     mine = {};
     myAnchors = (own?.anchors && Object.keys(own.anchors).length) ? own.anchors : null;
     const restored = myAnchors ? fromAnchors(plan.config, myAnchors) : null;
@@ -1474,7 +1489,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     cohostInvites = [];
     if (isPrimary) { const { data: ci } = await sb.from('admin_invites').select('*').eq('event_id', eventId).order('created_at'); cohostInvites = ci || []; }
     personalMode = isOwner && lsGet(modeKey(eventId)) === 'me';
-    applyRoleUi(); applyTips();
+    applyRoleUi(); applyTips(); renderPeople(); renderRemovedNotice();
     renderCohosts(); renderGroupView();
     $('#newEventTitle').textContent = 'Create a new event';
     $('#newEventBlurb').textContent = isOwner
@@ -1522,7 +1537,10 @@ const PIN_SUFFIX = '::ensemble-pin';
       const gridChanged = JSON.stringify(ev.config?.d) !== JSON.stringify(plan.config?.d)
         || JSON.stringify(ev.config?.locations?.map(l => l.proposed)) !== JSON.stringify(plan.config?.locations?.map(l => l.proposed));
       plan = ev;
-      responses = rs || [];
+      everyone = rs || []; responses = everyone.filter(r => !r.removed);
+      const wasRemoved = iAmRemoved; iAmRemoved = !!everyone.find(r => r.user_id === user.id)?.removed;
+      if (wasRemoved !== iAmRemoved) { renderRemovedNotice(); renderSaveBar(); }
+      renderPeople();
       // a location may have been removed since this page loaded
       if (loc >= (plan.config.locations || []).length) { loc = 0; renderGrids(); }
       renderLocTabs(); renderMeta(); renderManaging(); renderGroupView();
@@ -1607,9 +1625,12 @@ const PIN_SUFFIX = '::ensemble-pin';
     paintSet($('#youGrid'), mine[loc] ||= new Set());
     paintHeat();
   }
-  makePainter($('#youGrid'), () => mine[loc] ||= new Set(), () => { if (plan.closed) { toast('This event is closed to changes'); return false; } return true; });
+  const locked = () => !!plan && (plan.closed || iAmRemoved);
+  const lockedMsg = () => iAmRemoved ? 'The host has taken you off this event' : 'This event is closed to changes';
+  makePainter($('#youGrid'), () => mine[loc] ||= new Set(), () => { if (locked()) { toast(lockedMsg()); return false; } return true; });
   $('#youGrid').addEventListener('painted', markDirty);
   $('#copyMine').onclick = () => {
+    if (locked()) return toast(lockedMsg());
     const o = +$('#copyMineTo').value;
     if (!locs()[o] || !locs()[loc]) return toast('That location has changed — reload to see the latest');
     const had = (mine[o] || new Set()).size;
@@ -1623,7 +1644,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#youQfToggle').setAttribute('aria-expanded', String(open));
   };
   const youFill = all => {
-    if (plan.closed) return toast('This event is closed to changes');
+    if (locked()) return toast(lockedMsg());
     if (!locs()[loc]) return;
     mine[loc] = all ? new Set(locs()[loc].proposed || []) : new Set();
     paintSet($('#youGrid'), mine[loc]); markDirty();
@@ -1648,7 +1669,7 @@ const PIN_SUFFIX = '::ensemble-pin';
 
   function markDirty() { dirty = true; renderSaveBar(); }
   function renderSaveBar() {
-    const show = !!plan && !plan.closed && (curTab === 'you' || guestEditingInGroup());
+    const show = !!plan && !locked() && (curTab === 'you' || guestEditingInGroup());
     $('#savebar').classList.toggle('on', show);
     document.body.classList.toggle('hasbar', show);
     const narrow = matchMedia('(max-width:640px)').matches;
@@ -1657,7 +1678,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#saveAllBtn').disabled = !dirty;
   }
   $('#saveAllBtn').onclick = async () => {
-    if (plan.closed) return toast('This event is closed to changes');
+    if (locked()) return toast(lockedMsg());
     const text = $('#noteEdit').classList.contains('hidden') ? myNote : $('#noteBox').value.trim();
     if (text !== myNote) { myNote = text; myNoteAt = myNote ? new Date().toISOString() : null; }
     $('#saveAllBtn').disabled = true; $('#saveState').textContent = 'Saving…';
@@ -1812,9 +1833,9 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#noteList').innerHTML = allRows().filter(r => r.note && r.note.trim()).map(r => `<div class="note"><b>${esc(r.name)}<small style="font-weight:400;color:var(--ink-2)"> · ${fmtStamp(r.note_at || r.updated_at) || ''}${r.manual ? ' · added by you' : ''}</small></b><span>${esc(r.note)}</span></div>`).join('') || '<p class="cap">No notes yet.</p>';
   }
   let heatMode = 'mark';
-  const marking = () => guestEditingInGroup() && heatMode === 'mark' && !plan.closed;
+  const marking = () => guestEditingInGroup() && heatMode === 'mark' && !locked();
   function renderHeatMode() {
-    const show = guestEditingInGroup() && !plan.closed;
+    const show = guestEditingInGroup() && !locked();
     $('#heatModeRow').classList.toggle('hidden', !show);
     $('#groupGrid').classList.toggle('marking', marking());
     $('#who').closest('.quickfill').classList.toggle('hidden', marking());
@@ -1890,7 +1911,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#noteTitle').textContent = guestGroup ? 'Your note to the group' : 'A note about your availability';
     $('#noteSendCap').innerHTML = guestGroup ? 'Everyone can read it. Saved with <b>Save changes</b>.' : 'Saved with <b>Save changes</b>.';
     if (w === 'group' && plan && canSeeGroup()) paintHeat();
-    const bar = (w === 'you' || guestGroup) && !!plan && !plan.closed;
+    const bar = (w === 'you' || guestGroup) && !!plan && !locked();
     $('#savebar').classList.toggle('on', bar);
     document.body.classList.toggle('hasbar', bar);
     if (bar) renderSaveBar();
@@ -2230,6 +2251,38 @@ const PIN_SUFFIX = '::ensemble-pin';
     applyTips();
   });
 
+  /* ---------- people: hosts can remove someone's answers, and restore them ---------- */
+  function renderRemovedNotice() {
+    $('#removedNotice').classList.toggle('hidden', !iAmRemoved);
+    $('#noteBox').disabled = iAmRemoved;
+    $('#noteEditBtn').classList.toggle('hidden', iAmRemoved);
+    renderGroupView();
+  }
+  function renderPeople() {
+    if (!plan || !isOwner) return;
+    const others = everyone.filter(r => r.user_id !== user.id).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const active = others.filter(r => !r.removed), gone = others.filter(r => r.removed);
+    const slots = r => Object.values(r.availability || {}).reduce((n, a) => n + (a?.length || 0), 0);
+    $('#peopleList').innerHTML = active.length
+      ? active.map(r => `<li><span class="n">${esc(r.name || 'Someone')}<small>${slots(r)} time${slots(r) === 1 ? '' : 's'} marked${r.updated_at ? ' · ' + fmtStamp(r.updated_at) : ''}</small></span><span class="c"><button class="btn ghost small" data-rm="${r.user_id}">Remove</button></span></li>`).join('')
+      : '<li><span class="cap" style="white-space:normal">Nobody else has answered yet.</span></li>';
+    $('#removedTitle').classList.toggle('hidden', !gone.length);
+    $('#removedList').innerHTML = gone.map(r => `<li><span class="n">${esc(r.name || 'Someone')}<small>Removed${r.removed_at ? ' ' + fmtStamp(r.removed_at) : ''} · ${slots(r)} time${slots(r) === 1 ? '' : 's'} kept</small></span><span class="c"><button class="btn ghost small" data-restore="${r.user_id}">Restore</button></span></li>`).join('');
+    const act = async (uid, removed) => {
+      const r = everyone.find(x => x.user_id === uid); if (!r) return;
+      if (removed && !confirm(`Remove ${r.name || 'this person'}? Their times and note stop counting and they can't change them. Nothing is deleted — you can restore them anytime.`)) return;
+      const { error } = await sb.rpc('set_response_removed', { p_event: eventId, p_user: uid, p_removed: removed });
+      if (error) return toast("Couldn't do that: " + error.message);
+      r.removed = removed; r.removed_at = removed ? new Date().toISOString() : null;
+      responses = everyone.filter(x => !x.removed);
+      if (selected) selected.delete(uid);
+      renderPeople(); paintHeat();
+      toast(removed ? `${r.name || 'They'} removed — restore them anytime under People` : `${r.name || 'They'} restored — their times count again`);
+    };
+    $('#peopleList').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => act(b.dataset.rm, true));
+    $('#removedList').querySelectorAll('[data-restore]').forEach(b => b.onclick = () => act(b.dataset.restore, false));
+  }
+
   /* ---------- host view / my availability ---------- */
   function applyRoleUi() {
     const h = hostUi();
@@ -2239,7 +2292,7 @@ const PIN_SUFFIX = '::ensemble-pin';
       b.setAttribute('aria-selected', String(on));
       b.title = b.dataset.m === 'me' ? 'See the event the way invitees do and add your own times' : 'Share the event, propose times and see everyone’s answers';
     });
-    ['#cohostBlock', '#manualToolBlock', '#groupViewBlock', '#toolsTitle', '#toolGroups', '#optsSection', '#shareSection', '#backFromYouRow']
+    ['#cohostBlock', '#manualToolBlock', '#groupViewBlock', '#peopleBlock', '#toolsTitle', '#toolGroups', '#optsSection', '#shareSection', '#backFromYouRow']
       .forEach(sel => $(sel).classList.toggle('hidden', !h));
     $('#closeBtn').classList.toggle('hidden', !h); $('#editBtn').classList.toggle('hidden', !h);
     $('#copyBtn').classList.toggle('hidden', !h);
@@ -2264,10 +2317,10 @@ const PIN_SUFFIX = '::ensemble-pin';
     const on = groupViewOn();
     $('#groupViewBtn').textContent = on ? 'Turn off group view' : 'Turn on group view';
     $('#groupViewState').textContent = on ? 'On — everyone invited can see all answers' : 'Off — guests only see their own answers';
-    const guest = !hostUi() && peekAllowed();
+    const guest = !hostUi() && peekAllowed() && !iAmRemoved;
     $('#peekSection').classList.toggle('hidden', !guest);
     $('#backToMineRow').classList.toggle('hidden', !guest);
-    if (!hostUi() && !peekAllowed() && curTab === 'group') { showTab('you', 'groupViewOff'); renderSaveBar(); }
+    if (!hostUi() && (!peekAllowed() || iAmRemoved) && curTab === 'group') { showTab('you', 'groupViewOff'); renderSaveBar(); }
   }
   $('#groupViewBtn').onclick = async () => {
     const next = !groupViewOn();
@@ -2597,7 +2650,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31y';
+  const BUILD = '2026-10-31z';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
