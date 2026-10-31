@@ -62,7 +62,10 @@
   .tipsbox.collapsed .tipsbody{display:none}
   .tipsbox.collapsed > .shead{margin-bottom:0}
   .help.collapsed h4{margin:0}
-  .tipsToggle{flex:none}
+  .tipsfoot{display:flex;justify-content:flex-end;margin-top:6px}
+  .tipsToggle{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:20px;line-height:1;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+  .tipsToggle:hover{border-color:var(--ink-2)}
+  .tipsbox.collapsed .tipsfoot{margin-top:-8px}
   .help h4{font-size:clamp(17px,2vw,22px);font-weight:600;letter-spacing:-.02em;margin:0 0 clamp(10px,1.6vw,16px)}
   .help ol{list-style:none;margin:0;padding:0;display:grid;gap:clamp(9px,1.4vw,14px);grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
   .help li{display:grid;grid-template-columns:12px 1fr;gap:11px;align-items:start;font-size:inherit;line-height:1.4}
@@ -438,12 +441,13 @@
 
     <h3 class="sec">Propose your times</h3>
     <div class="help tipsbox" id="proposeTips">
-      <div class="helphead"><h4>Marking times on the grid</h4><button class="btn ghost small tipsToggle" aria-expanded="true">Hide tips</button></div>
+      <h4>Marking times on the grid</h4>
       <ol class="steps tipsbody">
         <li><span class="ico">🖐️</span><div><strong>Drag across the times you'd offer</strong><span>Click again to remove one.</span></div></li>
         <li><span class="ico">📅</span><div><strong>Tap a date to take the whole day</strong><span>Tap it again to clear it.</span></div></li>
         <li><span class="ico">📱</span><div><strong>On a phone, use the bar at the bottom</strong><span><kbd>Scroll</kbd> taps one slot; <kbd>Paint</kbd> drags across many.</span></div></li>
       </ol>
+      <div class="tipsfoot"><button class="tipsToggle" aria-expanded="true" aria-label="Hide tips" title="Hide tips">&minus;</button></div>
     </div>
     <div style="margin-bottom:14px">
       <button class="btn ghost small" id="proposeQfToggle" aria-expanded="false" aria-controls="proposeQuickfill">Quick fill options <span aria-hidden="true">&#9662;</span></button>
@@ -535,7 +539,7 @@
       </section>
 
       <section class="section tipsbox" id="youTips">
-        <div class="shead"><h3>Mark the times you can make, then save</h3><button class="btn ghost small tipsToggle" aria-expanded="true">Hide tips</button></div>
+        <div class="shead"><h3>Mark the times you can make, then save</h3></div>
         <div class="tipsbody">
         <ol class="steps">
           <li><span class="ico">📍</span><div><strong>Pick a location first</strong><span>Answer each place separately.</span></div></li>
@@ -545,6 +549,7 @@
         </ol>
         <p class="stepfoot"><em>When you&rsquo;re done, press <b>Save changes</b> at the bottom of the page. You can sign back in with the same name and PIN, on any device, to change your answer any time.</em></p>
         </div>
+        <div class="tipsfoot"><button class="tipsToggle" aria-expanded="true" aria-label="Hide tips" title="Hide tips">&minus;</button></div>
       </section>
 
       <div id="youTimesHome"></div>
@@ -2114,7 +2119,8 @@ const PIN_SUFFIX = '::ensemble-pin';
       const hide = pref ? pref === 'hide' : (box.id === 'youTips' && answered);
       box.classList.toggle('collapsed', hide);
       const b = box.querySelector('.tipsToggle');
-      b.textContent = hide ? 'Show tips' : 'Hide tips';
+      b.textContent = hide ? '+' : '\u2212';
+      b.setAttribute('aria-label', hide ? 'Show tips' : 'Hide tips'); b.title = hide ? 'Show tips' : 'Hide tips';
       b.setAttribute('aria-expanded', String(!hide));
     });
   }
@@ -2491,7 +2497,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31n';
+  const BUILD = '2026-10-31o';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
