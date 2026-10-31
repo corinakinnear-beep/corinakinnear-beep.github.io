@@ -106,6 +106,7 @@
   .facts dt{font-size:var(--fs-cap);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:700;white-space:nowrap}
   .facts dd{margin:0;font-size:var(--fs-body)}
   @media (max-width:560px){.facts{grid-template-columns:1fr;gap:2px 0}.facts dd{margin-bottom:10px}}
+  #groupPane #youLocSection{display:none}
   .bigtitle{font-size:var(--fs-h2);font-weight:600;letter-spacing:-.02em;margin:44px 0 18px}
   .btnrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .stacklist{list-style:none;margin:0;padding:0}
@@ -475,7 +476,7 @@
 
       <section class="section hidden" id="peekSection">
         <div class="shead"><h3>See when others are free</h3></div>
-        <p class="cap">The host has turned on group view. Look at everyone&rsquo;s answers, then come back and mark times that overlap as much as you can.</p>
+        <p class="cap">The host has turned on group view. See everyone&rsquo;s answers and mark your own times right underneath, so you can overlap as much as possible.</p>
         <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="goGroupGuest">See everyone&rsquo;s answers</button></div>
       </section>
 
@@ -496,8 +497,9 @@
         <p class="stepfoot"><em>When you&rsquo;re done, press <b>Save changes</b> at the bottom of the page. You can sign back in with the same name and PIN, on any device, to change your answer any time.</em></p>
       </section>
 
-      <section class="section">
-        <div class="shead"><h3>Your times</h3></div>
+      <div id="youTimesHome"></div>
+      <section class="section" id="youTimesSection">
+        <div class="shead"><h3>Your times</h3><span class="cap hidden" id="youTimesHint">Edit here, then press Save changes</span></div>
         <div class="locpick" id="youLocSection" style="margin-bottom:18px">
           <p class="qf-title" style="margin-bottom:10px">Choose location</p>
           <div class="tabs loc" id="locTabs" role="tablist"></div>
@@ -556,6 +558,8 @@
           <div class="who" id="who"><span class="none">Tap any slot on the grid to see who can and can&rsquo;t make it.</span></div>
         </div>
       </section>
+
+      <div id="groupMineSlot"></div>
 
       <section class="section">
         <div class="shead"><h3>Notes from the group</h3></div>
@@ -1440,7 +1444,7 @@ const PIN_SUFFIX = '::ensemble-pin';
 
   function markDirty() { dirty = true; renderSaveBar(); }
   function renderSaveBar() {
-    const show = !!plan && !plan.closed && curTab === 'you';
+    const show = !!plan && !plan.closed && (curTab === 'you' || guestEditingInGroup());
     $('#savebar').classList.toggle('on', show);
     document.body.classList.toggle('hasbar', show);
     $('#saveState').textContent = dirty ? 'You have unsaved changes' : 'All changes saved';
@@ -1528,6 +1532,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   }
 
   const groupViewOn = () => !!plan?.config?.groupView;
+  const guestEditingInGroup = () => curTab === 'group' && !!plan && !isOwner && groupViewOn();
   const canSeeGroup = () => isOwner || groupViewOn();
   function paintHeat() {
     if (!plan || !canSeeGroup()) return;
@@ -1646,10 +1651,18 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#guestNew').classList.toggle('hidden', w === 'manual');
     if (w !== 'manual') delegate = null;
     if (w === 'manual') { loadManual(delegate ? delegate.entry_id : mEntry ? mEntry.id : ''); }
+    // a guest in group view edits their own times right under the overlap grid
+    const guestGroup = w === 'group' && !!plan && !isOwner && groupViewOn();
+    const sec = $('#youTimesSection');
+    if (guestGroup) $('#groupMineSlot').appendChild(sec);
+    else $('#youTimesHome').after(sec);
+    $('#youTimesHint').classList.toggle('hidden', !guestGroup);
     if (w === 'group' && plan && canSeeGroup()) paintHeat();
-    $('#savebar').classList.toggle('on', w === 'you' && !!plan && !plan.closed);
-    document.body.classList.toggle('hasbar', w === 'you' && !!plan && !plan.closed);
-    $('#paintbar').classList.toggle('avail', w === 'you' || w === 'manual');
+    const bar = (w === 'you' || guestGroup) && !!plan && !plan.closed;
+    $('#savebar').classList.toggle('on', bar);
+    document.body.classList.toggle('hasbar', bar);
+    if (bar) renderSaveBar();
+    $('#paintbar').classList.toggle('avail', w === 'you' || w === 'manual' || guestGroup);
   }
   const leaveOk = () => !dirty || confirm('Are you sure you want to leave without saving your changes?');
   $('#goManual').onclick = () => showTab('manual', 'button:goManual');
@@ -2269,7 +2282,7 @@ const PIN_SUFFIX = '::ensemble-pin';
 
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31a';
+  const BUILD = '2026-10-31b';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
