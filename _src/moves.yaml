@@ -503,16 +503,70 @@ performing:
         - { work: "Molly Maps", company: "Mecca Vazie Andrews", role: "Contemporary dancer", where: "REDCAT, Los Angeles", when: "2013" }
         - { work: "After It Happened", company: "Laura Karlin", role: "Contemporary dancer", where: "Los Angeles", when: "2012" }
         - { work: "Nyau", company: "Gibson Muriva", role: "Contemporary and African dancer", where: "Montreal", when: "2011–2012" }
-        - { work: "Jack in the Box", company: "Aszure Barton", role: "Contemporary ballet dancer", where: "Montreal", when: "2011" }
         - { work: "Dynamic Inquiry", company: "Nathan Trice", role: "Contemporary dancer", where: "San Francisco", when: "2010" }
         - { work: "Q", company: "Yannis Adoniou", role: "Contemporary dancer", where: "San Francisco", when: "2010" }
+    - heading: Events and immersive theatre
+      items:
+        - { work: "UN Biodiversity Conference", company: "Ilya Jivoy", role: "Soloist and ensemble, contemporary", where: "", when: "" }
+        - { work: "InterContinental Paris", company: "Lia Kemendi", role: "Contemporary and ballet dancer", where: "Paris", when: "" }
+        - { work: "APM event", company: "brand-contente · Camille H. Bonnenfant", role: "Contemporary dancer", where: "", when: "" }
+        - { work: "Salon K Privé", company: "Johan King Silverhult and Patrick King", role: "Immersive dance theatre", where: "Berlin", when: "" }
+    - heading: Lineage and training
+      items:
+        - { work: "Alonzo King LINES Ballet BFA", company: "Dominican University of California · with Alonzo King, Marina Hotchkiss, Arturo Fernandez, Maurya Kerr, Yannis Adoniou, Carmen Rozestraten, Gregory Dawson, Christian Burn, Kara Davis and Michael Valez", role: "BFA", where: "San Francisco", when: "2011" }
+        - { work: "Jack in the Box", company: "Aszure Barton", role: "Contemporary ballet dancer", where: "Montreal", when: "2011" }
+        - { work: "Springboard Danse Montréal", company: "", role: "Summer intensive", where: "Montreal", when: "2010" }
+        - { work: "Steps on Broadway", company: "", role: "Summer intensive", where: "New York", when: "2010" }
         - { work: "Works by Jiří Kylián, Toru Shimazaki and Alejandro Cerrudo", company: "Hubbard Street Dance Chicago", role: "Contemporary dancer", where: "Chicago", when: "2009" }
+        - { work: "Cleo Parker Robinson Dance", company: "", role: "Summer intensive", where: "Denver", when: "2008" }
+        - { work: "The Edge", company: "", role: "Summer intensive", where: "Los Angeles", when: "2008" }
+        - { work: "Ballet West", company: "", role: "Summer intensive", where: "Salt Lake City", when: "2006, 2007" }
+        - { work: "Pacific Northwest Ballet School", company: "", role: "Summer intensive", where: "Seattle", when: "2005" }
+        - { work: "DTDT", company: "", role: "Summer intensive", where: "", when: "2004" }
+        - { work: "International Ballet School", company: "German Zamuel, Mark Carlson and Sandra Carlson", role: "Classical ballet", where: "", when: "2000–2007" }
+        - { work: "Parker Dance Academy", company: "Ballet, tap, jazz, hip-hop, contemporary and pointe", role: "Early training", where: "", when: "1991–2007" }
     - heading: Film, television and brands
       items:
         - { work: "Lose Yourself to Dance", company: "Daft Punk", role: "Dancer", where: "", when: "" }
         - { work: "We Are Kindred — ballet film", company: "", role: "Dancer", where: "", when: "2018" }
         - { work: "L'Oréal Professionnel tour · IAA Frankfurt", company: "", role: "Dancer", where: "", when: "" }
         - { work: "Face Off", company: "Syfy", role: "Assistant choreographer", where: "Los Angeles", when: "2014" }
+  # names on the Performing page that link to their own website (quiet links, see .credlist a.xl)
+  links:
+    "Deutsche Oper Berlin": "https://deutscheoperberlin.de"
+    "Los Angeles Opera": "https://www.laopera.org"
+    "Alonzo King LINES Ballet": "https://www.linesballet.org"
+    "Alonzo King": "https://www.linesballet.org"
+    "Mike Tyus": "https://www.miketyus.com"
+    "Invertigo Dance Theatre": "https://www.invertigodance.org"
+    "Laura Karlin": "https://www.invertigodance.org"
+    "Luke Zender": "https://www.lukedakotazender.com"
+    "MiMoDa Movement Theater": "https://mimodajazzostudio.com"
+    "Arrogant Elbow (Sarah Elgart)": "http://sarahelgart.com"
+    "Mecca Vazie Andrews": "https://www.meccavazieandrews.com"
+    "Aszure Barton": "https://www.aszurebarton.com"
+    "Nathan Trice": "http://www.nathantricerituals.com"
+    "Yannis Adoniou": "http://www.kunst-stoff.org"
+    "Hubbard Street Dance Chicago": "https://www.hubbardstreetdance.com"
+    "Daft Punk": "https://www.daftpunk.com"
+    "Syfy": "https://www.syfy.com"
+    "Ilya Jivoy": "https://jivoydance.com"
+    "InterContinental Paris": "https://parislegrand.intercontinental.com/en/"
+    "Lia Kemendi": "https://www.liakemendi.com"
+    "brand-contente": "http://brand-contente.com/"
+    "Salon K Privé": "https://www.salonkexperience.com/prive"
+    "Johan King Silverhult": "https://www.salonkexperience.com/founders"
+    "Patrick King": "https://www.salonkexperience.com/founders"
+    "Alonzo King LINES Ballet BFA": "https://dominican.edu/academics/undergraduate-programs/dancelines-ballet"
+    "Dominican University of California": "https://dominican.edu/academics/undergraduate-programs/dancelines-ballet"
+    "Maurya Kerr": "http://tinypistol.com"
+    "Gregory Dawson": "https://dawsondancesf.org"
+    "Springboard Danse Montréal": "https://www.springboarddanse.com/"
+    "Steps on Broadway": "https://www.stepsnyc.com/"
+    "Cleo Parker Robinson Dance": "https://cleoparkerdance.org/"
+    "Ballet West": "https://www.academy.balletwest.org/summer"
+    "Pacific Northwest Ballet School": "https://www.pnb.org/pnb-school/"
+    "International Ballet School": "https://internationalballetschool.net/"
   photo_credit: "Photographs by Chris Gonz"
   video:
     kind: file
