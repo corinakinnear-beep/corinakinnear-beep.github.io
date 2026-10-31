@@ -208,8 +208,8 @@
   .layout{display:block}
 
   /* grid */
-  .gridwrap{overflow-x:auto;padding-bottom:6px;user-select:none;-webkit-user-select:none;touch-action:pan-x pan-y;position:relative}
-  .gridwrap.painting{touch-action:none}
+  .gridwrap{overflow-x:auto;padding-bottom:6px;user-select:none;-webkit-user-select:none;touch-action:pan-x pan-y pinch-zoom;position:relative}
+  .gridwrap.painting{touch-action:pinch-zoom}   /* one finger paints, two fingers pinch-zoom */
   table.grid{border-collapse:separate;border-spacing:3px;min-width:100%}
   table.grid th{font-weight:500;font-size:var(--fs-cap);color:var(--ink-2);padding:0 4px 6px;white-space:nowrap}
   table.grid th.day{cursor:pointer;border-radius:8px}
@@ -947,12 +947,24 @@ const PIN_SUFFIX = '::ensemble-pin';
   let paintMode = !coarse;
   function makePainter(grid, getSet, canPaint, opts = {}) {
     const cls = opts.cls || 'on';
-    let mode = null, downAt = null, moved = false;
+    let mode = null, downAt = null, moved = false, snap = null;
+    const fingers = new Set();
+    const undoStroke = () => {
+      if (snap && mode) {
+        const set = getSet(); set.clear(); snap.forEach(i => set.add(i));
+        grid.querySelectorAll('td[data-i]').forEach(td => td.classList.toggle(cls, set.has(+td.dataset.i)));
+        if (opts.onApply) opts.onApply();
+      }
+      mode = null; downAt = null; snap = null;
+    };
     const cellAt = (x,y) => { const el = document.elementFromPoint(x,y); return el && el.tagName === 'TD' && grid.contains(el) && !el.classList.contains('na') ? el : null; };
     const apply = td => { const i = +td.dataset.i; mode === 'on' ? getSet().add(i) : getSet().delete(i); td.classList.toggle(cls, mode === 'on'); if (opts.onApply) opts.onApply(); };
     const done = () => { if (mode) grid.dispatchEvent(new Event('painted')); mode = null; downAt = null; };
     grid.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'touch') fingers.add(e.pointerId);
+      if (fingers.size > 1) { undoStroke(); return; }        // two fingers = pinch, not painting
       if (!canPaint()) return;
+      snap = new Set(getSet());
       const th = e.target.closest('th.day');
       if (th) {
         const cells = [...grid.querySelectorAll(`td[data-day="${th.dataset.day}"]:not(.na)`)];
@@ -971,10 +983,12 @@ const PIN_SUFFIX = '::ensemble-pin';
       if (!mode) return; const td = cellAt(e.clientX, e.clientY); if (td) apply(td);
     });
     grid.addEventListener('pointerup', e => {
+      const wasPinch = fingers.size > 1; fingers.delete(e.pointerId);
+      if (wasPinch) { mode = null; downAt = null; snap = null; return; }
       if (downAt && !mode && !moved) { const td = cellAt(e.clientX, e.clientY); if (td) { mode = getSet().has(+td.dataset.i) ? 'off' : 'on'; apply(td); } }
       done();
     });
-    grid.addEventListener('pointercancel', done);
+    grid.addEventListener('pointercancel', e => { fingers.delete(e.pointerId); undoStroke(); });
   }
   function setPaintMode(on) {
     paintMode = on;
@@ -2548,7 +2562,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31v';
+  const BUILD = '2026-10-31w';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
