@@ -211,6 +211,8 @@
   .heat table.grid td.l1{color:#2B3A6B}
   .heat table.grid td.l2,.heat table.grid td.l3,.heat table.grid td.l4{color:#fff}
   .heat table.grid td.q15{line-height:calc(var(--cell) * .6);font-size:11px}
+  #groupGrid td.me{box-shadow:inset 0 0 0 3px var(--you), inset 0 0 0 4px rgba(23,24,31,.35)}
+  #groupGrid.marking td:not(.na){cursor:pointer}
   .heat table.grid td.sel{outline:2px solid var(--ink)}
   .legend{font-size:var(--fs-cap);color:var(--ink-2);margin-top:12px;line-height:1.7}
   .legend i{display:inline-block;width:16px;height:13px;border-radius:3px;vertical-align:-1px;margin:0 3px}
@@ -489,7 +491,7 @@
 
       <section class="section hidden" id="peekSection">
         <div class="shead"><h3>See when others are free</h3></div>
-        <p class="cap">The host has turned on group view. See everyone&rsquo;s answers and mark your own times right underneath, so you can overlap as much as possible.</p>
+        <p class="cap">The host has turned on group view. See everyone&rsquo;s answers and mark your own times right on the same chart, so you can overlap as much as possible.</p>
         <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="goGroupGuest">See everyone&rsquo;s answers</button></div>
       </section>
 
@@ -512,7 +514,7 @@
 
       <div id="youTimesHome"></div>
       <section class="section" id="youTimesSection">
-        <div class="shead"><h3>Your times</h3><span class="cap hidden" id="youTimesHint">Edit here, then press Save changes</span></div>
+        <div class="shead"><h3>Your times</h3></div>
         <div class="locpick" id="youLocSection" style="margin-bottom:18px">
           <p class="qf-title" style="margin-bottom:10px">Choose location</p>
           <div class="tabs loc" id="locTabs" role="tablist"></div>
@@ -564,6 +566,13 @@
 
       <section class="section">
         <div class="shead"><h3>When everyone can make it</h3></div>
+        <div id="heatModeRow" class="hidden" style="margin:0 0 14px">
+          <div class="tabs" role="tablist" id="heatModeTabs">
+            <button role="tab" data-m="mark" aria-selected="true">Mark my times</button>
+            <button role="tab" data-m="who" aria-selected="false">See who&rsquo;s free</button>
+          </div>
+          <p class="cap" id="heatModeCap" style="margin:10px 0 0"></p>
+        </div>
         <p class="legend" style="margin:0 0 14px">Fewer free <i style="background:var(--h0)"></i><i style="background:var(--h1)"></i><i style="background:var(--h2)"></i><i style="background:var(--h3)"></i><i style="background:var(--h4)"></i> More free</p>
         <div class="gridwrap heat" id="groupGrid"></div>
         <div class="quickfill">
@@ -572,7 +581,6 @@
         </div>
       </section>
 
-      <div id="groupMineSlot"></div>
 
       <section class="section">
         <div class="shead"><h3>Notes from the group</h3></div>
@@ -838,10 +846,11 @@ const PIN_SUFFIX = '::ensemble-pin';
   };
 
   let paintMode = !coarse;
-  function makePainter(grid, getSet, canPaint) {
+  function makePainter(grid, getSet, canPaint, opts = {}) {
+    const cls = opts.cls || 'on';
     let mode = null, downAt = null, moved = false;
     const cellAt = (x,y) => { const el = document.elementFromPoint(x,y); return el && el.tagName === 'TD' && grid.contains(el) && !el.classList.contains('na') ? el : null; };
-    const apply = td => { const i = +td.dataset.i; mode === 'on' ? getSet().add(i) : getSet().delete(i); td.classList.toggle('on', mode === 'on'); };
+    const apply = td => { const i = +td.dataset.i; mode === 'on' ? getSet().add(i) : getSet().delete(i); td.classList.toggle(cls, mode === 'on'); if (opts.onApply) opts.onApply(); };
     const done = () => { if (mode) grid.dispatchEvent(new Event('painted')); mode = null; downAt = null; };
     grid.addEventListener('pointerdown', e => {
       if (!canPaint()) return;
@@ -1403,7 +1412,14 @@ const PIN_SUFFIX = '::ensemble-pin';
   const locs = () => plan.config.locations;
   const manuals = () => (plan.config.manual ||= []);
   const manualRows = () => manuals().map(m => ({ user_id: 'm:' + m.id, name: m.name, availability: m.availability || {}, note: m.note || '', note_at: m.updated_at, updated_at: m.updated_at, manual: true }));
-  const allRows = () => [...responses, ...manualRows()];
+  const mineArrays = () => { const av = {}; Object.keys(mine).forEach(k => av[k] = [...mine[k]].sort((a,b)=>a-b)); return av; };
+  const liveResponses = () => {
+    if (typeof guestEditingInGroup !== 'function' || !guestEditingInGroup()) return responses;
+    const av = mineArrays(), own = responses.find(r => r.user_id === user.id);
+    if (own) return responses.map(r => r === own ? { ...r, availability: av } : r);
+    return Object.values(av).some(a => a.length) ? [...responses, { event_id: eventId, user_id: user.id, name: profileName || 'You', availability: av }] : responses;
+  };
+  const allRows = () => [...liveResponses(), ...manualRows()];
   function renderLocTabs() {
     const html = locs().map((l, i) => `<button role="tab" data-i="${i}" aria-selected="${i === loc}">${esc(l.name)}</button>`).join('');
     ['#locTabs','#locTabsG','#locTabsM'].forEach(sel => {
@@ -1567,6 +1583,7 @@ const PIN_SUFFIX = '::ensemble-pin';
       td.classList.remove('l1','l2','l3','l4'); if (c) td.classList.add('l' + Math.max(1, Math.ceil(c / max * 4)));
       td.dataset.c = c; td.dataset.names = (cur.names[td.dataset.i] || []).join(', ');
       td.textContent = c ? c : '';
+      td.classList.toggle('me', guestEditingInGroup() && !!mine[loc]?.has(+td.dataset.i));
     });
     // Merge consecutive equally-attended slots into ranges (9–10, 9–12 …)
     const n = spd(plan.config);
@@ -1614,7 +1631,26 @@ const PIN_SUFFIX = '::ensemble-pin';
     }
     $('#noteList').innerHTML = allRows().filter(r => r.note && r.note.trim()).map(r => `<div class="note"><b>${esc(r.name)}<small style="font-weight:400;color:var(--ink-2)"> · ${fmtStamp(r.note_at || r.updated_at) || ''}${r.manual ? ' · added by you' : ''}</small></b><span>${esc(r.note)}</span></div>`).join('') || '<p class="cap">No notes yet.</p>';
   }
+  let heatMode = 'mark';
+  const marking = () => guestEditingInGroup() && heatMode === 'mark' && !plan.closed;
+  function renderHeatMode() {
+    const show = guestEditingInGroup() && !plan.closed;
+    $('#heatModeRow').classList.toggle('hidden', !show);
+    $('#groupGrid').classList.toggle('marking', marking());
+    $('#who').closest('.quickfill').classList.toggle('hidden', marking());
+    $('#heatModeTabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.m === heatMode)));
+    $('#heatModeCap').textContent = heatMode === 'mark'
+      ? 'Tap or drag to add or remove yourself — your times are outlined in yellow. Press Save changes when you’re done.'
+      : 'Tap a time to see who can and can’t make it.';
+  }
+  $('#heatModeTabs').querySelectorAll('button').forEach(b => b.onclick = () => { heatMode = b.dataset.m; renderHeatMode(); });
+  makePainter($('#groupGrid'), () => mine[loc] ||= new Set(), marking, {
+    cls: 'me',
+    onApply: () => { if (!$('#groupGrid')._raf) $('#groupGrid')._raf = requestAnimationFrame(() => { $('#groupGrid')._raf = 0; paintHeat(); }); }
+  });
+  $('#groupGrid').addEventListener('painted', () => { markDirty(); paintHeat(); });
   $('#groupGrid').addEventListener('pointerdown', e => {
+    if (marking()) return;
     const td = e.target.closest('td'); if (!td || td.classList.contains('na')) return;
     $('#groupGrid').querySelectorAll('td.sel').forEach(x => x.classList.remove('sel')); td.classList.add('sel');
     const i = +td.dataset.i, view = shown();
@@ -1667,10 +1703,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (w === 'manual') { loadManual(delegate ? delegate.entry_id : mEntry ? mEntry.id : ''); }
     // a guest in group view edits their own times right under the overlap grid
     const guestGroup = w === 'group' && !!plan && !isOwner && groupViewOn();
-    const sec = $('#youTimesSection');
-    if (guestGroup) $('#groupMineSlot').appendChild(sec);
-    else $('#youTimesHome').after(sec);
-    $('#youTimesHint').classList.toggle('hidden', !guestGroup);
+    renderHeatMode();
     if (w === 'group' && plan && canSeeGroup()) paintHeat();
     const bar = (w === 'you' || guestGroup) && !!plan && !plan.closed;
     $('#savebar').classList.toggle('on', bar);
@@ -1991,8 +2024,8 @@ const PIN_SUFFIX = '::ensemble-pin';
     renderGroupView();
     toast(next ? 'Group view is on — everyone invited can now see all answers' : 'Group view is off — guests only see their own answers');
   };
-  $('#goGroupGuest').onclick = () => { showTab('group', 'button:goGroupGuest'); window.scrollTo(0, 0); };
-  $('#backToMine').onclick = () => { showTab('you', 'button:backToMine'); renderSaveBar(); window.scrollTo(0, 0); };
+  $('#goGroupGuest').onclick = () => { heatMode = 'mark'; showTab('group', 'button:goGroupGuest'); window.scrollTo(0, 0); };
+  $('#backToMine').onclick = () => { showTab('you', 'button:backToMine'); paintSet($('#youGrid'), mine[loc] ||= new Set()); renderSaveBar(); window.scrollTo(0, 0); };
 
   /* ---------- co-hosts ---------- */
   const cohostUrl = t => location.origin + location.pathname + '#e/' + eventId + '/h/' + t;
@@ -2302,7 +2335,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-10-31d';
+  const BUILD = '2026-10-31e';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
