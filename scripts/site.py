@@ -44,6 +44,24 @@ def write(path, html):
     print(f"  + {path.relative_to(ROOT)}")
 
 
+def linkify(text, links):
+    """Wrap every name in `links` (name -> website) that appears in `text` in a quiet link."""
+    from markupsafe import Markup, escape
+    out = str(escape(text or ""))
+    tokens = {}
+    for n, (name, url) in enumerate(sorted((links or {}).items(), key=lambda kv: -len(kv[0]))):
+        if not url:
+            continue
+        key = str(escape(name))
+        if key in out:
+            tok = f"\x00{n}\x00"
+            tokens[tok] = f'<a class="xl" href="{escape(url)}" target="_blank" rel="noopener">{key}</a>'
+            out = out.replace(key, tok)
+    for tok, a in tokens.items():
+        out = out.replace(tok, a)
+    return Markup(out)
+
+
 def main():
     data = yaml.safe_load((SRC / "moves.yaml").read_text(encoding="utf-8"))
     env = Environment(loader=FileSystemLoader(str(SRC / "templates")), autoescape=select_autoescape(["html"]),
@@ -114,6 +132,11 @@ def main():
             description=w["summary"].strip().split(". ")[0].rstrip(".") + ".",
             w=w, prev=shown[i - 1] if i > 0 else None, next=shown[i + 1] if i + 1 < len(shown) else None))
 
+    plinks = data["performing"].get("links") or {}
+    for g in data["performing"].get("groups") or []:
+        for it in g["items"]:
+            it["work"] = linkify(it.get("work"), plinks)
+            it["company"] = linkify(it.get("company"), plinks)
     write("moves/performing/index.html", env.get_template("performing.html").render(
         **base, section="moves", sub="performing", title="Performing — Parla Moves",
         description="Corina Kinnear's performing credits — opera, ballet, contemporary companies, film and television.",
