@@ -86,6 +86,15 @@
       {id:"st3",order:3,title:"Final presentation",focus:"Style · Priorities",desc:"The finished design intent with your notes and the architect's worked in: specific style choices, finishes and fixtures, lighting, outlets and switching, and the priority list for the budget. Includes one round of revisions.",deliverable:"Design-intent document the architect's drafter can use directly.",due:d(44),status:"upcoming",standard:1250,fee:625,payment:{status:"upcoming",amount:625,date:null}},
       {id:"st4",order:4,title:"Ongoing support",focus:"Staying on the team",desc:"Optional and to be determined. Potential of project calls, plan revisions, extra revision rounds while drawings are in progress, sourcing appliances, materials, etc.",deliverable:"Invoiced monthly for hours used, due within 15 days.",due:null,status:"upcoming",standard:125,fee:62.5,hourly:true,payment:{status:"upcoming",amount:null,date:null}}
     ],
+    notifs:[
+      {id:"nt1",to:"u-cori",subject:"Brook added to the conversation · Kitchen",body:"We kept talking about the table after you left. What if the island IS the table…",link:"#conversation",created_at:d(-3,20),seen_at:d(-2,9)},
+      {id:"nt2",to:"u-cori",subject:"Evan added to the conversation · Kitchen",body:"Do you think we can afford kitchen tile all the way to the ceiling behind the range?",link:"#conversation",created_at:d(-1,8),seen_at:null},
+      {id:"nt3",to:"u-cori",subject:"Brook added a directive · Kitchen & the shared core",body:"We'd like the kitchen to be the one room that stays tidy-looking even when it isn't…",link:"#directives",created_at:d(-2,21),seen_at:null},
+      {id:"nt4",to:"u-cori",subject:"Brook added to the conversation",body:"We've been saving photos of limewashed walls with a slightly rougher texture…",link:"#conversation",created_at:d(0,7),seen_at:null},
+      {id:"nt5",to:"u-brook",subject:"Cori replied · Kitchen",body:"Yes — this is the direction I was hoping you'd land on. A stepped island keeps the window…",link:"#conversation",created_at:d(-2,9),seen_at:null},
+      {id:"nt6",to:"u-brook",subject:"Meeting updated · Brook and Evan's home",body:"Now Friday, November 20 at 10:00 AM · At the house",link:"#meeting",created_at:d(-4,12),seen_at:d(-4,13)},
+      {id:"nt7",to:"u-evan",subject:"Cori replied · Kitchen",body:"Yes — this is the direction I was hoping you'd land on…",link:"#conversation",created_at:d(-2,9),seen_at:null}
+    ],
     meeting:{id:"m1",when:d(16,10),where:"At the house",notes:"Concept presentation. I'll bring printed plans; please have the architect's latest set open on a screen if you can.",change_request:null},
     activity:[]
   };

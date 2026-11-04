@@ -49,7 +49,7 @@ function autoRoom(text,rooms){
 }
 
 /* ---------- state ---------- */
-let store=null, me=null, project=null, route="home";
+let store=null, me=null, project=null, route="home", notifs=[];
 let ui={room:"all",sort:"recent",editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false};
 const isDesigner=()=>me&&me.role==="designer";
 const member=id=>(project.members||[]).find(m=>m.id===id)||{name:"—"};
@@ -69,6 +69,10 @@ class MockStore{
   reset(){try{localStorage.removeItem(this.key);}catch(e){}this.load();return{me:this.project.members.find(m=>m.id===this.meId),project:this.project};}
   async signIn(){return{ok:true};}
   async signOut(){}
+  async setMyName(n){const m=this.project.members.find(x=>x.id===this.meId);if(m)m.name=n;this.persist();}
+  async loadNotifs(){return (this.project.notifs||[]).filter(n=>n.to===this.meId);}
+  async markNotifSeen(id){const n=(this.project.notifs||[]).find(x=>x.id===id);if(n)n.seen_at=new Date().toISOString();this.persist();}
+  async markAllNotifsSeen(){(this.project.notifs||[]).forEach(n=>{if(n.to===this.meId&&!n.seen_at)n.seen_at=new Date().toISOString();});this.persist();}
   async uploadImage(file){return readFile(file);}
   async saveAnswer(qid,text){for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid){q.a=text;q.updated_at=new Date().toISOString();q.updated_by=me.id;q.seen_by_designer=me.role==="designer";}this.persist();}
   async markAnswerSeen(qid){for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid)q.seen_by_designer=true;this.persist();}
@@ -87,6 +91,7 @@ class MockStore{
   async addImage(img){this.project.architect_images.push({id:uid(),...img});this.persist();}
   async removeImage(id){this.project.architect_images=this.project.architect_images.filter(x=>x.id!==id);this.persist();}
   async savePinterest(url,note){this.project.pinterest_url=url;this.project.pinterest_note=note;this.persist();}
+  async setNotifyClients(on){this.project.notify_clients=on;this.persist();}
 }
 
 /* ---------- Supabase store ---------- */
@@ -101,7 +106,10 @@ class SupabaseStore{
     if(!prof){await this.sb.from("profiles").upsert({id:u.id,email:u.email,name:(u.email||"").split("@")[0]});}
     const designerEmails=[].concat(cfg.DESIGNER_EMAILS||[],cfg.DESIGNER_EMAIL||[]).map(e=>String(e).toLowerCase());
     const designer=designerEmails.includes((u.email||"").toLowerCase());
-    me={id:u.id,email:u.email,name:prof&&prof.name||(designer?DESIGNER_NAME:(u.email||"").split("@")[0]),role:designer?"designer":"client"};
+    const prefix=(u.email||"").split("@")[0];
+    let nm=prof&&prof.name||"";
+    if(designer&&(!nm||nm.toLowerCase()===prefix.toLowerCase())){nm=DESIGNER_NAME;await this.sb.from("profiles").update({name:nm}).eq("id",u.id);}
+    me={id:u.id,email:u.email,name:nm||prefix,role:designer?"designer":"client"};
     const {data:mems}=await this.sb.from("project_members").select("project_id, projects(id,name)").eq("user_id",u.id);
     this.projects=(mems||[]).map(m=>m.projects).filter(Boolean);
     let pid=null;try{pid=localStorage.getItem("parla-studio-project");}catch(e){}
@@ -128,7 +136,7 @@ class SupabaseStore{
     this.pid=id;
     return{
       id:p.id,name:p.name,designer:members.find(m=>m.role==="designer"),members,
-      rooms:p.rooms||[],pinterest_url:p.pinterest_url||"",pinterest_note:p.pinterest_note||"",
+      rooms:p.rooms||[],pinterest_url:p.pinterest_url||"",pinterest_note:p.pinterest_note||"",notify_clients:!!p.notify_clients,
       architect_images:imgs||[],documents:docs||[],
       intake:(secs||[]).map(s=>({id:s.id,title:s.title,room:s.room||"",questions:(qs||[]).filter(q=>q.section_id===s.id).map(q=>({id:q.id,q:q.question||"",a:q.answer||"",updated_at:q.updated_at,updated_by:q.updated_by,added_by:q.added_by,seen_by_designer:q.seen_by_designer}))})),
       notes:(notes||[]).map(n=>({...n,images:n.images||[],replies:(reps||[]).filter(r=>r.note_id===n.id)})),
@@ -137,6 +145,10 @@ class SupabaseStore{
       meeting:meet?{id:meet.id,when:meet.when,where:meet.where||"",notes:meet.notes||"",change_request:meet.change_request}:null
     };
   }
+  async setMyName(n){await this.sb.from("profiles").update({name:n}).eq("id",me.id);}
+  async loadNotifs(){const {data}=await this.sb.from("notifications").select("id,subject,body,link,created_at,seen_at").eq("to_user",me.id).order("created_at",{ascending:false}).limit(30);return data||[];}
+  async markNotifSeen(id){await this.sb.from("notifications").update({seen_at:new Date().toISOString()}).eq("id",id);}
+  async markAllNotifsSeen(){await this.sb.from("notifications").update({seen_at:new Date().toISOString()}).eq("to_user",me.id).is("seen_at",null);}
   async signIn(email){const {error}=await this.sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});return{ok:!error,error:error&&error.message};}
   async signOut(){await this.sb.auth.signOut();}
   async uploadImage(file){
@@ -162,7 +174,8 @@ class SupabaseStore{
   async addImage(img){await this.sb.from("architect_images").insert({project_id:this.pid,url:img.url,caption:img.caption,position:Date.now()});}
   async removeImage(id){await this.sb.from("architect_images").delete().eq("id",id);}
   async savePinterest(url,note){await this.sb.from("projects").update({pinterest_url:url,pinterest_note:note}).eq("id",this.pid);}
-  async createProject(name,emails){const {data,error}=await this.sb.rpc("create_project",{p_name:name,p_client_emails:emails,p_intake:window.SAMPLE_PROJECT.intake.map(s=>({title:s.title,room:s.room||"",questions:s.questions.filter(q=>q.q).map(q=>q.q)})),p_process:window.SAMPLE_PROJECT.process,p_stages:window.SAMPLE_PROJECT.stages.map(s=>({title:s.title,focus:s.focus||"",description:s.desc,deliverable:s.deliverable,standard:s.standard,fee:s.fee,hourly:!!s.hourly})),p_rooms:window.SAMPLE_PROJECT.rooms});if(error)throw error;return data;}
+  async setNotifyClients(on){await this.sb.from("projects").update({notify_clients:on}).eq("id",this.pid);}
+  async createProject(name,clients){const {data,error}=await this.sb.rpc("create_project",{p_name:name,p_client_emails:clients.map(c=>c.email),p_client_names:clients.map(c=>c.name),p_intake:window.SAMPLE_PROJECT.intake.map(s=>({title:s.title,room:s.room||"",questions:s.questions.filter(q=>q.q).map(q=>q.q)})),p_process:window.SAMPLE_PROJECT.process,p_stages:window.SAMPLE_PROJECT.stages.map(s=>({title:s.title,focus:s.focus||"",description:s.desc,deliverable:s.deliverable,standard:s.standard,fee:s.fee,hourly:!!s.hourly})),p_rooms:window.SAMPLE_PROJECT.rooms});if(error)throw error;return data;}
 }
 
 /* ---------- derived ---------- */
@@ -181,9 +194,17 @@ function activity(){
 
 /* ---------- rendering ---------- */
 const NAV=[["home","Home"],["directives","Directives"],["conversation","Conversation"],["documents","Documents"],["timeline","Timeline"],["meeting","Meeting"]];
+function needsName(){return me&&(!me.name||me.name.toLowerCase()===(me.email||"").split("@")[0].toLowerCase());}
+function renderAskName(app){
+  $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;
+  app.innerHTML=`<div class="signin"><div class="signin-card"><p class="label">One thing</p><h1>What should we call you?</h1><p class="lede">Your first name is how your notes and replies will be signed.</p>
+  <form id="nameForm"><div class="field"><label for="myname">Name</label><input class="input" id="myname" required autocomplete="given-name" placeholder="Brook"></div><div class="actions"><button class="btn" type="submit">That's me</button></div></form></div></div>`;
+  $("#nameForm",app).onsubmit=async e=>{e.preventDefault();const n=$("#myname",app).value.trim();if(!n)return;await store.setMyName(n);me.name=n;const m=(project&&project.members||[]).find(x=>x.id===me.id);if(m)m.name=n;render();};
+}
 function render(){
   const app=$("#app");
   if(!me){renderSignIn(app);return;}
+  if(needsName()){renderAskName(app);return;}
   if(!project){renderNoProject(app);return;}
   renderNav();
   $("#foot").hidden=false;$("#footProject").textContent=project.name;
@@ -193,16 +214,37 @@ function render(){
   renderPreviewBar();
   if(ui.jump){const el=document.getElementById(ui.jump);ui.jump=null;if(el)setTimeout(()=>el.scrollIntoView({block:"start"}),30);}
 }
+const ICONS={
+  msg:`<svg viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H9l-4.5 3.5V17H6.5A2.5 2.5 0 0 1 4 14.5z"/></svg>`,
+  bell:`<svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"/></svg>`
+};
+function closePops(){$("#menuPop").hidden=true;$("#bellPop").hidden=true;}
+document.addEventListener("click",e=>{if(!e.target.closest(".pop,#menuBtn,#bellBtn"))closePops();});
 function renderNav(){
-  const nav=$("#nav");nav.hidden=false;
+  const nav=$("#nav");$("#menuBtn").hidden=false;
   nav.innerHTML=NAV.map(([k,l])=>{
     let c="";
     if(isDesigner()){if(k==="conversation"&&unreadNotes().length)c=unreadNotes().length;if(k==="directives"&&changedAnswers().length)c=changedAnswers().length;}
     else{if(k==="conversation"&&newRepliesForClient().length)c=newRepliesForClient().length;if(k==="directives"&&openAnswers().length)c=openAnswers().length;}
     return`<a href="#${k}" class="${route===k?"active":""}">${l}${c?`<span class="count">${c}</span>`:""}</a>`;}).join("");
+  $("#menuBtn").onclick=e=>{e.stopPropagation();const p=$("#menuPop");const open=p.hidden;closePops();p.hidden=!open;};
+  nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",closePops));
   const r=$("#mastRight");
-  r.innerHTML=`<span class="who">${esc(me.name)}${LIVE?` · <button id="signout">Sign out</button>`:""}</span>`;
+  const convCount=isDesigner()?unreadNotes().length:newRepliesForClient().length;
+  const newN=notifs.filter(n=>!n.seen_at).length;
+  r.innerHTML=`<a class="icon-btn" href="#conversation" aria-label="Conversation">${ICONS.msg}${convCount?`<span class="badge">${convCount}</span>`:""}</a>
+    <button class="icon-btn" id="bellBtn" aria-label="Notifications">${ICONS.bell}${newN?`<span class="badge">${newN}</span>`:""}</button>
+    <span class="who">${esc(me.name)}${LIVE?` · <button id="signout">Sign out</button>`:""}</span>`;
   if(LIVE)$("#signout",r).onclick=async()=>{await store.signOut();me=null;project=null;render();};
+  $("#bellBtn",r).onclick=async e=>{e.stopPropagation();const p=$("#bellPop");const open=p.hidden;closePops();if(!open)return;renderBell();p.hidden=false;};
+}
+function renderBell(){
+  const p=$("#bellPop");
+  const list=notifs.slice(0,20);
+  p.innerHTML=`<div class="head"><span class="label">Notifications</span>${list.some(n=>!n.seen_at)?`<button class="textlink" id="seenAll">Mark all read</button>`:""}</div>
+  <div class="items">${list.map(n=>`<button class="notif ${n.seen_at?"":"new"}" data-nid="${n.id}" data-link="${esc(n.link||"#home")}"><span class="s">${n.seen_at?"":`<span class="dot"></span>`}${esc(n.subject)}</span><span class="b">${esc(n.body)}</span><span class="w">${fmtStamp(n.created_at)}</span></button>`).join("")||`<p class="empty">Nothing yet. You'll see it here when ${isDesigner()?"the clients":DESIGNER_NAME} post, reply or change something.</p>`}</div>`;
+  p.querySelectorAll("[data-nid]").forEach(b=>b.onclick=async()=>{const n=notifs.find(x=>x.id===b.dataset.nid);if(n&&!n.seen_at){n.seen_at=new Date().toISOString();await store.markNotifSeen(n.id);}closePops();const h=(b.dataset.link||"#home").replace(/^#/,"");if(h===route)render();else location.hash=h;});
+  const sa=$("#seenAll",p);if(sa)sa.onclick=async()=>{for(const n of notifs)if(!n.seen_at){n.seen_at=new Date().toISOString();}await store.markAllNotifsSeen();renderNav();renderBell();};
 }
 function renderPreviewBar(){
   const bar=$("#previewBar");
@@ -214,7 +256,7 @@ function renderPreviewBar(){
   $("#resetSample",bar).onclick=()=>{const r=store.reset();me=r.me;project=r.project;render();toast("Sample data reset");};
 }
 function renderSignIn(app){
-  $("#nav").hidden=true;$("#mastRight").innerHTML="";$("#foot").hidden=true;$("#previewBar").hidden=true;
+  $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;$("#previewBar").hidden=true;
   app.innerHTML=`<div class="signin"><div class="signin-card">
     <p class="label">Private</p>
     <h1>Welcome.</h1>
@@ -225,15 +267,15 @@ function renderSignIn(app){
   $("#signinForm",app).onsubmit=async e=>{e.preventDefault();const email=$("#email",app).value.trim();const r=await store.signIn(email);$("#signinMsg",app).textContent=r.ok?`Check ${email} for a link. It works for about an hour and keeps you signed in on this device.`:`That didn't send: ${r.error}`;};
 }
 function renderNoProject(app){
-  $("#nav").hidden=true;$("#foot").hidden=true;
+  $("#menuBtn").hidden=true;closePops();$("#foot").hidden=true;
   $("#mastRight").innerHTML=`<span class="who">${esc(me.name)} · <button id="signout">Sign out</button></span>`;
   $("#signout").onclick=async()=>{await store.signOut();me=null;render();};
   if(!isDesigner()){app.innerHTML=`<div class="signin"><div class="signin-card"><h1>Almost.</h1><p class="lede">You're signed in, but no project is linked to this email yet. ${esc(DESIGNER_NAME)} can add you from her side — if you expected to be here, tell her which email you used.</p></div></div>`;return;}
-  app.innerHTML=`<div class="view"><div class="page-head"><p class="label">New project</p><h1>Start a project.</h1><p class="lede">Give it a name and the client emails. It starts with your standard stages, intake questions and rooms, which you can edit after.</p></div>
+  app.innerHTML=`<div class="view"><div class="page-head"><p class="label">New project</p><h1>Start a project.</h1><p class="lede">Give it a name and the clients. It starts with your standard stages, intake questions and rooms, which you can edit after. Nobody is emailed by this; clients only hear about Studio when you tell them.</p></div>
   <form id="newProj" class="row" style="max-width:560px"><div class="field"><label for="pname">Project name</label><input class="input" id="pname" required placeholder="Brook and Evan's home"></div>
-  <div class="field"><label for="pemails">Client emails (comma separated)</label><input class="input" id="pemails" required placeholder="brook@…, evan@…"></div>
+  <div class="field"><label for="pemails">Clients, one per line, as Name &lt;email&gt;</label><textarea class="input" id="pemails" required placeholder="Brook &lt;brook@example.com&gt;&#10;Evan &lt;evan@example.com&gt;"></textarea></div>
   <div class="actions"><button class="btn" type="submit">Create project</button></div></form></div>`;
-  $("#newProj",app).onsubmit=async e=>{e.preventDefault();const name=$("#pname",app).value.trim();const emails=$("#pemails",app).value.split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);try{const id=await store.createProject(name,emails);project=await store.loadProject(id);route="home";location.hash="home";render();toast("Project created");}catch(err){toast("Couldn't create: "+err.message);}};
+  $("#newProj",app).onsubmit=async e=>{e.preventDefault();const name=$("#pname",app).value.trim();const clients=$("#pemails",app).value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(.*?)\s*<([^>]+)>$/);return m?{name:m[1].trim(),email:m[2].trim().toLowerCase()}:{name:"",email:s.toLowerCase()};});try{const id=await store.createProject(name,clients);project=await store.loadProject(id);route="home";location.hash="home";render();toast("Project created");}catch(err){toast("Couldn't create: "+err.message);}};
 }
 
 /* ---------- views ---------- */
@@ -267,7 +309,7 @@ function viewHome(){
   return`<div class="page-head"><p class="label">${esc(project.name)}</p><h1>Hello, ${esc(firstName)}.</h1><p class="lede">${lede}</p></div>
   <div class="home-grid">
     <div class="cards">${cards.map(([k,t,s,n])=>`<a class="card" href="#${k}"><h3>${t}</h3><p class="sub">${s}</p><span class="side">${n?`<span class="tag accent">${n}</span>`:""}<span class="arrow">→</span></span></a>`).join("")}</div>
-    <div class="statline"><p class="label">Recently</p><div class="activity">${activity().map(a=>`<a class="act" href="#${a.go}"><span class="t">${esc(a.t)}</span><span class="w">${fmtStamp(a.w)}</span></a>`).join("")||`<p class="muted small">Nothing yet.</p>`}</div></div>
+    <div class="statline">${d?`<div class="switchrow"><span class="label">Email the clients about replies and meeting changes</span><button class="chip ${project.notify_clients?"on":""}" id="notifyToggle">${project.notify_clients?"On":"Off"}</button>${project.notify_clients?"":`<span class="small muted">Off until you turn it on. Brook and Evan get nothing by email.</span>`}</div>`:""}<p class="label">Recently</p><div class="activity">${activity().map(a=>`<a class="act" href="#${a.go}"><span class="t">${esc(a.t)}</span><span class="w">${fmtStamp(a.w)}</span></a>`).join("")||`<p class="muted small">Nothing yet.</p>`}</div></div>
   </div>`;
 }
 
@@ -392,6 +434,7 @@ function viewMeeting(){
 /* ---------- events ---------- */
 function bind(app){
   app.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ui.room=b.dataset.pick;render();});
+  const nt=$("#notifyToggle",app);if(nt)nt.onclick=async()=>{project.notify_clients=!project.notify_clients;await store.setNotifyClients(project.notify_clients);render();toast(project.notify_clients?"Clients will be emailed":"Client emails off");};
   app.querySelectorAll("[data-sort]").forEach(b=>b.onclick=()=>{ui.sort=b.dataset.sort;render();});
   app.querySelectorAll("[data-qedit]").forEach(b=>b.onclick=()=>{ui.editing[b.dataset.qedit]=true;render();$("#ans-"+b.dataset.qedit).focus();});
   app.querySelectorAll("[data-qcancel]").forEach(b=>b.onclick=()=>{delete ui.editing[b.dataset.qcancel];render();});
@@ -441,8 +484,9 @@ window.addEventListener("hashchange",()=>{syncRoute();ui.editing={};ui.replyOpen
 (async function start(){
   store=LIVE?new SupabaseStore():new MockStore();
   syncRoute();
-  try{const r=await store.init();if(r){me=r.me;project=r.project;}}catch(err){console.error(err);}
+  try{const r=await store.init();if(r){me=r.me;project=r.project;if(me)notifs=await store.loadNotifs();}}catch(err){console.error(err);}
   render();
-  if(LIVE){store.sb.auth.onAuthStateChange(async(ev)=>{if(ev==="SIGNED_IN"&&!me){const r=await store.init();if(r){me=r.me;project=r.project;render();}}});}
+  if(LIVE)setInterval(async()=>{if(me&&project){try{notifs=await store.loadNotifs();renderNav();}catch(e){}}},60000);
+  if(LIVE){store.sb.auth.onAuthStateChange(async(ev)=>{if(ev==="SIGNED_IN"&&!me){const r=await store.init();if(r){me=r.me;project=r.project;if(me)notifs=await store.loadNotifs();render();}}});}
 })();
 })();

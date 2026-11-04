@@ -33,8 +33,10 @@ create table if not exists public.projects (
   pinterest_note text default '',
   rooms text[] default '{}',
   process jsonb default '[]',
+  notify_clients boolean default false,
   created_at timestamptz default now()
 );
+alter table public.projects add column if not exists notify_clients boolean default false;
 
 create table if not exists public.project_members (
   project_id uuid references public.projects(id) on delete cascade,
@@ -48,8 +50,15 @@ create table if not exists public.project_invites (
   project_id uuid references public.projects(id) on delete cascade,
   email text not null,
   role text not null default 'client',
+  name text default '',
   primary key (project_id, email)
 );
+alter table public.project_invites add column if not exists name text default '';
+
+-- Who may start projects. Add a row per designer email.
+create table if not exists public.designers (email text primary key);
+insert into public.designers (email) values ('corina@parladesigns.com'), ('corina.kinnear@gmail.com') on conflict do nothing;
+alter table public.designers enable row level security;
 
 create table if not exists public.intake_sections (
   id uuid primary key default gen_random_uuid(),
@@ -161,19 +170,29 @@ begin
     select i.project_id, auth.uid(), i.role from public.project_invites i
     where lower(i.email) = lower(my_email)
   on conflict do nothing;
+  -- take the name the designer gave on the invite if the profile has none yet
+  update public.profiles p set name = i.name
+    from public.project_invites i
+    where p.id = auth.uid() and lower(i.email) = lower(my_email) and i.name <> ''
+      and (p.name is null or p.name = '' or lower(p.name) = lower(split_part(my_email,'@',1)));
 end $$;
 
 -- Called by the designer from the app to start a project with the standard template.
 create or replace function public.create_project(
-  p_name text, p_client_emails text[], p_intake jsonb, p_stages jsonb, p_rooms text[], p_process jsonb default '[]'
+  p_name text, p_client_emails text[], p_intake jsonb, p_stages jsonb, p_rooms text[], p_process jsonb default '[]', p_client_names text[] default '{}'
 ) returns uuid
 language plpgsql security definer set search_path = public as $$
-declare pid uuid; sec jsonb; q text; sid uuid; i int := 0; j int; st jsonb; e text;
+declare pid uuid; sec jsonb; q text; sid uuid; i int := 0; j int; st jsonb; e text; k int := 0; my_email text;
 begin
+  select email into my_email from auth.users where id = auth.uid();
+  if not exists (select 1 from public.designers d where lower(d.email) = lower(coalesce(my_email,''))) then
+    raise exception 'Only the designer can start a project';
+  end if;
   insert into public.projects (name, designer_id, rooms, process) values (p_name, auth.uid(), p_rooms, p_process) returning id into pid;
   insert into public.project_members (project_id, user_id, role) values (pid, auth.uid(), 'designer');
   foreach e in array p_client_emails loop
-    insert into public.project_invites (project_id, email, role) values (pid, lower(e), 'client') on conflict do nothing;
+    k := k + 1;
+    insert into public.project_invites (project_id, email, role, name) values (pid, lower(e), 'client', coalesce(p_client_names[k], '')) on conflict do nothing;
     -- if that person already has an account, add them now
     insert into public.project_members (project_id, user_id, role)
       select pid, u.id, 'client' from auth.users u where lower(u.email) = lower(e)
@@ -274,19 +293,27 @@ create table if not exists public.notifications (
   body text not null,
   link text default '',
   created_at timestamptz default now(),
-  sent_at timestamptz
+  sent_at timestamptz,
+  seen_at timestamptz
 );
+alter table public.notifications add column if not exists seen_at timestamptz;
 alter table public.notifications enable row level security;
--- nobody reads the queue from the app; the function uses the service role
+-- each person sees and marks their own notifications in the app; sending uses the service role
+drop policy if exists notifications_own on public.notifications;
+create policy notifications_own on public.notifications for select to authenticated using (to_user = auth.uid());
+drop policy if exists notifications_seen on public.notifications;
+create policy notifications_seen on public.notifications for update to authenticated using (to_user = auth.uid()) with check (to_user = auth.uid());
 
 create or replace function public.notify_project(pid uuid, except_user uuid, only_role text, subj text, bod text, lnk text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   insert into public.notifications (project_id, to_user, subject, body, link)
   select pid, m.user_id, subj, bod, lnk
-  from public.project_members m
+  from public.project_members m join public.projects p on p.id = m.project_id
   where m.project_id = pid and m.user_id is distinct from except_user
-    and (only_role is null or m.role = only_role);
+    and (only_role is null or m.role = only_role)
+    -- clients are only emailed once the designer turns it on for the project
+    and (m.role = 'designer' or p.notify_clients);
 end $$;
 
 create or replace function public.on_note_insert() returns trigger
