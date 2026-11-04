@@ -218,6 +218,26 @@ begin
   return pid;
 end $$;
 
+-- Dashboard: one row per project the signed-in designer runs.
+create or replace function public.project_summaries() returns table (
+  id uuid, name text, clients text, unread int, changed int, stage text, stage_due date,
+  meeting timestamptz, meeting_request boolean, payment_requested int, last_activity timestamptz
+) language sql stable security definer set search_path = public as $$
+  select p.id, p.name,
+    (select string_agg(coalesce(pr.name, pr.email), ' & ') from project_members m2 join profiles pr on pr.id=m2.user_id where m2.project_id=p.id and m2.role='client') as clients,
+    (select count(*)::int from notes n where n.project_id=p.id and n.read_at is null and n.author_id <> auth.uid()) as unread,
+    (select count(*)::int from intake_questions q where q.project_id=p.id and q.updated_by is not null and q.updated_by <> auth.uid() and not q.seen_by_designer) as changed,
+    (select s.title from stages s where s.project_id=p.id and s.status='current' order by s.position limit 1) as stage,
+    (select s.due from stages s where s.project_id=p.id and s.status='current' order by s.position limit 1) as stage_due,
+    (select mt."when" from meetings mt where mt.project_id=p.id order by mt."when" desc limit 1) as meeting,
+    (select mt.change_request is not null from meetings mt where mt.project_id=p.id order by mt."when" desc limit 1) as meeting_request,
+    (select count(*)::int from stages s where s.project_id=p.id and s.payment_status='requested') as payment_requested,
+    greatest((select max(created_at) from notes n where n.project_id=p.id),(select max(created_at) from note_replies r where r.project_id=p.id),(select max(updated_at) from intake_questions q where q.project_id=p.id)) as last_activity
+  from projects p join project_members m on m.project_id=p.id
+  where m.user_id = auth.uid() and m.role='designer'
+  order by last_activity desc nulls last, p.created_at desc;
+$$;
+
 -- ---------- row security ----------
 alter table public.profiles enable row level security;
 alter table public.projects enable row level security;

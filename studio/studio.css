@@ -133,6 +133,16 @@ textarea.input{min-height:110px}
 .stat{display:grid;gap:4px}
 .stat .v{font-family:var(--serif);font-weight:300;font-size:30px;line-height:1.1}
 
+/* Dashboard */
+.dash{display:grid;gap:0;border-top:1px solid var(--line)}
+.proj{display:grid;gap:14px;padding:26px 0;border-bottom:1px solid var(--line);transition:color .15s}
+.proj:hover h3{color:var(--accent)}
+.proj .ptop{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:baseline;justify-content:space-between}
+.proj h3{font-size:28px}
+.proj .pgrid{display:grid;gap:12px 36px}
+@media (min-width:700px){.proj .pgrid{grid-template-columns:1fr 1fr 1fr}}
+.proj .kv{display:grid;gap:4px}
+.proj .kv .v{color:var(--ink-2)}
 /* References */
 .masonry{columns:1;column-gap:34px}
 @media (min-width:600px){.masonry{columns:2}}

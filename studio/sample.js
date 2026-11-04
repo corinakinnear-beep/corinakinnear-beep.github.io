@@ -7,7 +7,7 @@
   }
   const d=(days,h)=>{const t=new Date(2026,10,4,h||10,0,0);t.setDate(t.getDate()+days);return t.toISOString();};
 
-  const CORI={id:"u-cori",name:"Cori",email:"corina@parladesigns.com",role:"designer"};
+  const CORI={id:"u-cori",name:"Corina",email:"corina@parladesigns.com",role:"designer"};
   const BROOK={id:"u-brook",name:"Brook",email:"brook@example.com",role:"client"};
   const EVAN={id:"u-evan",name:"Evan",email:"evan@example.com",role:"client"};
 
@@ -91,11 +91,22 @@
       {id:"nt2",to:"u-cori",subject:"Evan added to the conversation · Kitchen",body:"Do you think we can afford kitchen tile all the way to the ceiling behind the range?",link:"#conversation",created_at:d(-1,8),seen_at:null},
       {id:"nt3",to:"u-cori",subject:"Brook added a directive · Kitchen & the shared core",body:"We'd like the kitchen to be the one room that stays tidy-looking even when it isn't…",link:"#directives",created_at:d(-2,21),seen_at:null},
       {id:"nt4",to:"u-cori",subject:"Brook added to the conversation",body:"We've been saving photos of limewashed walls with a slightly rougher texture…",link:"#conversation",created_at:d(0,7),seen_at:null},
-      {id:"nt5",to:"u-brook",subject:"Cori replied · Kitchen",body:"Yes — this is the direction I was hoping you'd land on. A stepped island keeps the window…",link:"#conversation",created_at:d(-2,9),seen_at:null},
+      {id:"nt5",to:"u-brook",subject:"Corina replied · Kitchen",body:"Yes — this is the direction I was hoping you'd land on. A stepped island keeps the window…",link:"#conversation",created_at:d(-2,9),seen_at:null},
       {id:"nt6",to:"u-brook",subject:"Meeting updated · Brook and Evan's home",body:"Now Friday, November 20 at 10:00 AM · At the house",link:"#meeting",created_at:d(-4,12),seen_at:d(-4,13)},
-      {id:"nt7",to:"u-evan",subject:"Cori replied · Kitchen",body:"Yes — this is the direction I was hoping you'd land on…",link:"#conversation",created_at:d(-2,9),seen_at:null}
+      {id:"nt7",to:"u-evan",subject:"Corina replied · Kitchen",body:"Yes — this is the direction I was hoping you'd land on…",link:"#conversation",created_at:d(-2,9),seen_at:null}
     ],
     meeting:{id:"m1",when:d(16,10),where:"At the house",notes:"Concept presentation. I'll bring printed plans; please have the architect's latest set open on a screen if you can.",change_request:null},
     activity:[]
   };
+
+  // A second project so the dashboard has something to show.
+  const P2=JSON.parse(JSON.stringify(window.SAMPLE_PROJECT));
+  P2.id="p-maya";P2.name="Maya's studio apartment";
+  P2.members=[CORI,{id:"u-maya",name:"Maya",email:"maya@example.com",role:"client"}];
+  P2.notes=[{id:"m1n",author_id:"u-maya",room:"Bedrooms",body:"Could the bed go on the window wall? I keep coming back to waking up with the light.",images:[],created_at:d(-1,21),edited_at:null,read_at:null,integrated_at:null,replies:[]}];
+  P2.notifs=[];P2.documents=[];P2.architect_images=[];P2.pinterest_url="";P2.pinterest_note="";
+  P2.intake.forEach(s=>s.questions=s.questions.filter(q=>q.q).map(q=>({...q,a:"",updated_at:null,updated_by:null})));
+  P2.stages.forEach((s,i)=>{s.status=i===0?"done":i===1?"current":"upcoming";s.due=i===1?d(30):null;s.payment={status:i===0?"free":i===1?"requested":"upcoming",amount:s.fee||0,date:null};});
+  P2.meeting={id:"m2",when:d(6,14),where:"Zoom",notes:"Layout proposal.",change_request:null};
+  window.SAMPLE_PROJECTS=[window.SAMPLE_PROJECT,P2];
 })();

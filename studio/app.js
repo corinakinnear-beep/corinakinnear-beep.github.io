@@ -4,7 +4,7 @@
 "use strict";
 const cfg=window.STUDIO_CONFIG||{};
 const LIVE=!!(cfg.SUPABASE_URL&&cfg.SUPABASE_ANON_KEY&&window.supabase);
-const DESIGNER_NAME=cfg.DESIGNER_NAME||"Cori";
+const DESIGNER_NAME=cfg.DESIGNER_NAME||"Corina";
 
 /* ---------- helpers ---------- */
 const $=(s,r)=>(r||document).querySelector(s);
@@ -60,13 +60,17 @@ class MockStore{
   constructor(){this.key="parla-studio-preview-v2-"+(cfg.PREVIEW_AS||"any");}
   load(){
     let saved=null;try{saved=JSON.parse(localStorage.getItem(this.key)||"null");}catch(e){}
-    this.project=saved&&saved.project?saved.project:JSON.parse(JSON.stringify(window.SAMPLE_PROJECT));
+    this.all=saved&&saved.all?saved.all:JSON.parse(JSON.stringify(window.SAMPLE_PROJECTS||[window.SAMPLE_PROJECT]));
+    this.project=this.all.find(p=>p.id===(saved&&saved.pid))||this.all[0];
     this.meId=cfg.PREVIEW_AS||(saved&&saved.meId)||"u-cori";
   }
-  persist(){try{localStorage.setItem(this.key,JSON.stringify({project:this.project,meId:this.meId}));}catch(e){}}
-  async init(){this.load();return{me:this.project.members.find(m=>m.id===this.meId),project:this.project};}
+  persist(){try{localStorage.setItem(this.key,JSON.stringify({all:this.all,pid:this.project.id,meId:this.meId}));}catch(e){}}
+  async init(){this.load();const mine=this.all.filter(p=>p.members.some(m=>m.id===this.meId));if(!mine.includes(this.project))this.project=mine[0];return{me:this.project.members.find(m=>m.id===this.meId),project:this.project};}
+  async loadProject(id){this.project=this.all.find(p=>p.id===id)||this.project;this.persist();return this.project;}
+  async listProjects(){const did=this.meId;return this.all.filter(p=>p.members.some(m=>m.id===did)).map(p=>{const dz=(p.designer||{}).id;const cs=p.stages.find(s=>s.status==="current");return{id:p.id,name:p.name,clients:p.members.filter(m=>m.role==="client").map(m=>m.name).join(" & "),unread:p.notes.filter(n=>!n.read_at&&n.author_id!==dz).length,changed:p.intake.flatMap(x=>x.questions).filter(q=>q.updated_by&&q.updated_by!==dz&&!q.seen_by_designer).length,stage:cs?cs.title:"",stage_due:cs?cs.due:null,meeting:p.meeting?p.meeting.when:null,meeting_request:!!(p.meeting&&p.meeting.change_request),payment_requested:p.stages.filter(x=>x.payment.status==="requested").length,last_activity:[...p.notes.map(n=>n.created_at),...p.notes.flatMap(n=>n.replies.map(r=>r.created_at))].sort().pop()||null};});}
   switchUser(id){this.meId=id;this.persist();return this.project.members.find(m=>m.id===id);}
   reset(){try{localStorage.removeItem(this.key);}catch(e){}this.load();return{me:this.project.members.find(m=>m.id===this.meId),project:this.project};}
+  async createProject(name,clients){const p=JSON.parse(JSON.stringify(window.SAMPLE_PROJECT));p.id=uid();p.name=name;p.members=[p.designer,...clients.map(c=>({id:uid(),name:c.name||c.email.split("@")[0],email:c.email,role:"client"}))];p.notes=[];p.notifs=[];p.meeting=null;p.documents=[];p.architect_images=[];p.pinterest_url="";p.pinterest_note="";p.intake.forEach(s=>s.questions=s.questions.filter(q=>q.q).map(q=>({...q,a:"",updated_at:null,updated_by:null})));p.stages.forEach((s,i)=>{s.status=i===0?"current":"upcoming";s.due=null;s.payment={status:s.fee?"upcoming":"free",amount:s.fee||0,date:null};});this.all.push(p);this.project=p;this.persist();return p.id;}
   async signIn(){return{ok:true};}
   async signOut(){}
   async setMyName(n){const m=this.project.members.find(x=>x.id===this.meId);if(m)m.name=n;this.persist();}
@@ -117,6 +121,7 @@ class SupabaseStore{
     if(!chosen)return{me,project:null};
     return{me,project:await this.loadProject(chosen.id)};
   }
+  async listProjects(){const {data}=await this.sb.rpc("project_summaries");this.projects=(data||[]).map(p=>({id:p.id,name:p.name}));return data||[];}
   async loadProject(id){
     const sb=this.sb;
     const [{data:p},{data:mems},{data:secs},{data:qs},{data:notes},{data:reps},{data:stages},{data:meet},{data:imgs}]=await Promise.all([
@@ -194,6 +199,8 @@ function activity(){
 
 /* ---------- rendering ---------- */
 const NAV=[["home","Home"],["directives","Directives"],["conversation","Conversation"],["documents","Documents"],["timeline","Timeline"],["meeting","Meeting"]];
+const ROUTES=["projects",...NAV.map(([k])=>k)];
+let summaries=null;
 function needsName(){return me&&(!me.name||me.name.toLowerCase()===(me.email||"").split("@")[0].toLowerCase());}
 function renderAskName(app){
   $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;
@@ -205,6 +212,7 @@ function render(){
   const app=$("#app");
   if(!me){renderSignIn(app);return;}
   if(needsName()){renderAskName(app);return;}
+  if(isDesigner()&&(route==="projects"||!project)){renderDashboard(app);return;}
   if(!project){renderNoProject(app);return;}
   renderNav();
   $("#foot").hidden=false;$("#footProject").textContent=project.name;
@@ -222,12 +230,13 @@ function closePops(){$("#menuPop").hidden=true;$("#bellPop").hidden=true;}
 document.addEventListener("click",e=>{if(!e.target.closest(".pop,#menuBtn,#bellBtn"))closePops();});
 function renderNav(){
   const nav=$("#nav");$("#menuBtn").hidden=false;
-  nav.innerHTML=NAV.map(([k,l])=>{
+  nav.innerHTML=(isDesigner()?`<a href="#projects" class="${route==="projects"?"active":""}">All projects</a>`:"")+NAV.map(([k,l])=>{
     let c="";
     if(isDesigner()){if(k==="conversation"&&unreadNotes().length)c=unreadNotes().length;if(k==="directives"&&changedAnswers().length)c=changedAnswers().length;}
     else{if(k==="conversation"&&newRepliesForClient().length)c=newRepliesForClient().length;if(k==="directives"&&openAnswers().length)c=openAnswers().length;}
     return`<a href="#${k}" class="${route===k?"active":""}">${l}${c?`<span class="count">${c}</span>`:""}</a>`;}).join("");
   $("#menuBtn").onclick=e=>{e.stopPropagation();const p=$("#menuPop");const open=p.hidden;closePops();p.hidden=!open;};
+  $(".wordmark").href=isDesigner()?"#projects":"#home";
   nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",closePops));
   const r=$("#mastRight");
   const convCount=isDesigner()?unreadNotes().length:newRepliesForClient().length;
@@ -265,6 +274,40 @@ function renderSignIn(app){
     <div class="actions"><button class="btn" type="submit">Send me a link</button></div></form>
     <p class="small muted" id="signinMsg"></p></div></div>`;
   $("#signinForm",app).onsubmit=async e=>{e.preventDefault();const email=$("#email",app).value.trim();const r=await store.signIn(email);$("#signinMsg",app).textContent=r.ok?`Check ${email} for a link. It works for about an hour and keeps you signed in on this device.`:`That didn't send: ${r.error}`;};
+}
+async function renderDashboard(app){
+  renderNav();
+  $("#foot").hidden=false;$("#footProject").textContent="All projects";
+  if(!summaries){app.innerHTML=`<div class="view"><div class="page-head"><p class="label">Studio</p><h1>Hello, ${esc(me.name.split(" ")[0])}.</h1></div></div>`;summaries=await store.listProjects();if(route!=="projects")return;}
+  const list=summaries;
+  const attn=p=>{const a=[];if(p.unread)a.push(`${p.unread} unread`);if(p.changed)a.push(`${p.changed} directive${p.changed>1?"s":""} changed`);if(p.meeting_request)a.push("meeting request");if(p.payment_requested)a.push(`${p.payment_requested} payment${p.payment_requested>1?"s":""} requested`);return a;};
+  const needs=list.filter(p=>attn(p).length).length;
+  app.innerHTML=`<div class="view">
+    <div class="page-head"><p class="label">Studio</p><h1>Hello, ${esc(me.name.split(" ")[0])}.</h1><p class="lede">${list.length?`${list.length} project${list.length>1?"s":""}${needs?` · ${needs} need${needs>1?"":"s"} you`:" · nothing waiting on you"}.`:"No projects yet."}</p></div>
+    <section class="section"><div class="band"><h2>Projects</h2><span class="desc"></span><span class="n">${list.length}</span></div>
+    <div class="dash">${list.map(p=>{const a=attn(p);return`<a class="proj ${a.length?"needs":""}" href="#home" data-open="${p.id}">
+      <div class="ptop"><h3>${esc(p.name)}</h3>${a.length?`<span class="tag accent">${a.length===1?a[0]:a.length+" things"}</span>`:""}</div>
+      ${p.clients?`<p class="small muted">${esc(p.clients)}</p>`:""}
+      <div class="pgrid">
+        <div class="kv"><span class="label">Stage</span><span class="v">${esc(p.stage||"—")}${p.stage_due?`<br><span class="small muted">${fmtLong(p.stage_due)}</span>`:""}</span></div>
+        <div class="kv"><span class="label">Next meeting</span><span class="v">${p.meeting?`${fmtWeek(p.meeting)}<br><span class="small muted">${fmtTime(p.meeting)}</span>`:"—"}</span></div>
+        <div class="kv"><span class="label">Last activity</span><span class="v">${p.last_activity?fmtStamp(p.last_activity):"—"}</span></div>
+      </div>
+      ${a.length>1?`<p class="small" style="color:var(--accent)">${a.join(" · ")}</p>`:""}
+    </a>`;}).join("")}</div>
+    <div class="actions"><button class="btn ghost" id="newProjBtn">Start a project</button></div></section>
+    <div id="newProjWrap" hidden></div>
+  </div>`;
+  app.querySelectorAll("[data-open]").forEach(a=>a.onclick=async e=>{e.preventDefault();project=await store.loadProject(a.dataset.open);summaries=null;ui.room="all";ui.sort="recent";location.hash="home";if(route==="home")render();});
+  $("#newProjBtn",app).onclick=()=>{const w=$("#newProjWrap",app);w.hidden=false;renderNewProjectForm(w);w.scrollIntoView({behavior:"smooth",block:"start"});};
+  renderPreviewBar();
+}
+function renderNewProjectForm(w){
+  w.innerHTML=`<section class="section"><div class="band"><h2>New project</h2><p class="desc">Starts with your standard stages, intake questions and rooms. Nobody is emailed by this.</p></div>
+  <form id="newProj" class="row" style="max-width:560px"><div class="field"><label for="pname">Project name</label><input class="input" id="pname" required placeholder="The Nguyens' kitchen"></div>
+  <div class="field"><label for="pemails">Clients, one per line, as Name &lt;email&gt;</label><textarea class="input" id="pemails" required placeholder="Brook &lt;brook@example.com&gt;&#10;Evan &lt;evan@example.com&gt;"></textarea></div>
+  <div class="actions"><button class="btn" type="submit">Create project</button></div></form></section>`;
+  $("#newProj",w).onsubmit=async e=>{e.preventDefault();const name=$("#pname",w).value.trim();const clients=$("#pemails",w).value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(.*?)\s*<([^>]+)>$/);return m?{name:m[1].trim(),email:m[2].trim().toLowerCase()}:{name:"",email:s.toLowerCase()};});try{const id=await store.createProject(name,clients);project=await store.loadProject(id);summaries=null;location.hash="home";render();toast("Project created");}catch(err){toast("Couldn't create: "+err.message);}};
 }
 function renderNoProject(app){
   $("#menuBtn").hidden=true;closePops();$("#foot").hidden=true;
@@ -479,8 +522,8 @@ function bind(app){
 }
 
 /* ---------- boot ---------- */
-function syncRoute(){const h=(location.hash||"#home").slice(1);route=NAV.some(([k])=>k===h)?h:"home";window.scrollTo({top:0});}
-window.addEventListener("hashchange",()=>{syncRoute();ui.editing={};ui.replyOpen={};ui.stageEdit=null;ui.meetingEdit=false;render();});
+function syncRoute(){const h=(location.hash||"").slice(1);route=ROUTES.includes(h)?h:(me&&isDesigner()?"projects":"home");window.scrollTo({top:0});}
+window.addEventListener("hashchange",()=>{summaries=null;syncRoute();ui.editing={};ui.replyOpen={};ui.stageEdit=null;ui.meetingEdit=false;render();});
 (async function start(){
   store=LIVE?new SupabaseStore():new MockStore();
   syncRoute();
