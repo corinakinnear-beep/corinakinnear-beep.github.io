@@ -7,5 +7,7 @@ window.STUDIO_CONFIG = {
   // The designer's sign-in emails. Anyone else who signs in is treated as a client.
   DESIGNER_EMAILS: ["corina@parladesigns.com", "corina.kinnear@gmail.com"],
   DESIGNER_NAME: "Corina",
-  DESIGNER_PHONE: "303.564.7526"
+  DESIGNER_PHONE: "303.564.7526",
+  // Shown to clients only when they tap a requested payment.
+  PAY: { venmo: "@parlamotion", zelle: "corina.kinnear@gmail.com" }
 };

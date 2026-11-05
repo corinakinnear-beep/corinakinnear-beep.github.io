@@ -20,9 +20,11 @@
     pinterest_url:"https://www.pinterest.com/parlamoves/brook-evan/",
     pinterest_note:"The board we built together after the first meeting. Texture, natural fibers and open flow are the through-line; the pins we both saved are at the top.",
     documents:[
-      {id:"d1",title:"The process, design services and fees",kind:"Google Doc",url:"https://docs.google.com/document/d/1ykJxIB-KpPOyHNQlzxUKX5uRcmhEC7VJwIEvQUmHD2w/edit",note:"What I'll do, the founding-client rate, and how payment works."},
-      {id:"d2",title:"One-page agreement",kind:"PDF",url:"",note:"Coming before the concept presentation — I'll put the signed copy here."},
-      {id:"d3",title:"Architect's drawing set, Oct 2026",kind:"PDF",url:ph(900,640,"Drawing set PDF"),note:"The full set the drawings below come from."}
+      {id:"d1",title:"The process, design services and fees",kind:"Google Doc",url:"https://docs.google.com/document/d/1ykJxIB-KpPOyHNQlzxUKX5uRcmhEC7VJwIEvQUmHD2w/edit",note:"What I'll do, the founding-client rate, and how payment works.",created_at:d(-12)},
+      {id:"d4",title:"Mood board",kind:"Mood board",url:"https://parladesigns.com/current/venice-remodel/",note:"The references you gave me, sorted a few ways to put words to what you're drawn to.",created_at:d(-10)},
+      {id:"d2",title:"One-page agreement",kind:"PDF",url:"",note:"Coming before the layout proposal.",created_at:d(-9)},
+      {id:"d3",title:"Plans submitted to the city",kind:"PDF",url:ph(900,640,"Preliminary filing PDF"),note:"237 5th Ave, preliminary filing.",created_at:d(-4)},
+      {id:"d5",title:"Updated design proposal from the architect",kind:"PDF",url:ph(900,640,"Landscape framework"),note:"Site layout and landscape framework.",created_at:d(-1)}
     ],
     architect_images:[
       {id:"a1",url:ph(900,640,"Ground floor plan"),caption:"Ground floor — current set from the architect, Oct 2026"},
@@ -33,37 +35,37 @@
     ],
     intake:[
       {id:"s1",room:"Entry & outdoor",title:"Entry, transitions & outdoor",questions:[
-        {id:"q1",q:"How sure are you about the farm-style doors? Can we imagine a space where the whole wall opens, but there's still a bit of separation?",a:"We like the doors.",updated_at:d(-12),updated_by:"u-cori"},
-        {id:"q2",q:"When you come in through the back doors, where do shoes and coats go?",a:"Back door for shoes; coat storage mostly out front. Shower situation: think about the floor between the back door and the bathroom, and outdoor storage.",updated_at:d(-12),updated_by:"u-cori"},
-        {id:"q3",q:"Is there a reason you chose to have a hall?",a:"Washer and dryer go outside. We don't like the hall.",updated_at:d(-12),updated_by:"u-cori"},
-        {id:"q4",q:"Walk me through a load of laundry, start to finish — sorting, the basket mid-load, folding, where it sits before it's put away. I'm not sure the washer/dryer space is big enough to hold that in action.",a:"",updated_at:null,updated_by:null},
-        {id:"q5",q:"Outdoor priorities: secret garden, firepit, surfing gear, bike storage, bedroom privacy — how do these rank?",a:"",updated_at:null,updated_by:null},
-        {id:"q6",q:"Can we integrate the outdoor shower into the outdoor landing? Where will it be now?",a:"",updated_at:null,updated_by:null}
+        {id:"q1",directive:"Keep the farm-style doors. Explore a version where the whole wall opens while keeping a bit of separation.",directive_reviewed:true,q:"How sure are you about the farm-style doors? Can we imagine a space where the whole wall opens, but there's still a bit of separation?",a:"We like the doors.",updated_at:d(-12),updated_by:"u-cori"},
+        {id:"q2",directive:"Shoes come off at the back door; coats live mostly out front. Think through the floor between the back door and the bathroom, and outdoor storage.",directive_reviewed:true,q:"When you come in through the back doors, where do shoes and coats go?",a:"Back door for shoes; coat storage mostly out front. Shower situation: think about the floor between the back door and the bathroom, and outdoor storage.",updated_at:d(-12),updated_by:"u-cori"},
+        {id:"q3",directive:"No hall. The washer and dryer move outside.",directive_reviewed:true,q:"Is there a reason you chose to have a hall?",a:"Washer and dryer go outside. We don't like the hall.",updated_at:d(-12),updated_by:"u-cori"},
+        {id:"q4",directive:"",directive_reviewed:false,q:"Walk me through a load of laundry, start to finish — sorting, the basket mid-load, folding, where it sits before it's put away. I'm not sure the washer/dryer space is big enough to hold that in action.",a:"",updated_at:null,updated_by:null},
+        {id:"q5",directive:"",directive_reviewed:false,q:"Outdoor priorities: secret garden, firepit, surfing gear, bike storage, bedroom privacy — how do these rank?",a:"",updated_at:null,updated_by:null},
+        {id:"q6",directive:"",directive_reviewed:false,q:"Can we integrate the outdoor shower into the outdoor landing? Where will it be now?",a:"",updated_at:null,updated_by:null}
       ]},
       {id:"s2",room:"Kitchen",title:"Kitchen & the shared core",questions:[
-        {id:"q7",q:"The kitchen island — is this for functionality, or is this the table you want to eat at?",a:"A big table for homework and hosting — maybe eight people.",updated_at:d(-3,19),updated_by:"u-brook"},
-        {id:"q8",q:"The dining workspace — do you see that as a booth-type situation?",a:"",updated_at:null,updated_by:null},
-        {id:"q9",q:"What is your living room for? If it's only for receiving visitors, is it really an extension of the kitchen?",a:"Hanging out, game night, parent seating.",updated_at:d(-12),updated_by:"u-cori"},
-        {id:"q10",q:"Cook / sink / fridge workflow — walk me through it. I generally recommend fridge → sink → cook, or a triangle.",a:"Triangle. A window, and continuous space.",updated_at:d(-12),updated_by:"u-cori"},
-        {id:"q11",q:"What is the morning routine? How much cooking in general?",a:"Fireplace is gas and works. Outdoor kitchen.",updated_at:d(-12),updated_by:"u-cori"},
-        {id:"q21",q:"",a:"We'd like the kitchen to be the one room that stays tidy-looking even when it isn't — closed storage over open shelves, and somewhere the toaster and kettle can live out of sight.",updated_at:d(-2,21),updated_by:"u-brook",added_by:"u-brook"}
+        {id:"q7",directive:"One big table for homework and hosting, seating for about eight.",directive_reviewed:true,q:"The kitchen island — is this for functionality, or is this the table you want to eat at?",a:"A big table for homework and hosting — maybe eight people.",updated_at:d(-3,19),updated_by:"u-brook"},
+        {id:"q8",directive:"",directive_reviewed:false,q:"The dining workspace — do you see that as a booth-type situation?",a:"",updated_at:null,updated_by:null},
+        {id:"q9",directive:"The living room is for hanging out, game night and parent seating, a real room rather than kitchen overflow.",directive_reviewed:true,q:"What is your living room for? If it's only for receiving visitors, is it really an extension of the kitchen?",a:"Hanging out, game night, parent seating.",updated_at:d(-12),updated_by:"u-cori"},
+        {id:"q10",directive:"Fridge, sink, cook in a triangle, with a window and continuous space.",directive_reviewed:true,q:"Cook / sink / fridge workflow — walk me through it. I generally recommend fridge → sink → cook, or a triangle.",a:"Triangle. A window, and continuous space.",updated_at:d(-12),updated_by:"u-cori"},
+        {id:"q11",directive:"The gas fireplace stays and works. An outdoor kitchen.",directive_reviewed:true,q:"What is the morning routine? How much cooking in general?",a:"Fireplace is gas and works. Outdoor kitchen.",updated_at:d(-12),updated_by:"u-cori"},
+        {id:"q21",directive:"The kitchen stays tidy-looking even when it isn't: closed storage over open shelves, and a home for the toaster and kettle out of sight.",directive_reviewed:true,q:"",a:"We'd like the kitchen to be the one room that stays tidy-looking even when it isn't — closed storage over open shelves, and somewhere the toaster and kettle can live out of sight.",updated_at:d(-2,21),updated_by:"u-brook",added_by:"u-brook"}
       ]},
       {id:"s3",room:"Bedrooms",title:"Sleeping & storage",questions:[
-        {id:"q12",q:"Bedroom windows — full length, or a higher window that gives you more variation in how you organize the room? (This is really a question about another kid, and co-sleeping.)",a:"Door goes outside — windows and furniture should flex.",updated_at:d(-12),updated_by:"u-cori"},
-        {id:"q13",q:"What has to fit in the primary closet for the two of you? Hanging vs. folded, shoes, anything bulky, seasonal things. I'm concerned the current size won't cover it.",a:"Two full-size closets. Zoe's bedroom can be smaller.",updated_at:d(-12),updated_by:"u-cori"}
+        {id:"q12",directive:"The bedroom door opens outside; windows and furniture stay flexible.",directive_reviewed:true,q:"Bedroom windows — full length, or a higher window that gives you more variation in how you organize the room? (This is really a question about another kid, and co-sleeping.)",a:"Door goes outside — windows and furniture should flex.",updated_at:d(-12),updated_by:"u-cori"},
+        {id:"q13",directive:"Two full-size closets in the primary. Zoe's bedroom can be smaller.",directive_reviewed:true,q:"What has to fit in the primary closet for the two of you? Hanging vs. folded, shoes, anything bulky, seasonal things. I'm concerned the current size won't cover it.",a:"Two full-size closets. Zoe's bedroom can be smaller.",updated_at:d(-12),updated_by:"u-cori"}
       ]},
       {id:"s4",room:"Bathrooms",title:"Bathrooms & routine",questions:[
-        {id:"q14",q:"The primary bathroom has a pocket door — it saves space, but comes with some noise concerns I want you aware of.",a:"",updated_at:null,updated_by:null},
-        {id:"q15",q:"Tell me about the double-sink priority. What is your bathroom routine like?",a:"No need for a double sink.",updated_at:d(-12),updated_by:"u-cori"}
+        {id:"q14",directive:"",directive_reviewed:false,q:"The primary bathroom has a pocket door — it saves space, but comes with some noise concerns I want you aware of.",a:"",updated_at:null,updated_by:null},
+        {id:"q15",directive:"No double sink.",directive_reviewed:true,q:"Tell me about the double-sink priority. What is your bathroom routine like?",a:"No need for a double sink.",updated_at:d(-12),updated_by:"u-cori"}
       ]},
       {id:"s5",room:"Loft & office",title:"Upper & flex spaces",questions:[
-        {id:"q16",q:"Is there a reason the attic space — the small office — doesn't have a window?",a:"It should have a window.",updated_at:d(-12),updated_by:"u-cori"},
-        {id:"q17",q:"I want to design the loft more carefully. Projector or TV?",a:"",updated_at:null,updated_by:null},
-        {id:"q18",q:"What are both of your work hours, and in which spaces?",a:"Brook works at home; Evan has the option.",updated_at:d(-12),updated_by:"u-cori"}
+        {id:"q16",directive:"The small office gets a window.",directive_reviewed:true,q:"Is there a reason the attic space — the small office — doesn't have a window?",a:"It should have a window.",updated_at:d(-12),updated_by:"u-cori"},
+        {id:"q17",directive:"",directive_reviewed:false,q:"I want to design the loft more carefully. Projector or TV?",a:"",updated_at:null,updated_by:null},
+        {id:"q18",directive:"Brook works from home; Evan has the option to.",directive_reviewed:true,q:"What are both of your work hours, and in which spaces?",a:"Brook works at home; Evan has the option.",updated_at:d(-12),updated_by:"u-cori"}
       ]},
       {id:"s6",room:"Hosting",title:"Hosting",questions:[
-        {id:"q19",q:"Tell me about your hosting routines. How often, how many people, what kind of dishware?",a:"Outdoor kitchen. One dishwasher.",updated_at:d(-12),updated_by:"u-cori"},
-        {id:"q20",q:"Do people stay with you?",a:"Couch or bed — the loft could host someone.",updated_at:d(-12),updated_by:"u-cori"}
+        {id:"q19",directive:"Hosting happens around the outdoor kitchen. One dishwasher.",directive_reviewed:true,q:"Tell me about your hosting routines. How often, how many people, what kind of dishware?",a:"Outdoor kitchen. One dishwasher.",updated_at:d(-12),updated_by:"u-cori"},
+        {id:"q20",directive:"Guests sleep on a couch or bed; the loft could host someone.",directive_reviewed:true,q:"Do people stay with you?",a:"Couch or bed — the loft could host someone.",updated_at:d(-12),updated_by:"u-cori"}
       ]}
     ],
     notes:[

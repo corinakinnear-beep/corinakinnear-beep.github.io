@@ -87,8 +87,12 @@ create table if not exists public.intake_questions (
   updated_at timestamptz,
   updated_by uuid references public.profiles(id),
   added_by uuid references public.profiles(id),
-  seen_by_designer boolean default true
+  seen_by_designer boolean default true,
+  directive text default '',
+  directive_reviewed boolean default false
 );
+alter table public.intake_questions add column if not exists directive text default '';
+alter table public.intake_questions add column if not exists directive_reviewed boolean default false;
 
 create table if not exists public.notes (
   id uuid primary key default gen_random_uuid(),
@@ -146,8 +150,10 @@ create table if not exists public.documents (
   kind text default '',
   url text default '',
   note text default '',
-  position bigint default 0
+  position bigint default 0,
+  created_at timestamptz default now()
 );
+alter table public.documents add column if not exists created_at timestamptz default now();
 
 create table if not exists public.architect_images (
   id uuid primary key default gen_random_uuid(),
@@ -225,6 +231,26 @@ begin
             case when coalesce((st->>'fee')::numeric,0) = 0 then 'free' else 'upcoming' end);
   end loop;
   return pid;
+end $$;
+
+-- Designer renames a project and edits its client list (invites + existing members). Nothing is emailed.
+create or replace function public.update_project_clients(p_project uuid, p_name text, p_client_emails text[], p_client_names text[] default '{}')
+returns void language plpgsql security definer set search_path = public as $$
+declare e text; k int := 0;
+begin
+  if not public.is_designer(p_project) then raise exception 'Only the designer can edit the project'; end if;
+  update public.projects set name = p_name where id = p_project;
+  delete from public.project_invites where project_id = p_project and role = 'client' and not (lower(email) = any (select lower(x) from unnest(p_client_emails) x));
+  delete from public.project_members m using public.profiles pr where m.project_id = p_project and m.role = 'client' and pr.id = m.user_id and not (lower(pr.email) = any (select lower(x) from unnest(p_client_emails) x));
+  foreach e in array p_client_emails loop
+    k := k + 1;
+    insert into public.project_invites (project_id, email, role, name) values (p_project, lower(e), 'client', coalesce(p_client_names[k], ''))
+      on conflict (project_id, email) do update set name = excluded.name;
+    insert into public.project_members (project_id, user_id, role)
+      select p_project, u.id, 'client' from auth.users u where lower(u.email) = lower(e)
+    on conflict do nothing;
+    update public.profiles p set name = coalesce(nullif(p_client_names[k],''), p.name) from auth.users u where u.id = p.id and lower(u.email) = lower(e) and (p.name is null or p.name = '' or lower(p.name) = lower(split_part(u.email,'@',1)));
+  end loop;
 end $$;
 
 -- Dashboard: one row per project the signed-in designer runs.
@@ -401,13 +427,13 @@ create or replace function public.on_question_update() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare pname text; who text; author_role text; sec text;
 begin
-  if new.answer is distinct from old.answer and new.updated_by is not null then
+  if (new.answer is distinct from old.answer or new.directive is distinct from old.directive) and new.updated_by is not null then
     select role into author_role from public.project_members where project_id = new.project_id and user_id = new.updated_by;
     if author_role <> 'designer' then
       select name into pname from public.projects where id = new.project_id;
       select coalesce(name, email) into who from public.profiles where id = new.updated_by;
       select title into sec from public.intake_sections where id = new.section_id;
-      perform public.notify_project(new.project_id, new.updated_by, 'designer', who || (case when tg_op = 'INSERT' then ' added a directive' else ' changed a directive' end) || ' · ' || coalesce(sec,'') || ' · ' || pname, left(new.answer, 400), '#directives');
+      perform public.notify_project(new.project_id, new.updated_by, 'designer', who || ' changed a directive · ' || coalesce(sec,'') || ' · ' || pname, left(coalesce(nullif(new.directive,''), new.answer), 400), '#directives');
     end if;
   end if;
   return new;
@@ -425,7 +451,7 @@ begin
       select name into pname from public.projects where id = new.project_id;
       select coalesce(name, email) into who from public.profiles where id = new.added_by;
       select title into sec from public.intake_sections where id = new.section_id;
-      perform public.notify_project(new.project_id, new.added_by, 'designer', who || ' added a directive · ' || coalesce(sec,'') || ' · ' || pname, left(new.answer, 400), '#directives');
+      perform public.notify_project(new.project_id, new.added_by, 'designer', who || ' added a directive · ' || coalesce(sec,'') || ' · ' || pname, left(coalesce(nullif(new.directive,''), new.answer), 400), '#directives');
     end if;
   end if;
   return new;
