@@ -202,6 +202,18 @@ begin
     select i.project_id, auth.uid(), i.role from public.project_invites i
     where lower(i.email) = lower(my_email)
   on conflict do nothing;
+  -- first time in: a note about where the project stands, and one for each message the designer already left
+  insert into public.notifications (project_id, to_user, subject, body, link)
+    select i.project_id, auth.uid(), 'Now in ' || lower(s.title) || ' · ' || p.name, coalesce(s.description,''), '#timeline'
+    from public.project_invites i join public.projects p on p.id = i.project_id join public.stages s on s.project_id = p.id and s.status = 'current'
+    where lower(i.email) = lower(my_email)
+      and not exists (select 1 from public.notifications n where n.to_user = auth.uid() and n.project_id = i.project_id);
+  insert into public.notifications (project_id, to_user, subject, body, link)
+    select n.project_id, auth.uid(), coalesce(pr.name, 'Your designer') || ' left you a message' || case when n.room <> '' then ' · ' || n.room else '' end, left(n.body, 400), '#conversation'
+    from public.project_invites i join public.notes n on n.project_id = i.project_id join public.project_members m on m.project_id = n.project_id and m.user_id = n.author_id and m.role = 'designer'
+    join public.profiles pr on pr.id = n.author_id
+    where lower(i.email) = lower(my_email)
+      and not exists (select 1 from public.notifications x where x.to_user = auth.uid() and x.project_id = n.project_id and x.link = '#conversation');
   -- take the name the designer gave on the invite if the profile has none yet
   update public.profiles p set name = i.name
     from public.project_invites i
@@ -584,6 +596,10 @@ create or replace function public.on_stage_payment() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare pname text;
 begin
+  if new.status = 'current' and old.status is distinct from 'current' then
+    select name into pname from public.projects where id = new.project_id;
+    perform public.notify_project(new.project_id, auth.uid(), 'client', 'Now in ' || lower(new.title) || ' · ' || pname, coalesce(new.description,''), '#timeline');
+  end if;
   if new.payment_status is distinct from old.payment_status then
     select name into pname from public.projects where id = new.project_id;
     perform public.notify_project(new.project_id, auth.uid(), 'client',
