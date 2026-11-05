@@ -63,7 +63,7 @@ function suggestDirective(n){
 }
 /* ---------- state ---------- */
 let store=null, me=null, project=null, route="home", notifs=[];
-let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false};
+let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false};
 const isDesigner=()=>me&&me.role==="designer";
 const member=id=>(project.members||[]).find(m=>m.id===id)||{name:"—"};
 const nameOf=id=>member(id).name;
@@ -250,7 +250,7 @@ function activity(){
 }
 
 /* ---------- rendering ---------- */
-const NAV=[["home","Home"],["directives","Directives"],["conversation","Messages"],["documents","Documents"],["timeline","Timeline"],["meeting","Meeting"],["account","Settings"]];
+const NAV=[["home","Home"],["directives","Directives"],["conversation","Messages"],["documents","Documents"],["timeline","Timeline"],["account","Settings"]];
 const ROUTES=["projects",...NAV.map(([k])=>k)];
 let summaries=null;
 function needsName(){return me&&(!me.name||(LIVE&&me.name===(me.email||"").split("@")[0]));}
@@ -268,7 +268,7 @@ function render(){
   if(!project){renderNoProject(app);return;}
   renderNav();
   $("#foot").hidden=false;$("#footProject").textContent=project.name;
-  const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewMeeting,account:viewSettings};
+  const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewTimeline,account:viewSettings};
   app.innerHTML=`<div class="view">${(views[route]||viewHome)()}</div>`;
   bind(app);
   renderPreviewBar();
@@ -303,7 +303,7 @@ function renderBell(){
   const list=notifs.slice(0,20);
   p.innerHTML=`<div class="head"><span class="label">Notifications</span>${list.some(n=>!n.seen_at)?`<button class="textlink" id="seenAll">Mark all read</button>`:""}</div>
   <div class="items">${list.map(n=>`<button class="notif ${n.seen_at?"":"new"}" data-nid="${n.id}" data-link="${esc(n.link||"#home")}"><span class="s">${n.seen_at?"":`<span class="dot"></span>`}${esc(n.subject)}</span><span class="b">${esc(n.body)}</span><span class="w">${fmtStamp(n.created_at)}</span></button>`).join("")||`<p class="empty">Nothing yet.</p>`}</div>`;
-  p.querySelectorAll("[data-nid]").forEach(b=>b.onclick=async()=>{const n=notifs.find(x=>x.id===b.dataset.nid);if(n&&!n.seen_at){n.seen_at=new Date().toISOString();await store.markNotifSeen(n.id);}closePops();const h=(b.dataset.link||"#home").replace(/^#/,"");if(h===route)render();else location.hash=h;});
+  p.querySelectorAll("[data-nid]").forEach(b=>b.onclick=async()=>{const n=notifs.find(x=>x.id===b.dataset.nid);if(n&&!n.seen_at){n.seen_at=new Date().toISOString();await store.markNotifSeen(n.id);}closePops();let h=(b.dataset.link||"#home").replace(/^#/,"");if(h==="meeting"){ui.jump="meeting";h="timeline";}if(h===route)render();else location.hash=h;});
   const sa=$("#seenAll",p);if(sa)sa.onclick=async()=>{for(const n of notifs)if(!n.seen_at){n.seen_at=new Date().toISOString();}await store.markAllNotifsSeen();renderNav();renderBell();};
 }
 function renderPreviewBar(){
@@ -385,8 +385,7 @@ function viewHome(){
     cards=[
       ["conversation","Messages",`${unread?unread+" unread":"Nothing unread"}`,unread||""],
       ["directives","Directives",changed?`${changed} changed or added by the clients`:"Nothing new since you last looked",changed||""],
-      ["meeting","Next meeting",m?`${fmtWeek(m.when)} · ${fmtTime(m.when)}${req?" · change requested":""}`:"Nothing scheduled yet",req?"!":""],
-      ["timeline","Timeline",cs?`${cs.title} now · ${project.stages.filter(s=>s.payment.status==="requested").length} payment${project.stages.filter(s=>s.payment.status==="requested").length===1?"":"s"} requested`:"Stages and payments",""],
+      ["timeline","Timeline",`${cs?cs.title+" now":"Stages and payments"}${m?` · next meeting ${fmtDate(m.when)}`:""}${req?" · change requested":""}${project.stages.some(s=>s.payment.status==="requested")?" · payment requested":""}`,req?"!":""],
       ["documents","Documents",`Process, fees, mood board, drawings`,""]
     ];
   }else{
@@ -394,8 +393,7 @@ function viewHome(){
     cards=[
       ["conversation","Messages",`New thoughts, photos and questions, whenever they come${replied?` · ${replied} with replies from ${esc(DESIGNER_NAME)}`:""}`,replied||""],
       ["directives","Directives",`How you live and what you need from each room — change or add to it any time`,open||""],
-      ["meeting","Next meeting",m?`${fmtWeek(m.when)} · ${fmtTime(m.when)}${req?" · change requested":""}`:"Nothing scheduled yet",""],
-      ["timeline","Timeline",cs?`${cs.title} now${project.stages.some(s=>s.payment.status==="requested")?" · payment requested":""}`:"Stages, deliverables and payments",project.stages.some(s=>s.payment.status==="requested")?"!":""],
+      ["timeline","Timeline",`${cs?cs.title+" now":"Stages, meetings and payments"}${m?` · next meeting ${fmtDate(m.when)}`:""}${project.stages.some(s=>s.payment.status==="requested")?" · payment requested":""}`,project.stages.some(s=>s.payment.status==="requested")?"!":""],
       ["documents","Documents",`Fees and process, the Pinterest board, the architect's drawings`,""]
     ];
   }
@@ -503,6 +501,7 @@ function viewTimeline(){
   const phases=project.process||[];
   const activePhases=cs?(cs.focus||"").split("·").map(x=>x.trim().toLowerCase()):[];
   return`<div class="page-head"><p class="label">Timeline</p><h1>Where things stand.</h1></div>
+  ${meetingBlock()}
   <section class="section"><div class="band"><h2>The process</h2><span class="desc"></span></div>
     <div class="phases">${phases.map((p,i)=>{const on=activePhases.includes(p.title.toLowerCase());return`<div class="phase ${on?"on":""}"><span class="label">${on?"Now":"&nbsp;"}</span><h3>${esc(p.title)}</h3><p class="small">${esc(p.body)}</p></div>`;}).join("")}</div></section>
   <section class="section"><div class="band"><h2>Meetings</h2><span class="desc"></span></div>
@@ -537,20 +536,21 @@ function stageForm(s){
   <div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-scancel="1">Cancel</button>${s.id!=="new"?`<button class="textlink" type="button" data-sdel="${s.id}">Remove stage</button>`:""}</div></form>`;
 }
 
-function viewMeeting(){
+function meetingBlock(){
   const d=isDesigner(),m=project.meeting;
   const cr=m&&m.change_request;
-  return`<div class="page-head"><p class="label">Meeting</p><h1>Next meeting</h1>${d?"":`<p class="lede">If this time doesn't work, the form below will email me. Or text me any time: <span class="phone" id="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></p>`}</div>
+  const showReq=!d&&m&&ui.reqOpen;
+  return`<section class="section" id="meeting"><div class="band"><h2>Next meeting</h2><span class="desc"></span></div>
   <div class="meeting"><div style="display:grid;gap:18px">
     ${m?`<p class="when-big">${fmtWeek(m.when)}<br>${fmtTime(m.when)}</p><p class="label">${esc(m.where)}</p><p style="max-width:52ch;color:var(--ink-2)">${linkify(m.notes)}</p>`:`<p class="when-big">Nothing scheduled.</p>`}
     ${cr?`<div class="req"><span class="label">${cr.kind==="cancel"?"Cancel requested":"Change requested"} · ${esc(nameOf(cr.by))} · ${fmtStamp(cr.at)}</span><p>${linkify(cr.message)}</p>${d?`<div class="actions"><button class="textlink" id="clearReq">Clear request</button></div>`:""}</div>`:""}
-    ${d?`<div class="actions"><button class="btn ghost" id="meetEdit">${m?"Edit meeting":"Schedule a meeting"}</button></div>`:""}
+    ${d?`<div class="actions"><button class="btn ghost tiny" id="meetEdit">${m?"Edit meeting":"Schedule a meeting"}</button></div>`:""}
+    ${!d&&m&&!showReq?`<div class="actions"><button class="btn ghost tiny" id="reqOpen">Need a different time?</button><span class="small muted">Or text me: <span class="phone" id="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></span></div>`:""}
     ${d&&ui.meetingEdit?`<form class="editbox" id="meetForm"><div class="field"><label>When</label><input class="input" name="when" type="datetime-local" value="${toLocalInput(m&&m.when)}" required></div><div class="field"><label>Where</label><input class="input" name="where" value="${esc(m?m.where:"")}"></div><div class="field"><label>Notes for them</label><textarea class="input" name="notes">${esc(m?m.notes:"")}</textarea></div><div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" id="meetCancel">Cancel</button></div></form>`:""}
   </div>
-  ${!d&&m?`<form class="editbox" id="reqForm"><p class="label">Need a different time? This emails me.</p><div class="field"><label>Request</label><select class="input" name="kind"><option value="move">Move it</option><option value="cancel">Cancel it</option></select></div><div class="field"><label>Tell me what works</label><textarea class="input" name="message" placeholder="Could we do the following Tuesday instead, any time after 10?" required></textarea></div><div class="actions"><button class="btn" type="submit">Send request</button></div></form>`:""}
-  </div>`;
+  ${showReq?`<form class="editbox" id="reqForm"><p class="label">This emails ${esc(DESIGNER_NAME)}.</p><div class="field"><label>Request</label><select class="input" name="kind"><option value="move">Move it</option><option value="cancel">Cancel it</option></select></div><div class="field"><label>What works</label><textarea class="input" name="message" placeholder="Could we do the following Tuesday instead, any time after 10?" required></textarea></div><div class="actions"><button class="btn" type="submit">Send request</button><button class="textlink" type="button" id="reqCancel">Cancel</button></div></form>`:""}
+  </div></section>`;
 }
-
 function viewSettings(){
   return`<div class="page-head"><h1>Settings</h1></div>
   <section class="section"><div class="band"><h2>Name</h2><span class="desc"></span></div>
@@ -627,7 +627,9 @@ function bind(app){
   const mc=$("#meetCancel",app);if(mc)mc.onclick=()=>{ui.meetingEdit=false;render();};
   const mf=$("#meetForm",app);if(mf)mf.onsubmit=async e=>{e.preventDefault();const m={id:project.meeting?project.meeting.id:undefined,when:new Date(mf.elements.when.value).toISOString(),where:mf.elements.where.value.trim(),notes:mf.elements.notes.value.trim(),change_request:null};try{await store.saveMeeting(m);project.meeting=LIVE?(await store.loadProject(project.id)).meeting:m;ui.meetingEdit=false;render();toast("Meeting saved");}catch(err){toast("Couldn't save: "+err.message);}};
   const cq=$("#clearReq",app);if(cq)cq.onclick=async()=>{const m={...project.meeting,change_request:null};await store.saveMeeting(m);project.meeting=m;render();};
-  const rq=$("#reqForm",app);if(rq)rq.onsubmit=async e=>{e.preventDefault();const m={...project.meeting,change_request:{kind:rq.elements.kind.value,message:rq.elements.message.value.trim(),by:me.id,at:new Date().toISOString()}};await store.saveMeeting(m);project.meeting=m;render();toast(`Sent — ${DESIGNER_NAME} will confirm by email`);};
+  const ro=$("#reqOpen",app);if(ro)ro.onclick=()=>{ui.reqOpen=true;render();};
+  const rc=$("#reqCancel",app);if(rc)rc.onclick=()=>{ui.reqOpen=false;render();};
+  const rq=$("#reqForm",app);if(rq)rq.onsubmit=async e=>{e.preventDefault();const m={...project.meeting,change_request:{kind:rq.elements.kind.value,message:rq.elements.message.value.trim(),by:me.id,at:new Date().toISOString()}};await store.saveMeeting(m);project.meeting=m;ui.reqOpen=false;render();toast(`Sent — ${DESIGNER_NAME} will confirm`);};
 }
 
 /* ---------- boot ---------- */
