@@ -8,8 +8,10 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   name text,
+  email_alerts boolean default false,
   created_at timestamptz default now()
 );
+alter table public.profiles add column if not exists email_alerts boolean default false;
 
 -- Create a profile row the moment someone signs in for the first time.
 create or replace function public.handle_new_user() returns trigger
@@ -43,9 +45,11 @@ create table if not exists public.projects (
   rooms text[] default '{}',
   process jsonb default '[]',
   notify_clients boolean default false,
+  pin text default '',
   created_at timestamptz default now()
 );
 alter table public.projects add column if not exists notify_clients boolean default false;
+alter table public.projects add column if not exists pin text default '';
 
 create table if not exists public.project_members (
   project_id uuid references public.projects(id) on delete cascade,
@@ -93,6 +97,15 @@ create table if not exists public.intake_questions (
 );
 alter table public.intake_questions add column if not exists directive text default '';
 alter table public.intake_questions add column if not exists directive_reviewed boolean default false;
+
+create table if not exists public.directive_comments (
+  id uuid primary key default gen_random_uuid(),
+  question_id uuid references public.intake_questions(id) on delete cascade,
+  project_id uuid references public.projects(id) on delete cascade,
+  author_id uuid references public.profiles(id),
+  body text not null,
+  created_at timestamptz default now()
+);
 
 create table if not exists public.notes (
   id uuid primary key default gen_random_uuid(),
@@ -253,6 +266,35 @@ begin
   end loop;
 end $$;
 
+-- Email-only sign-in: an invited email (or a designer) may create an account without a confirmation step.
+create or replace function public.email_ok(p_email text) returns uuid
+language sql stable security definer set search_path = public as $$
+  select coalesce(
+    (select i.project_id from public.project_invites i where lower(i.email) = lower(p_email) limit 1),
+    (select '00000000-0000-0000-0000-000000000000'::uuid from public.designers d where lower(d.email) = lower(p_email) limit 1));
+$$;
+
+-- Designer edits the list of spaces. A space with directives in it can't be removed.
+create or replace function public.set_project_rooms(p_project uuid, p_rooms text[]) returns void
+language plpgsql security definer set search_path = public as $$
+declare r text; i int := 0; busy text;
+begin
+  if not public.is_designer(p_project) then raise exception 'Only the designer can edit the project'; end if;
+  select s.room into busy from public.intake_sections s where s.project_id = p_project and s.room <> '' and not (s.room = any (p_rooms))
+    and exists (select 1 from public.intake_questions q where q.section_id = s.id) limit 1;
+  if busy is not null then raise exception '"%" still has directives; move or delete them first', busy; end if;
+  delete from public.intake_sections s where s.project_id = p_project and s.room <> '' and not (s.room = any (p_rooms));
+  foreach r in array p_rooms loop
+    i := i + 1;
+    if not exists (select 1 from public.intake_sections s where s.project_id = p_project and s.room = r) then
+      insert into public.intake_sections (project_id, title, room, position) values (p_project, r, r, i);
+    else
+      update public.intake_sections set position = i, title = r where project_id = p_project and room = r;
+    end if;
+  end loop;
+  update public.projects set rooms = p_rooms where id = p_project;
+end $$;
+
 -- Dashboard: one row per project the signed-in designer runs.
 create or replace function public.project_summaries() returns table (
   id uuid, name text, clients text, unread int, changed int, stage text, stage_due date,
@@ -286,6 +328,9 @@ alter table public.stages enable row level security;
 alter table public.meetings enable row level security;
 alter table public.architect_images enable row level security;
 alter table public.documents enable row level security;
+alter table public.directive_comments enable row level security;
+drop policy if exists dcomments_rw on public.directive_comments;
+create policy dcomments_rw on public.directive_comments for all to authenticated using (public.is_member(project_id)) with check (public.is_member(project_id));
 
 -- profiles: anyone signed in can read names (needed to show "Brook", "Cori"); you can edit your own
 drop policy if exists profiles_read on public.profiles;
@@ -364,11 +409,10 @@ returns void language plpgsql security definer set search_path = public as $$
 begin
   insert into public.notifications (project_id, to_user, subject, body, link)
   select pid, m.user_id, subj, bod, lnk
-  from public.project_members m join public.projects p on p.id = m.project_id
+  from public.project_members m join public.profiles pr on pr.id = m.user_id
   where m.project_id = pid and m.user_id is distinct from except_user
-    and (only_role is null or m.role = only_role)
-    -- clients are only emailed once the designer turns it on for the project
-    and (m.role = 'designer' or p.notify_clients);
+    and (only_role is null or m.role = only_role);
+  -- rows still queue for the in-app bell; the sender skips people whose email_alerts is off
 end $$;
 
 create or replace function public.on_note_insert() returns trigger
@@ -472,5 +516,20 @@ begin
   end if;
   return new;
 end $$;
+create or replace function public.on_dcomment_insert() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text; dir text;
+begin
+  select name into pname from public.projects where id = new.project_id;
+  select coalesce(name, email) into who from public.profiles where id = new.author_id;
+  select role into author_role from public.project_members where project_id = new.project_id and user_id = new.author_id;
+  select coalesce(nullif(directive,''), question) into dir from public.intake_questions where id = new.question_id;
+  perform public.notify_project(new.project_id, new.author_id, case when author_role = 'designer' then 'client' else 'designer' end,
+    who || ' commented on a directive · ' || pname, left(coalesce(dir,''), 120) || E'\n— ' || left(new.body, 300), '#directives');
+  return new;
+end $$;
+drop trigger if exists dcomment_insert_notify on public.directive_comments;
+create trigger dcomment_insert_notify after insert on public.directive_comments for each row execute function public.on_dcomment_insert();
+
 drop trigger if exists meeting_change_notify on public.meetings;
 create trigger meeting_change_notify after update on public.meetings for each row execute function public.on_meeting_change();
