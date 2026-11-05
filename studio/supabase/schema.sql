@@ -78,14 +78,14 @@ create table if not exists public.intake_sections (
   project_id uuid references public.projects(id) on delete cascade,
   title text not null,
   room text default '',
-  position int default 0
+  position bigint default 0
 );
 
 create table if not exists public.intake_questions (
   id uuid primary key default gen_random_uuid(),
   project_id uuid references public.projects(id) on delete cascade,
   section_id uuid references public.intake_sections(id) on delete cascade,
-  position int default 0,
+  position bigint default 0,
   question text default '',
   answer text default '',
   updated_at timestamptz,
@@ -132,7 +132,7 @@ create table if not exists public.note_replies (
 create table if not exists public.stages (
   id uuid primary key default gen_random_uuid(),
   project_id uuid references public.projects(id) on delete cascade,
-  position int default 0,
+  position bigint default 0,
   title text not null,
   focus text default '',
   description text default '',
