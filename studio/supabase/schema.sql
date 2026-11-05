@@ -1,4 +1,4 @@
--- Parlā Studio — database schema for Supabase.
+-- Studio — database schema for Supabase.
 -- Run this once in the SQL editor of a fresh project. Safe to re-run (uses IF NOT EXISTS / OR REPLACE).
 
 create extension if not exists pgcrypto;
@@ -34,6 +34,7 @@ create table if not exists public.projects (
   rooms text[] default '{}',
   process jsonb default '[]',
   notify_clients boolean default false,
+  designer_phone text default '',
   created_at timestamptz default now()
 );
 alter table public.projects add column if not exists notify_clients boolean default false;
@@ -55,9 +56,9 @@ create table if not exists public.project_invites (
 );
 alter table public.project_invites add column if not exists name text default '';
 
--- Who may start projects. Add a row per designer email.
+-- Who may start projects. With open signup (the default here) the table is empty and anyone signed in may start one.
+-- To restrict, insert the allowed emails.
 create table if not exists public.designers (email text primary key);
-insert into public.designers (email) values ('corina@parladesigns.com'), ('corina.kinnear@gmail.com') on conflict do nothing;
 alter table public.designers enable row level security;
 
 create table if not exists public.intake_sections (
@@ -185,8 +186,8 @@ language plpgsql security definer set search_path = public as $$
 declare pid uuid; sec jsonb; q text; sid uuid; i int := 0; j int; st jsonb; e text; k int := 0; my_email text;
 begin
   select email into my_email from auth.users where id = auth.uid();
-  if not exists (select 1 from public.designers d where lower(d.email) = lower(coalesce(my_email,''))) then
-    raise exception 'Only the designer can start a project';
+  if exists (select 1 from public.designers) and not exists (select 1 from public.designers d where lower(d.email) = lower(coalesce(my_email,''))) then
+    raise exception 'Only a listed designer can start a project';
   end if;
   insert into public.projects (name, designer_id, rooms, process) values (p_name, auth.uid(), p_rooms, p_process) returning id into pid;
   insert into public.project_members (project_id, user_id, role) values (pid, auth.uid(), 'designer');
@@ -433,9 +434,17 @@ begin
     select coalesce(name, email) into who from public.profiles where id = (new.change_request->>'by')::uuid;
     perform public.notify_project(new.project_id, (new.change_request->>'by')::uuid, 'designer', who || ' asked to ' || coalesce(new.change_request->>'kind','change') || ' the meeting · ' || pname, coalesce(new.change_request->>'message',''), '#meeting');
   elsif new."when" is distinct from old."when" or new."where" is distinct from old."where" then
-    perform public.notify_project(new.project_id, null, 'client', 'Meeting updated · ' || pname, 'Now ' || to_char(new."when" at time zone 'America/Los_Angeles', 'Day, Month DD at HH12:MI AM') || coalesce(' · ' || nullif(new."where",''), ''), '#meeting');
+    perform public.notify_project(new.project_id, null, 'client', 'Meeting updated · ' || pname, 'Now ' || to_char(new."when" at time zone 'UTC', 'Day, Month DD at HH12:MI AM') || coalesce(' · ' || nullif(new."where",''), ''), '#meeting');
   end if;
   return new;
 end $$;
 drop trigger if exists meeting_change_notify on public.meetings;
 create trigger meeting_change_notify after update on public.meetings for each row execute function public.on_meeting_change();
+
+-- ---------- schedule the sender (edit the URL and key for your project) ----------
+-- create extension if not exists pg_cron; create extension if not exists pg_net;
+-- select cron.schedule('studio-notify', '*/5 * * * *', $$
+--   select net.http_post(url := 'https://YOUR-REF.supabase.co/functions/v1/notify',
+--     headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer YOUR_PUBLISHABLE_KEY'),
+--     body := '{}'::jsonb);
+-- $$);

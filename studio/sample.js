@@ -7,7 +7,7 @@
   }
   const d=(days,h)=>{const t=new Date(2026,10,4,h||10,0,0);t.setDate(t.getDate()+days);return t.toISOString();};
 
-  const CORI={id:"u-cori",name:"Corina",email:"corina@parladesigns.com",role:"designer"};
+  const CORI={id:"u-cori",name:"Corina",email:"designer@example.com",role:"designer"};
   const BROOK={id:"u-brook",name:"Brook",email:"brook@example.com",role:"client"};
   const EVAN={id:"u-evan",name:"Evan",email:"evan@example.com",role:"client"};
 

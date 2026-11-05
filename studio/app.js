@@ -1,10 +1,10 @@
-/* Parlā Studio — client portal app.
+/* Studio — client portal app.
    Runs in preview mode (sample data, role switch) until config.js points at a Supabase project. */
 (function(){
 "use strict";
 const cfg=window.STUDIO_CONFIG||{};
 const LIVE=!!(cfg.SUPABASE_URL&&cfg.SUPABASE_ANON_KEY&&window.supabase);
-const DESIGNER_NAME=cfg.DESIGNER_NAME||"Corina";
+const DESIGNER_NAME=cfg.DESIGNER_NAME||"your designer";
 
 /* ---------- helpers ---------- */
 const $=(s,r)=>(r||document).querySelector(s);
@@ -57,7 +57,7 @@ const nameOf=id=>member(id).name;
 
 /* ---------- Preview store (sample data in this browser only) ---------- */
 class MockStore{
-  constructor(){this.key="parla-studio-preview-v2-"+(cfg.PREVIEW_AS||"any");}
+  constructor(){this.key="studio-preview-"+(cfg.PREVIEW_AS||"any");}
   load(){
     let saved=null;try{saved=JSON.parse(localStorage.getItem(this.key)||"null");}catch(e){}
     this.all=saved&&saved.all?saved.all:JSON.parse(JSON.stringify(window.SAMPLE_PROJECTS||[window.SAMPLE_PROJECT]));
@@ -108,15 +108,14 @@ class SupabaseStore{
     await this.sb.rpc("join_invited_projects");
     const {data:prof}=await this.sb.from("profiles").select("*").eq("id",u.id).maybeSingle();
     if(!prof){await this.sb.from("profiles").upsert({id:u.id,email:u.email,name:(u.email||"").split("@")[0]});}
-    const designerEmails=[].concat(cfg.DESIGNER_EMAILS||[],cfg.DESIGNER_EMAIL||[]).map(e=>String(e).toLowerCase());
-    const designer=designerEmails.includes((u.email||"").toLowerCase());
     const prefix=(u.email||"").split("@")[0];
-    let nm=prof&&prof.name||"";
-    if(designer&&(!nm||nm.toLowerCase()===prefix.toLowerCase())){nm=DESIGNER_NAME;await this.sb.from("profiles").update({name:nm}).eq("id",u.id);}
-    me={id:u.id,email:u.email,name:nm||prefix,role:designer?"designer":"client"};
-    const {data:mems}=await this.sb.from("project_members").select("project_id, projects(id,name)").eq("user_id",u.id);
+    const nm=prof&&prof.name||"";
+    const {data:mems}=await this.sb.from("project_members").select("project_id, role, projects(id,name)").eq("user_id",u.id);
     this.projects=(mems||[]).map(m=>m.projects).filter(Boolean);
-    let pid=null;try{pid=localStorage.getItem("parla-studio-project");}catch(e){}
+    // A designer is anyone who runs at least one project, or anyone at all when signup is open and they have no projects yet.
+    const designer=(mems||[]).some(m=>m.role==="designer")||(cfg.OPEN_SIGNUP&&!(mems||[]).length);
+    me={id:u.id,email:u.email,name:nm||prefix,role:designer?"designer":"client"};
+    let pid=null;try{pid=localStorage.getItem("studio-project");}catch(e){}
     const chosen=this.projects.find(p=>p.id===pid)||this.projects[0];
     if(!chosen)return{me,project:null};
     return{me,project:await this.loadProject(chosen.id)};
@@ -136,12 +135,13 @@ class SupabaseStore{
       sb.from("architect_images").select("*").eq("project_id",id).order("position")
     ]);
     const {data:docs}=await sb.from("documents").select("*").eq("project_id",id).order("position");
-    try{localStorage.setItem("parla-studio-project",id);}catch(e){}
+    try{localStorage.setItem("studio-project",id);}catch(e){}
     const members=(mems||[]).map(m=>({id:m.user_id,role:m.role,name:m.profiles?m.profiles.name:"—",email:m.profiles?m.profiles.email:""}));
     this.pid=id;
+    const mine=members.find(m=>m.id===me.id);if(mine)me.role=mine.role;
     return{
       id:p.id,name:p.name,designer:members.find(m=>m.role==="designer"),members,
-      rooms:p.rooms||[],pinterest_url:p.pinterest_url||"",pinterest_note:p.pinterest_note||"",notify_clients:!!p.notify_clients,
+      rooms:p.rooms||[],designer_phone:p.designer_phone||"",pinterest_url:p.pinterest_url||"",pinterest_note:p.pinterest_note||"",notify_clients:!!p.notify_clients,
       architect_images:imgs||[],documents:docs||[],
       intake:(secs||[]).map(s=>({id:s.id,title:s.title,room:s.room||"",questions:(qs||[]).filter(q=>q.section_id===s.id).map(q=>({id:q.id,q:q.question||"",a:q.answer||"",updated_at:q.updated_at,updated_by:q.updated_by,added_by:q.added_by,seen_by_designer:q.seen_by_designer}))})),
       notes:(notes||[]).map(n=>({...n,images:n.images||[],replies:(reps||[]).filter(r=>r.note_id===n.id)})),
@@ -463,7 +463,7 @@ function stageForm(s){
 function viewMeeting(){
   const d=isDesigner(),m=project.meeting;
   const cr=m&&m.change_request;
-  return`<div class="page-head"><p class="label">Meeting</p><h1>Next time we meet.</h1>${d?"":`<p class="lede">If this time doesn't work, the form below will email me. Or text me any time: <span class="phone" id="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></p>`}</div>
+  return`<div class="page-head"><p class="label">Meeting</p><h1>Next time we meet.</h1>${d?"":`<p class="lede">If this time doesn't work, the form below will email ${esc((project.designer||{}).name||DESIGNER_NAME)}.${project.designer_phone?` Or text any time: <span class="phone" id="phone">${esc(project.designer_phone)}</span>`:""}</p>`}</div>
   <div class="meeting"><div style="display:grid;gap:18px">
     ${m?`<p class="when-big">${fmtWeek(m.when)}<br>${fmtTime(m.when)}</p><p class="label">${esc(m.where)}</p><p style="max-width:52ch;color:var(--ink-2)">${linkify(m.notes)}</p>`:`<p class="when-big">Nothing scheduled.</p>`}
     ${cr?`<div class="req"><span class="label">${cr.kind==="cancel"?"Cancel requested":"Change requested"} · ${esc(nameOf(cr.by))} · ${fmtStamp(cr.at)}</span><p>${linkify(cr.message)}</p>${d?`<div class="actions"><button class="textlink" id="clearReq">Clear request</button></div>`:""}</div>`:""}
