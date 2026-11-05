@@ -211,12 +211,12 @@ function activity(){
 }
 
 /* ---------- rendering ---------- */
-const NAV=[["home","Home"],["directives","Directives"],["conversation","Messages"],["documents","Documents"],["timeline","Timeline"],["meeting","Meeting"],["settings","Settings"]];
+const NAV=[["home","Home"],["directives","Directives"],["conversation","Messages"],["documents","Documents"],["timeline","Timeline"],["meeting","Meeting"],["account","Settings"]];
 const ROUTES=["projects",...NAV.map(([k])=>k)];
 let summaries=null;
-function needsName(){return me&&(!me.name||me.name.toLowerCase()===(me.email||"").split("@")[0].toLowerCase());}
+function needsName(){return me&&(!me.name||(LIVE&&me.name===(me.email||"").split("@")[0]));}
 function renderAskName(app){
-  $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;
+  $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;$("#projName").hidden=true;
   app.innerHTML=`<div class="signin"><div class="signin-card"><h1>Name</h1>
   <form id="nameForm"><div class="field"><input class="input" id="myname" required autocomplete="given-name" placeholder="Your name" aria-label="Name"></div><div class="actions"><button class="btn" type="submit">Save</button></div></form></div></div>`;
   $("#nameForm",app).onsubmit=async e=>{e.preventDefault();const n=$("#myname",app).value.trim();if(!n)return;await store.setMyName(n);me.name=n;const m=(project&&project.members||[]).find(x=>x.id===me.id);if(m)m.name=n;render();};
@@ -229,7 +229,7 @@ function render(){
   if(!project){renderNoProject(app);return;}
   renderNav();
   $("#foot").hidden=false;$("#footProject").textContent=project.name;
-  const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewMeeting,settings:viewSettings};
+  const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewMeeting,account:viewSettings};
   app.innerHTML=`<div class="view">${(views[route]||viewHome)()}</div>`;
   bind(app);
   renderPreviewBar();
@@ -277,7 +277,7 @@ function renderPreviewBar(){
   $("#resetSample",bar).onclick=()=>{const r=store.reset();me=r.me;project=r.project;render();toast("Sample data reset");};
 }
 function renderSignIn(app){
-  $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;$("#previewBar").hidden=true;
+  $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;$("#previewBar").hidden=true;$("#projName").hidden=true;
   app.innerHTML=`<div class="signin"><div class="signin-card">
     <p class="label">Private</p>
     <h1>Welcome.</h1>
@@ -295,7 +295,7 @@ async function renderDashboard(app){
   const attn=p=>{const a=[];if(p.unread)a.push(`${p.unread} unread`);if(p.changed)a.push(`${p.changed} directive${p.changed>1?"s":""} changed`);if(p.meeting_request)a.push("meeting request");if(p.payment_requested)a.push(`${p.payment_requested} payment${p.payment_requested>1?"s":""} requested`);return a;};
   const needs=list.filter(p=>attn(p).length).length;
   app.innerHTML=`<div class="view">
-    <div class="page-head"><p class="label">Studio</p><h1 class="big">Hello, ${esc(me.name.split(" ")[0])}.</h1><p class="lede">${list.length?`${list.length} project${list.length>1?"s":""}${needs?` · ${needs} need${needs>1?"":"s"} you`:" · nothing waiting on you"}.`:"No projects yet."}</p></div>
+    <div class="page-head"><p class="label">Studio</p><h1 class="big">Hello, ${esc(me.name.split(" ")[0])}.</h1><p class="lede">${list.length?(needs?`${needs===1?"One project needs":needs+" projects need"} you.`:"Nothing waiting on you."):"No projects yet."}</p></div>
     <section class="section"><div class="band"><h2>Projects</h2><span class="desc"></span></div>
     <div class="dash">${list.map(p=>{const a=attn(p);return`<a class="proj ${a.length?"needs":""}" href="#home" data-open="${p.id}">
       <div class="ptop"><h3>${esc(p.name)}</h3>${a.length?`<span class="tag accent">${a.length===1?a[0]:a.length+" things"}</span>`:""}</div>
@@ -322,7 +322,7 @@ function renderNewProjectForm(w){
   $("#newProj",w).onsubmit=async e=>{e.preventDefault();const name=$("#pname",w).value.trim();const clients=$("#pemails",w).value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(.*?)\s*<([^>]+)>$/);return m?{name:m[1].trim(),email:m[2].trim().toLowerCase()}:{name:"",email:s.toLowerCase()};});try{const id=await store.createProject(name,clients);project=await store.loadProject(id);summaries=null;location.hash="home";render();toast("Project created");}catch(err){toast("Couldn't create: "+err.message);}};
 }
 function renderNoProject(app){
-  $("#menuBtn").hidden=true;closePops();$("#foot").hidden=true;
+  $("#menuBtn").hidden=true;closePops();$("#foot").hidden=true;$("#projName").hidden=true;
   $("#mastRight").innerHTML=`<span class="who">${esc(me.name)} · <button id="signout">Sign out</button></span>`;
   $("#signout").onclick=async()=>{await store.signOut();me=null;render();};
   if(!isDesigner()){app.innerHTML=`<div class="signin"><div class="signin-card"><h1>Almost.</h1><p class="lede">You're signed in, but no project is linked to this email yet. ${esc(DESIGNER_NAME)} can add you from her side — if you expected to be here, tell her which email you used.</p></div></div>`;return;}
@@ -349,7 +349,7 @@ function viewHome(){
       ["directives","Directives",changed?`${changed} changed or added by the clients`:"Nothing new since you last looked",changed||""],
       ["meeting","Next meeting",m?`${fmtWeek(m.when)} · ${fmtTime(m.when)}${req?" · change requested":""}`:"Nothing scheduled yet",req?"!":""],
       ["timeline","Timeline",cs?`${cs.title} now · ${project.stages.filter(s=>s.payment.status==="requested").length} payment${project.stages.filter(s=>s.payment.status==="requested").length===1?"":"s"} requested`:"Stages and payments",""],
-      ["documents","Documents",`${project.documents.length} documents · ${project.architect_images.length} drawings`,""]
+      ["documents","Documents",`Process, fees, mood board, drawings`,""]
     ];
   }else{
     lede=`${cs?`We're in the <b>${esc(cs.title.toLowerCase())}</b> stage${cs.due?`, due ${fmtLong(cs.due)}`:""}.`:""} ${m?`Next we meet ${fmtWeek(m.when)} at ${fmtTime(m.when)}.`:""} ${open?`${open} directive${open>1?"s":""} still open.`:""}`;
@@ -357,7 +357,7 @@ function viewHome(){
       ["conversation","Messages",`New thoughts, photos and questions, whenever they come${replied?` · ${replied} with replies from ${esc(DESIGNER_NAME)}`:""}`,replied||""],
       ["directives","Directives",`How you live and what you need from each room — change or add to it any time`,open||""],
       ["meeting","Next meeting",m?`${fmtWeek(m.when)} · ${fmtTime(m.when)}${req?" · change requested":""}`:"Nothing scheduled yet",""],
-      ["timeline","Timeline",cs?`${cs.title} now · ${project.stages.filter(s=>s.status==="done").length} of ${project.stages.length} stages done`:"Stages, deliverables and payments",""],
+      ["timeline","Timeline",cs?`${cs.title} now${project.stages.some(s=>s.payment.status==="requested")?" · payment requested":""}`:"Stages, deliverables and payments",project.stages.some(s=>s.payment.status==="requested")?"!":""],
       ["documents","Documents",`Fees and process, the Pinterest board, the architect's drawings`,""]
     ];
   }
@@ -510,7 +510,7 @@ function viewMeeting(){
 }
 
 function viewSettings(){
-  return`<div class="page-head"><p class="label">Settings</p><h1>Settings</h1></div>
+  return`<div class="page-head"><h1>Settings</h1></div>
   <section class="section"><div class="band"><h2>Name</h2><span class="desc"></span></div>
     <form id="nameSet" class="row" style="max-width:460px"><div class="field"><label for="setName">Name</label><input class="input" id="setName" value="${esc(me.name)}" required></div><div class="actions"><button class="btn tiny" type="submit">Save name</button></div></form></section>
   <section class="section"><div class="band"><h2>Email</h2><span class="desc"></span></div>
@@ -523,7 +523,7 @@ function bind(app){
   app.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ui.room=b.dataset.pick;render();});
   const ns=$("#nameSet",app);if(ns)ns.onsubmit=async e=>{e.preventDefault();const n=$("#setName",app).value.trim();if(!n)return;await store.setMyName(n);me.name=n;const m=(project.members||[]).find(x=>x.id===me.id);if(m)m.name=n;render();toast("Name saved");};
   const es=$("#emailSet",app);if(es)es.onsubmit=async e=>{e.preventDefault();const em=$("#setEmail",app).value.trim().toLowerCase();if(!em||em===(me.email||"").toLowerCase())return;const r=await store.setMyEmail(em);$("#emailMsg",app).textContent=r.ok?(LIVE?`Check ${me.email} and ${em} for confirmation links.`:"Email changed."):`Couldn't change it: ${r.error}`;if(r.ok&&!LIVE){me.email=em;const m=(project.members||[]).find(x=>x.id===me.id);if(m)m.email=em;}};
-  const so=$("#signoutBtn",app);if(so)so.onclick=async()=>{await store.signOut();if(LIVE){me=null;project=null;notifs=[];location.hash="";render();}else toast("Preview: sign-out does nothing here");};
+  const so=$("#signoutBtn",app);if(so)so.onclick=async()=>{await store.signOut();if(LIVE){me=null;project=null;notifs=[];summaries=null;try{localStorage.removeItem("parla-studio-project");}catch(e){}location.hash="";render();}else toast("Preview: sign-out does nothing here");};
   const cl=$("#copyLink",app);if(cl)cl.onclick=async()=>{const t=projectLink();try{await navigator.clipboard.writeText(t);toast("Link copied");}catch(e){const el=$("#projLink",app);const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);toast("Select and copy the link");}};
   const pe=$("#projEdit",app);if(pe)pe.onclick=()=>{ui.projEdit=true;render();};
   const pc=$("#projCancel",app);if(pc)pc.onclick=()=>{ui.projEdit=false;render();};
@@ -537,7 +537,7 @@ function bind(app){
   app.querySelectorAll("[data-qadd]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const sid=f.dataset.qadd,text=f.querySelector("input").value.trim();if(!text)return;const q=await store.addQuestion(sid,text);if(LIVE)project.intake.find(x=>x.id===sid).questions.push(q);render();});
   app.querySelectorAll("[data-accept]").forEach(b=>b.onclick=async()=>{await acceptOne(b.dataset.accept);render();toast("Accepted");});
   app.querySelectorAll("[data-draft]").forEach(b=>b.onclick=()=>{const f=app.querySelector(`#rev-${b.dataset.draft}`);f.querySelector("[data-dir]").value=f.querySelector("[data-notes]").value;});
-  const aa=$("#acceptAll",app);if(aa)aa.onclick=async()=>{for(const el of app.querySelectorAll(".revrow"))if(el.querySelector("[data-dir]").value.trim())await acceptOne(el.id.slice(4));ui.review=false;render();toast("Directives updated");};
+  const aa=$("#acceptAll",app);if(aa)aa.onclick=async()=>{for(const el of app.querySelectorAll(".revrow[id]"))if(el.querySelector("[data-dir]").value.trim())await acceptOne(el.id.slice(4));ui.review=false;render();toast("Directives updated");};
   app.querySelectorAll("[data-pay]").forEach(b=>b.onclick=()=>{ui.payOpen=ui.payOpen===b.dataset.pay?null:b.dataset.pay;render();});
   app.querySelectorAll("[data-payreq]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const st=project.stages.find(x=>x.id===f.dataset.payreq);const body=`Payment for ${st?st.title:"a stage"}: I'd like to pay another way. ${f.querySelector("textarea").value.trim()}`;try{const n=await store.addNote({room:"",body,images:[]});if(LIVE)project.notes.unshift(n);ui.payOpen=null;render();toast(`Sent — ${DESIGNER_NAME} will reply in messages`);}catch(err){toast("Couldn't send: "+err.message);}});
   app.querySelectorAll("[data-qedit]").forEach(b=>b.onclick=()=>{ui.editing[b.dataset.qedit]=true;ui.open[b.dataset.qedit]=true;render();$("#ans-"+b.dataset.qedit).focus();});
@@ -586,8 +586,9 @@ window.addEventListener("hashchange",()=>{summaries=null;syncRoute();ui.editing=
   store=LIVE?new SupabaseStore():new MockStore();
   syncRoute();
   try{const r=await store.init();if(r){me=r.me;project=r.project;if(me)notifs=await store.loadNotifs();}}catch(err){console.error(err);}
+  if(!location.hash)syncRoute();
   render();
   if(LIVE)setInterval(async()=>{if(me&&project){try{notifs=await store.loadNotifs();renderNav();}catch(e){}}},60000);
-  if(LIVE){store.sb.auth.onAuthStateChange(async(ev)=>{if(ev==="SIGNED_IN"&&!me){const r=await store.init();if(r){me=r.me;project=r.project;if(me)notifs=await store.loadNotifs();render();}}});}
+  if(LIVE){store.sb.auth.onAuthStateChange(async(ev)=>{if(ev==="SIGNED_IN"&&!me){const r=await store.init();if(r){me=r.me;project=r.project;if(me)notifs=await store.loadNotifs();if(!location.hash)syncRoute();render();}}});}
 })();
 })();
