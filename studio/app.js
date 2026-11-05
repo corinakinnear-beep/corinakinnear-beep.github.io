@@ -63,7 +63,7 @@ function suggestDirective(n){
 }
 /* ---------- state ---------- */
 let store=null, me=null, project=null, route="home", notifs=[];
-let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false};
+let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false};
 const isDesigner=()=>me&&me.role==="designer";
 const member=id=>(project.members||[]).find(m=>m.id===id)||{name:"—"};
 const nameOf=id=>member(id).name;
@@ -116,7 +116,7 @@ class MockStore{
   async removeImage(id){this.project.architect_images=this.project.architect_images.filter(x=>x.id!==id);this.persist();}
   async savePinterest(url,note){this.project.pinterest_url=url;this.project.pinterest_note=note;this.persist();}
   async setRooms(rooms){const p=this.project;const removed=p.rooms.filter(r=>!rooms.includes(r));for(const r of removed){const sec=p.intake.find(x=>x.room===r);if(sec&&sec.questions.length)throw new Error(`"${r}" still has directives; move or delete them first`);}p.intake=p.intake.filter(x=>!removed.includes(x.room));for(const r of rooms)if(!p.intake.some(x=>x.room===r))p.intake.push({id:uid(),title:r,room:r,questions:[]});p.intake.sort((a,b)=>rooms.indexOf(a.room)-rooms.indexOf(b.room));p.rooms=rooms;this.persist();}
-  async setPin_(pin){this.project.pin=pin;this.persist();}
+  async renameRoom(old,nw){const p=this.project;p.rooms=p.rooms.map(r=>r===old?nw:r);p.intake.forEach(s=>{if(s.room===old){s.room=nw;s.title=nw;}});p.notes.forEach(n=>{if(n.room===old)n.room=nw;});this.persist();}
   async setEmailAlerts(on){this.project.members.forEach(m=>{if(m.id===this.meId)m.email_alerts=on;});this.persist();}
   async updateProject(name,clients){const p=this.project;p.name=name;const keep=p.members.filter(m=>m.role!=="client");p.members=[...keep,...clients.map(c=>{const ex=p.members.find(m=>(m.email||"").toLowerCase()===c.email);return ex?{...ex,name:c.name||ex.name}:{id:uid(),name:c.name||c.email.split("@")[0],email:c.email,role:"client"};})];this.persist();}
 }
@@ -226,7 +226,7 @@ class SupabaseStore{
   async removeImage(id){await this.sb.from("architect_images").delete().eq("id",id);}
   async savePinterest(url,note){await this.sb.from("projects").update({pinterest_url:url,pinterest_note:note}).eq("id",this.pid);}
   async setRooms(rooms){const {error}=await this.sb.rpc("set_project_rooms",{p_project:this.pid,p_rooms:rooms});if(error)throw error;}
-  async setPin_(pin){await this.sb.from("projects").update({pin}).eq("id",this.pid);}
+  async renameRoom(old,nw){const {error}=await this.sb.rpc("rename_room",{p_project:this.pid,p_old:old,p_new:nw});if(error)throw error;}
   async setEmailAlerts(on){await this.sb.from("profiles").update({email_alerts:on}).eq("id",me.id);}
   async updateProject(name,clients){const {error}=await this.sb.rpc("update_project_clients",{p_project:this.pid,p_name:name,p_client_emails:clients.map(c=>c.email),p_client_names:clients.map(c=>c.name)});if(error)throw error;}
   async createProject(name,clients){const {data,error}=await this.sb.rpc("create_project",{p_name:name,p_client_emails:clients.map(c=>c.email),p_client_names:clients.map(c=>c.name),p_intake:window.SAMPLE_PROJECT.intake.map(s=>({title:s.room||s.title,room:s.room||"",questions:[]})),p_process:window.SAMPLE_PROJECT.process,p_stages:window.SAMPLE_PROJECT.stages.map(s=>({title:s.title,focus:s.focus||"",description:s.desc,deliverable:s.deliverable,standard:s.standard,fee:s.fee,hourly:!!s.hourly})),p_rooms:window.SAMPLE_PROJECT.rooms});if(error)throw error;return data;}
@@ -380,7 +380,7 @@ function viewHome(){
   const unsorted=project.notes.filter(n=>!n.room).length;
   let lede,cards;
   if(d){
-    const needs=[];if(unread)needs.push(`${unread} unread message${unread>1?"s":""}`);if(changed)needs.push(`${changed} directive${changed>1?"s":""} changed`);if(req)needs.push("a meeting request");if(unsorted)needs.push(`${unsorted} unsorted`);
+    const needs=[];if(unread)needs.push(`${unread} unread message${unread>1?"s":""}`);if(changed)needs.push(`${changed} directive${changed>1?"s":""} changed`);if(req)needs.push("a meeting request");if(unsorted)needs.push(`${unsorted} under Other`);
     lede=`${needs.length?`Needs you: ${needs.join(", ")}.`:"Nothing waiting on you."} ${cs?`${esc(cs.title)} is the current stage${cs.due?`, due ${fmtLong(cs.due)}`:""}.`:""}`;
     cards=[
       ["conversation","Messages",`${unread?unread+" unread":"Nothing unread"}`,unread||""],
@@ -424,7 +424,7 @@ function viewDirectives(){
   return`<div class="page-head"><p class="label">Design directives</p><h1>How you live, and what you need from this house.</h1>${d?"":`<p class="lede">Clarify any of these, change one when you understand it better, or add your own.</p>`}
   ${d?`<div class="actions"><button class="btn ghost tiny" id="reviewBtn">${toReview?`Review ${toReview} from meeting notes`:"Meeting notes"}</button></div>`:""}</div>
   <div class="chips" id="jump">${project.intake.map(s=>`<button class="chip ${changedIn(s)?"accent":""}" data-jump="sec-${s.id}">${esc(s.room||s.title)}</button>`).join("")}</div>
-  ${project.intake.map(s=>`<section class="section qa-section" id="sec-${s.id}"><div class="band"><h2>${esc(s.room||s.title)}</h2><span class="desc"></span></div>
+  ${project.intake.map(s=>`<section class="section qa-section" id="sec-${s.id}"><div class="band">${d&&ui.roomEdit===s.room?`<form class="row" data-roomrename="${esc(s.room)}" style="max-width:420px"><div class="field"><input class="input" id="rn-${s.id}" value="${esc(s.room)}" required aria-label="Space name"></div><div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" id="roomCancel">Cancel</button>${!s.questions.length?`<button class="textlink" type="button" data-roomdel="${esc(s.room)}">Remove</button>`:""}</div></form>`:`<h2>${esc(s.room||s.title)}</h2><span class="desc">${d?`<button class="textlink" data-roomedit="${esc(s.room)}">Rename</button>`:""}</span>`}</div>
     <div class="rows">${s.questions.map(q=>{
       const changed=q.updated_by&&q.updated_by!==did&&!q.seen_by_designer;
       const editing=ui.editing[q.id];
@@ -446,8 +446,10 @@ function viewDirectives(){
       </div>`;}).join("")}
       ${s.room&&convCount(s.room)?`<div class="qa inconv"><p class="label">From messages</p>${project.notes.filter(n=>n.room===s.room).map(n=>`<div class="mini"><div class="rtop"><b>${esc(nameOf(n.author_id))}</b><span>${fmtDate(n.created_at)}</span>${n.integrated_at?`<span class="tag quiet">Integrated</span>`:""}</div><p class="rbody">${linkify(n.body)}</p>${n.replies.map(r=>`<p class="rbody" style="padding-left:16px;border-left:1px solid var(--line)"><b style="font-weight:500">${esc(nameOf(r.author_id))}</b> · ${linkify(r.body)}</p>`).join("")}</div>`).join("")}<div class="actions"><button class="textlink" data-conv="${esc(s.room)}">Open in messages →</button></div></div>`:""}
       ${ui.editing["add-"+s.id]?`<form class="qa edit" data-dadd="${s.id}"><p class="label">New directive · ${esc(s.room||s.title)}</p><textarea class="input" id="dir-${s.id}" placeholder="${d?"Something to design to…":"Something you want the design to honor…"}"></textarea><div class="actions"><button class="btn tiny" type="submit">Add</button><button class="textlink" type="button" data-qcancel="add-${s.id}">Cancel</button></div></form>`:`<div class="qa"><div class="actions"><button class="btn ghost tiny" data-dnew="${s.id}">Add a directive</button></div></div>`}
-    </div></section>`).join("")}`;
+    </div></section>`).join("")}
+  ${d?(ui.roomAdd?roomAddForm():`<div class="actions"><button class="btn ghost" id="roomAddDir">Add a space</button></div>`):""}`;
 }
+function roomAddForm(){return`<form class="editbox" id="roomAddForm" style="max-width:420px"><div class="field"><label for="newRoom">New space</label><input class="input" id="newRoom" required placeholder="Garage"></div><div class="actions"><button class="btn tiny" type="submit">Add</button><button class="textlink" type="button" id="roomAddCancel">Cancel</button></div></form>`;}
 function viewReview(){
   // Designer only: meeting notes on the left, the directive each becomes on the right. Edit, then accept.
   return`<div class="page-head"><p class="label">Design directives · meeting notes</p><h1>From notes to directives.</h1><p class="lede">Each question with the notes you took, and the directive it becomes. Edit any, then accept.</p>
@@ -465,15 +467,16 @@ function viewConversation(){
   const rooms=["all","unsorted",...project.rooms];
   const count=r=>r==="all"?project.notes.length:r==="unsorted"?project.notes.filter(n=>!n.room).length:project.notes.filter(n=>n.room===r).length;
   const list=ui.sort==="recent"?project.notes.filter(n=>!n.integrated_at):project.notes.filter(n=>ui.room==="all"||(ui.room==="unsorted"?!n.room:n.room===ui.room));
-  const sel=(cur,id)=>`<select class="input" style="padding:7px 10px;width:auto;font-size:12px;letter-spacing:.08em;text-transform:uppercase" data-room="${id}" aria-label="Room"><option value="">Unsorted</option>${project.rooms.map(r=>`<option ${r===cur?"selected":""}>${esc(r)}</option>`).join("")}</select>`;
+  const sel=(cur,id)=>`<select class="input" style="padding:7px 10px;width:auto;font-size:12px;letter-spacing:.08em;text-transform:uppercase" data-room="${id}" aria-label="Room"><option value="">Other</option>${project.rooms.map(r=>`<option ${r===cur?"selected":""}>${esc(r)}</option>`).join("")}</select>`;
   const secFor=room=>project.intake.find(s=>s.room===room);
   const unsorted=count("unsorted");
-  return`<div class="page-head"><p class="label">Messages</p><h1>Conversation</h1>${d?(unsorted?`<p class="lede">${unsorted} unsorted — file ${unsorted>1?"them":"it"} by room when you can.</p>`:""):`<p class="lede">An idea, a photo, a question, a change of heart — I want to hear it, at any point. Post it here and it will be filed by room on its own. When it's a question, you'll see my answer underneath and get an email with it.</p>`}</div>
+  return`<div class="page-head"><p class="label">Messages</p><h1>Conversation</h1>${d?(unsorted?`<p class="lede">${unsorted} under Other — file ${unsorted>1?"them":"it"} by space when you can.</p>`:""):`<p class="lede">An idea, a photo, a question, a change of heart — I want to hear it, at any point. Post it here and it will be filed by room on its own. When it's a question, you'll see my answer underneath and get an email with it.</p>`}</div>
   <form class="compose" id="compose"><p class="label">New message</p>
     <textarea class="input" id="noteBody" placeholder="${d?"Something to show them, or an idea to float…":"We kept thinking about the table…"}"></textarea>
     <div class="files"><span class="btn ghost tiny filebtn">Add image<input type="file" id="noteFiles" accept="image/*" multiple></span>${ui.composeImgs.map(u=>`<img src="${u}" alt="">`).join("")}</div>
     <div class="actions"><button class="btn" type="submit">Post</button></div></form>
-  <section class="section"><div class="band"><div class="chips"><button class="chip ${ui.sort==="recent"?"on":""}" data-sort="recent">Open · recent</button><button class="chip ${ui.sort!=="recent"?"on":""}" data-sort="room">By room</button></div><div class="rooms" ${ui.sort==="recent"?"hidden":""}>${rooms.map(r=>`<button class="chip ${ui.room===r?"on":""}" data-pick="${esc(r)}">${r==="all"?"All":r==="unsorted"?"Unsorted":esc(r)}</button>`).join("")}</div></div>
+  <section class="section"><div class="band"><div class="chips"><button class="chip ${ui.sort==="recent"?"on":""}" data-sort="recent">Open · recent</button><button class="chip ${ui.sort!=="recent"?"on":""}" data-sort="room">By room</button></div><div class="rooms" ${ui.sort==="recent"?"hidden":""}>${rooms.map(r=>`<button class="chip ${ui.room===r?"on":""}" data-pick="${esc(r)}">${r==="all"?"All":r==="unsorted"?"Other":esc(r)}</button>`).join("")}${d?`<button class="textlink" id="roomAddMsg">Add a space</button>`:""}</div></div>
+  ${d&&ui.roomAdd?roomAddForm():""}
   ${ui.sort!=="recent"&&ui.room!=="all"&&ui.room!=="unsorted"&&secFor(ui.room)?`<p class="small"><button class="textlink" data-dir="sec-${secFor(ui.room).id}">See the directives for ${esc(ui.room.toLowerCase())} →</button></p>`:""}
   <div class="note-list">${list.map(n=>{
     const mine=n.author_id===me.id,unread=!n.read_at&&n.author_id!==did,editing=ui.editing[n.id];
@@ -565,6 +568,13 @@ function viewSettings(){
 /* ---------- events ---------- */
 function bind(app){
   app.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ui.room=b.dataset.pick;render();});
+  app.querySelectorAll("[data-roomedit]").forEach(b=>b.onclick=()=>{ui.roomEdit=b.dataset.roomedit;render();});
+  const rcn=$("#roomCancel",app);if(rcn)rcn.onclick=()=>{ui.roomEdit=null;render();};
+  app.querySelectorAll("[data-roomrename]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const old=f.dataset.roomrename,nw=f.querySelector("input").value.trim();if(!nw||nw===old){ui.roomEdit=null;render();return;}if(project.rooms.includes(nw)){toast("There's already a space called "+nw);return;}try{await store.renameRoom(old,nw);if(LIVE)project=await store.loadProject(project.id);ui.roomEdit=null;if(ui.room===old)ui.room=nw;render();toast("Renamed");}catch(err){toast("Couldn't rename: "+err.message);}});
+  app.querySelectorAll("[data-roomdel]").forEach(b=>b.onclick=async()=>{const r=b.dataset.roomdel;try{await store.setRooms(project.rooms.filter(x=>x!==r));if(LIVE)project=await store.loadProject(project.id);ui.roomEdit=null;render();toast("Removed");}catch(err){toast("Couldn't remove: "+err.message);}});
+  for(const id of ["roomAddDir","roomAddMsg"]){const b=$("#"+id,app);if(b)b.onclick=()=>{ui.roomAdd=true;render();const i=$("#newRoom",app);if(i)i.focus();};}
+  const rac=$("#roomAddCancel",app);if(rac)rac.onclick=()=>{ui.roomAdd=false;render();};
+  const raf=$("#roomAddForm",app);if(raf)raf.onsubmit=async e=>{e.preventDefault();const r=$("#newRoom",app).value.trim();if(!r)return;if(project.rooms.includes(r)){toast("Already there");return;}try{await store.setRooms([...project.rooms,r]);if(LIVE)project=await store.loadProject(project.id);ui.roomAdd=false;render();toast("Added "+r);}catch(err){toast("Couldn't add: "+err.message);}};
   const ns=$("#nameSet",app);if(ns)ns.onsubmit=async e=>{e.preventDefault();const n=$("#setName",app).value.trim();if(!n)return;await store.setMyName(n);me.name=n;const m=(project.members||[]).find(x=>x.id===me.id);if(m)m.name=n;render();toast("Name saved");};
   const es=$("#emailSet",app);if(es)es.onsubmit=async e=>{e.preventDefault();const em=$("#setEmail",app).value.trim().toLowerCase();if(!em||em===(me.email||"").toLowerCase())return;const r=await store.setMyEmail(em);$("#emailMsg",app).textContent=r.ok?(LIVE?`Check ${me.email} and ${em} for confirmation links.`:"Email changed."):`Couldn't change it: ${r.error}`;if(r.ok&&!LIVE){me.email=em;const m=(project.members||[]).find(x=>x.id===me.id);if(m)m.email=em;}};
   const so=$("#signoutBtn",app);if(so)so.onclick=async()=>{await store.signOut();if(LIVE){me=null;project=null;notifs=[];summaries=null;try{localStorage.removeItem("parla-studio-project");}catch(e){}location.hash="";render();}else toast("Preview: sign-out does nothing here");};
@@ -594,8 +604,8 @@ function bind(app){
   app.querySelectorAll("[data-ccancel]").forEach(b=>b.onclick=()=>{delete ui.commentOpen[b.dataset.ccancel];render();});
   app.querySelectorAll("[data-csave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.csave,body=$("#cb-"+id).value.trim();if(!body)return;const c=await store.addComment(id,body);project.intake.forEach(s=>s.questions.forEach(q=>{if(q.id===id){q.comments=q.comments||[];if(!q.comments.some(x=>x.id===c.id))q.comments.push(c);if(!isDesigner())q.seen_by_designer=false;}}));delete ui.commentOpen[id];render();toast("Comment added");});
   const nf=$("#noteFiles",app);if(nf)nf.onchange=async()=>{for(const f of nf.files){try{ui.composeImgs.push(await store.uploadImage(f));}catch(err){toast("Upload failed: "+err.message);}}render();};
-  const comp=$("#compose",app);if(comp)comp.onsubmit=async e=>{e.preventDefault();const body=$("#noteBody",app).value.trim();if(!body&&!ui.composeImgs.length)return;const room=autoRoom(body,project.rooms);try{const n=await store.addNote({room,body,images:ui.composeImgs});if(LIVE)project.notes.unshift(n);ui.composeImgs=[];ui.room="all";render();toast(room?"Posted · filed under "+room:"Posted · unsorted for now");}catch(err){toast("Couldn't save: "+err.message);}};
-  app.querySelectorAll("select[data-room]").forEach(s=>{s.onchange=async()=>{await store.setNoteRoom(s.dataset.room,s.value);const n=project.notes.find(x=>x.id===s.dataset.room);if(n)n.room=s.value;render();toast(s.value?"Moved to "+s.value:"Unsorted");};});
+  const comp=$("#compose",app);if(comp)comp.onsubmit=async e=>{e.preventDefault();const body=$("#noteBody",app).value.trim();if(!body&&!ui.composeImgs.length)return;const room=autoRoom(body,project.rooms);try{const n=await store.addNote({room,body,images:ui.composeImgs});if(LIVE)project.notes.unshift(n);ui.composeImgs=[];ui.room="all";render();toast(room?"Posted · filed under "+room:"Posted · under Other for now");}catch(err){toast("Couldn't save: "+err.message);}};
+  app.querySelectorAll("select[data-room]").forEach(s=>{s.onchange=async()=>{await store.setNoteRoom(s.dataset.room,s.value);const n=project.notes.find(x=>x.id===s.dataset.room);if(n)n.room=s.value;render();toast(s.value?"Moved to "+s.value:"Moved to Other");};});
   app.querySelectorAll("[data-jump]").forEach(b=>b.onclick=()=>{const el=document.getElementById(b.dataset.jump);if(el)el.scrollIntoView({block:"start",behavior:"smooth"});});
   app.querySelectorAll("[data-conv]").forEach(b=>b.onclick=()=>{ui.room=b.dataset.conv;ui.sort="room";location.hash="conversation";});
   app.querySelectorAll("[data-dir]").forEach(b=>b.onclick=()=>{ui.jump=b.dataset.dir;location.hash="directives";});
@@ -634,7 +644,7 @@ function bind(app){
 
 /* ---------- boot ---------- */
 function syncRoute(){const h=(location.hash||"").slice(1);route=ROUTES.includes(h)?h:(me&&isDesigner()?"projects":"home");window.scrollTo({top:0});}
-window.addEventListener("hashchange",()=>{summaries=null;syncRoute();ui.editing={};ui.open={};ui.replyOpen={};ui.stageEdit=null;ui.meetingEdit=false;render();});
+window.addEventListener("hashchange",()=>{summaries=null;syncRoute();ui.editing={};ui.open={};ui.roomEdit=null;ui.roomAdd=false;ui.replyOpen={};ui.stageEdit=null;ui.meetingEdit=false;render();});
 (async function start(){
   try{const p=new URLSearchParams(location.search).get("p");if(p){localStorage.setItem("parla-studio-project",p);history.replaceState(null,"",location.pathname+location.hash);}}catch(e){}
   store=LIVE?new SupabaseStore():new MockStore();

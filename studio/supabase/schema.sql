@@ -295,6 +295,16 @@ begin
   update public.projects set rooms = p_rooms where id = p_project;
 end $$;
 
+-- Rename a space everywhere it appears: the project's list, its directives section, and filed messages.
+create or replace function public.rename_room(p_project uuid, p_old text, p_new text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_designer(p_project) then raise exception 'Only the designer can edit the project'; end if;
+  update public.projects set rooms = array_replace(rooms, p_old, p_new) where id = p_project;
+  update public.intake_sections set room = p_new, title = p_new where project_id = p_project and room = p_old;
+  update public.notes set room = p_new where project_id = p_project and room = p_old;
+end $$;
+
 -- Dashboard: one row per project the signed-in designer runs.
 create or replace function public.project_summaries() returns table (
   id uuid, name text, clients text, unread int, changed int, stage text, stage_due date,
