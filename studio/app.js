@@ -250,7 +250,7 @@ function activity(){
 }
 
 /* ---------- rendering ---------- */
-const NAV=[["home","Home"],["directives","Directives"],["conversation","Messages"],["documents","Documents"],["timeline","Timeline"],["account","Settings"]];
+const NAV=[["home","Home"],["directives","Design directives"],["conversation","Messages"],["documents","Documents"],["timeline","Timeline"],["account","Settings"]];
 const ROUTES=["projects",...NAV.map(([k])=>k)];
 let summaries=null;
 function needsName(){return me&&(!me.name||(LIVE&&me.name===(me.email||"").split("@")[0]));}
@@ -384,7 +384,7 @@ function viewHome(){
     lede=`${needs.length?`Needs you: ${needs.join(", ")}.`:"Nothing waiting on you."} ${cs?`${esc(cs.title)} is the current stage${cs.due?`, due ${fmtLong(cs.due)}`:""}.`:""}`;
     cards=[
       ["conversation","Messages",`${unread?unread+" unread":"Nothing unread"}`,unread||""],
-      ["directives","Directives",changed?`${changed} changed or added by the clients`:"Nothing new since you last looked",changed||""],
+      ["directives","Design directives",changed?`${changed} changed or added by the clients`:"Nothing new since you last looked",changed||""],
       ["timeline","Timeline",`${cs?cs.title+" now":"Stages and payments"}${m?` · next meeting ${fmtDate(m.when)}`:""}${req?" · change requested":""}${project.stages.some(s=>s.payment.status==="requested")?" · payment requested":""}`,req?"!":""],
       ["documents","Documents",`Process, fees, mood board, drawings`,""]
     ];
@@ -392,7 +392,7 @@ function viewHome(){
     lede=`${cs?`We're in the <b>${esc(cs.title.toLowerCase())}</b> stage${cs.due?`, due ${fmtLong(cs.due)}`:""}.`:""} ${m?`Next we meet ${fmtWeek(m.when)} at ${fmtTime(m.when)}.`:""} ${open?`${open} directive${open>1?"s":""} still open.`:""}`;
     cards=[
       ["conversation","Messages",`New thoughts, photos and questions, whenever they come${replied?` · ${replied} with replies from ${esc(DESIGNER_NAME)}`:""}`,replied||""],
-      ["directives","Directives",`How you live and what you need from each room — change or add to it any time`,open||""],
+      ["directives","Design directives",`How you live and what you need from each room — change or add to it any time`,open||""],
       ["timeline","Timeline",`${cs?cs.title+" now":"Stages, meetings and payments"}${m?` · next meeting ${fmtDate(m.when)}`:""}${project.stages.some(s=>s.payment.status==="requested")?" · payment requested":""}`,project.stages.some(s=>s.payment.status==="requested")?"!":""],
       ["documents","Documents",`Fees and process, the Pinterest board, the architect's drawings`,""]
     ];
@@ -421,7 +421,7 @@ function viewDirectives(){
   const changedIn=s=>s.questions.filter(q=>q.updated_by&&q.updated_by!==did&&!q.seen_by_designer).length;
   const toReview=project.intake.flatMap(s=>s.questions).filter(q=>dirText(q)&&!q.directive_reviewed).length;
   if(d&&ui.review)return viewReview();
-  return`<div class="page-head"><p class="label">Directives</p><h1>How you live, and what you need from this house.</h1>${d?"":`<p class="lede">Clarify any of these, change one when you understand it better, or add your own.</p>`}
+  return`<div class="page-head"><p class="label">Design directives</p><h1>How you live, and what you need from this house.</h1>${d?"":`<p class="lede">Clarify any of these, change one when you understand it better, or add your own.</p>`}
   ${d?`<div class="actions"><button class="btn ghost tiny" id="reviewBtn">${toReview?`Review ${toReview} from meeting notes`:"Meeting notes"}</button></div>`:""}</div>
   <div class="chips" id="jump">${project.intake.map(s=>`<button class="chip ${changedIn(s)?"accent":""}" data-jump="sec-${s.id}">${esc(s.room||s.title)}</button>`).join("")}</div>
   ${project.intake.map(s=>`<section class="section qa-section" id="sec-${s.id}"><div class="band"><h2>${esc(s.room||s.title)}</h2><span class="desc"></span></div>
@@ -450,7 +450,7 @@ function viewDirectives(){
 }
 function viewReview(){
   // Designer only: meeting notes on the left, the directive each becomes on the right. Edit, then accept.
-  return`<div class="page-head"><p class="label">Directives · meeting notes</p><h1>From notes to directives.</h1><p class="lede">Each question with the notes you took, and the directive it becomes. Edit any, then accept.</p>
+  return`<div class="page-head"><p class="label">Design directives · meeting notes</p><h1>From notes to directives.</h1><p class="lede">Each question with the notes you took, and the directive it becomes. Edit any, then accept.</p>
   <div class="actions"><button class="btn tiny" id="acceptAll">Accept all</button><button class="textlink" id="reviewBack">Back to directives</button></div></div>
   ${project.intake.map(s=>`<section class="section"><div class="band"><h2>${esc(s.room||s.title)}</h2><span class="desc"></span></div>
     <div class="rev">${s.questions.filter(q=>q.q).map(q=>`<div class="revrow ${q.directive_reviewed?"ok":""}" id="rev-${q.id}">
