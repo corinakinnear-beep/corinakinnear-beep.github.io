@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Studio</title>
+<meta name="description" content="A private client portal for designers: one page per project, with directives by room, an ongoing conversation, documents, a timeline with fees, and the next meeting. Shown here with sample data.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Outfit:wght@400;500&display=swap">
+<link rel="stylesheet" href="studio.css?v=1793843484">
+</head>
+<body>
+<header class="mast">
+  <div class="mast-in">
+    <button class="icon-btn" id="menuBtn" aria-label="Menu" hidden><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <a class="wordmark" href="#home">Studio</a>
+    <div class="pop menu" id="menuPop" hidden><nav class="nav" id="nav"></nav></div>
+    <div class="mast-right" id="mastRight"></div>
+    <div class="pop bell" id="bellPop" hidden></div>
+  </div>
+</header>
+<main id="app"></main>
+<footer id="foot" hidden>
+  <span class="label">Studio</span>
+  <span class="label" id="footProject"></span>
+</footer>
+<div class="preview" id="previewBar" hidden></div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=1793843484"></script>
+<script src="template.js?v=1793843484"></script>
+<script src="sample.js?v=1793843484"></script>
+<script src="app.js?v=1793843484"></script>
+</body>
+</html>
