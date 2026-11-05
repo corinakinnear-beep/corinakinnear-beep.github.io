@@ -73,7 +73,8 @@ class MockStore{
   async createProject(name,clients){const p=JSON.parse(JSON.stringify(window.SAMPLE_PROJECT));p.id=uid();p.name=name;p.members=[p.designer,...clients.map(c=>({id:uid(),name:c.name||c.email.split("@")[0],email:c.email,role:"client"}))];p.notes=[];p.notifs=[];p.meeting=null;p.documents=[];p.architect_images=[];p.pinterest_url="";p.pinterest_note="";p.intake.forEach(s=>s.questions=s.questions.filter(q=>q.q).map(q=>({...q,a:"",updated_at:null,updated_by:null})));p.stages.forEach((s,i)=>{s.status=i===0?"current":"upcoming";s.due=null;s.payment={status:s.fee?"upcoming":"free",amount:s.fee||0,date:null};});this.all.push(p);this.project=p;this.persist();return p.id;}
   async signIn(){return{ok:true};}
   async signOut(){}
-  async setMyName(n){const m=this.project.members.find(x=>x.id===this.meId);if(m)m.name=n;this.persist();}
+  async setMyName(n){this.all.forEach(p=>{const m=p.members.find(x=>x.id===this.meId);if(m)m.name=n;});this.persist();}
+  async setMyEmail(em){this.all.forEach(p=>{const m=p.members.find(x=>x.id===this.meId);if(m)m.email=em;});this.persist();return{ok:true};}
   async loadNotifs(){return (this.project.notifs||[]).filter(n=>n.to===this.meId);}
   async markNotifSeen(id){const n=(this.project.notifs||[]).find(x=>x.id===id);if(n)n.seen_at=new Date().toISOString();this.persist();}
   async markAllNotifsSeen(){(this.project.notifs||[]).forEach(n=>{if(n.to===this.meId&&!n.seen_at)n.seen_at=new Date().toISOString();});this.persist();}
@@ -151,6 +152,7 @@ class SupabaseStore{
     };
   }
   async setMyName(n){await this.sb.from("profiles").update({name:n}).eq("id",me.id);}
+  async setMyEmail(em){const {error}=await this.sb.auth.updateUser({email:em},{emailRedirectTo:location.origin+location.pathname});if(error)return{ok:false,error:error.message};return{ok:true};}
   async loadNotifs(){const {data}=await this.sb.from("notifications").select("id,subject,body,link,created_at,seen_at").eq("to_user",me.id).order("created_at",{ascending:false}).limit(30);return data||[];}
   async markNotifSeen(id){await this.sb.from("notifications").update({seen_at:new Date().toISOString()}).eq("id",id);}
   async markAllNotifsSeen(){await this.sb.from("notifications").update({seen_at:new Date().toISOString()}).eq("to_user",me.id).is("seen_at",null);}
@@ -198,7 +200,7 @@ function activity(){
 }
 
 /* ---------- rendering ---------- */
-const NAV=[["home","Home"],["directives","Directives"],["conversation","Conversation"],["documents","Documents"],["timeline","Timeline"],["meeting","Meeting"]];
+const NAV=[["home","Home"],["directives","Directives"],["conversation","Conversation"],["documents","Documents"],["timeline","Timeline"],["meeting","Meeting"],["settings","Settings"]];
 const ROUTES=["projects",...NAV.map(([k])=>k)];
 let summaries=null;
 function needsName(){return me&&(!me.name||me.name.toLowerCase()===(me.email||"").split("@")[0].toLowerCase());}
@@ -216,7 +218,7 @@ function render(){
   if(!project){renderNoProject(app);return;}
   renderNav();
   $("#foot").hidden=false;$("#footProject").textContent=project.name;
-  const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewMeeting};
+  const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewMeeting,settings:viewSettings};
   app.innerHTML=`<div class="view">${(views[route]||viewHome)()}</div>`;
   bind(app);
   renderPreviewBar();
@@ -242,9 +244,7 @@ function renderNav(){
   const convCount=isDesigner()?unreadNotes().length:newRepliesForClient().length;
   const newN=notifs.filter(n=>!n.seen_at).length;
   r.innerHTML=`<a class="icon-btn" href="#conversation" aria-label="Conversation">${ICONS.msg}${convCount?`<span class="badge">${convCount}</span>`:""}</a>
-    <button class="icon-btn" id="bellBtn" aria-label="Notifications">${ICONS.bell}${newN?`<span class="badge">${newN}</span>`:""}</button>
-    <span class="who">${esc(me.name)}${LIVE?` · <button id="signout">Sign out</button>`:""}</span>`;
-  if(LIVE)$("#signout",r).onclick=async()=>{await store.signOut();me=null;project=null;render();};
+    <button class="icon-btn" id="bellBtn" aria-label="Notifications">${ICONS.bell}${newN?`<span class="badge">${newN}</span>`:""}</button>`;
   $("#bellBtn",r).onclick=async e=>{e.stopPropagation();const p=$("#bellPop");const open=p.hidden;closePops();if(!open)return;renderBell();p.hidden=false;};
 }
 function renderBell(){
@@ -474,9 +474,21 @@ function viewMeeting(){
   </div>`;
 }
 
+function viewSettings(){
+  return`<div class="page-head"><p class="label">Settings</p><h1>You.</h1></div>
+  <section class="section"><div class="band"><h2>Name</h2><span class="desc"></span></div>
+    <form id="nameSet" class="row" style="max-width:460px"><div class="field"><label for="setName">How your notes and replies are signed</label><input class="input" id="setName" value="${esc(me.name)}" required></div><div class="actions"><button class="btn tiny" type="submit">Save name</button></div></form></section>
+  <section class="section"><div class="band"><h2>Email</h2><span class="desc"></span></div>
+    <form id="emailSet" class="row" style="max-width:460px"><div class="field"><label for="setEmail">The address you sign in with</label><input class="input" id="setEmail" type="email" value="${esc(me.email||"")}" required></div><div class="actions"><button class="btn tiny" type="submit">Change email</button></div><p class="small muted" id="emailMsg">${LIVE?"A confirmation link goes to both the old and the new address; the change takes effect once you've clicked both.":""}</p></form></section>
+  <section class="section"><div class="band"><h2>Sign out</h2><span class="desc"></span></div>
+    <div class="actions"><button class="btn ghost" id="signoutBtn">Sign out of this device</button></div></section>`;
+}
 /* ---------- events ---------- */
 function bind(app){
   app.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ui.room=b.dataset.pick;render();});
+  const ns=$("#nameSet",app);if(ns)ns.onsubmit=async e=>{e.preventDefault();const n=$("#setName",app).value.trim();if(!n)return;await store.setMyName(n);me.name=n;const m=(project.members||[]).find(x=>x.id===me.id);if(m)m.name=n;render();toast("Name saved");};
+  const es=$("#emailSet",app);if(es)es.onsubmit=async e=>{e.preventDefault();const em=$("#setEmail",app).value.trim().toLowerCase();if(!em||em===(me.email||"").toLowerCase())return;const r=await store.setMyEmail(em);$("#emailMsg",app).textContent=r.ok?(LIVE?`Check ${me.email} and ${em} for confirmation links.`:"Email changed."):`Couldn't change it: ${r.error}`;if(r.ok&&!LIVE){me.email=em;const m=(project.members||[]).find(x=>x.id===me.id);if(m)m.email=em;}};
+  const so=$("#signoutBtn",app);if(so)so.onclick=async()=>{await store.signOut();if(LIVE){me=null;project=null;notifs=[];location.hash="";render();}else toast("Preview: sign-out does nothing here");};
   const nt=$("#notifyToggle",app);if(nt)nt.onclick=async()=>{project.notify_clients=!project.notify_clients;await store.setNotifyClients(project.notify_clients);render();toast(project.notify_clients?"Clients will be emailed":"Client emails off");};
   app.querySelectorAll("[data-sort]").forEach(b=>b.onclick=()=>{ui.sort=b.dataset.sort;render();});
   app.querySelectorAll("[data-qedit]").forEach(b=>b.onclick=()=>{ui.editing[b.dataset.qedit]=true;render();$("#ans-"+b.dataset.qedit).focus();});
