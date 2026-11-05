@@ -50,7 +50,7 @@ function autoRoom(text,rooms){
 
 /* ---------- state ---------- */
 let store=null, me=null, project=null, route="home", notifs=[];
-let ui={room:"all",sort:"recent",editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false};
+let ui={room:"all",sort:"recent",open:{},editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false};
 const isDesigner=()=>me&&me.role==="designer";
 const member=id=>(project.members||[]).find(m=>m.id===id)||{name:"—"};
 const nameOf=id=>member(id).name;
@@ -284,7 +284,7 @@ async function renderDashboard(app){
   const needs=list.filter(p=>attn(p).length).length;
   app.innerHTML=`<div class="view">
     <div class="page-head"><p class="label">Studio</p><h1>Hello, ${esc(me.name.split(" ")[0])}.</h1><p class="lede">${list.length?`${list.length} project${list.length>1?"s":""}${needs?` · ${needs} need${needs>1?"":"s"} you`:" · nothing waiting on you"}.`:"No projects yet."}</p></div>
-    <section class="section"><div class="band"><h2>Projects</h2><span class="desc"></span><span class="n">${list.length}</span></div>
+    <section class="section"><div class="band"><h2>Projects</h2><span class="desc"></span></div>
     <div class="dash">${list.map(p=>{const a=attn(p);return`<a class="proj ${a.length?"needs":""}" href="#home" data-open="${p.id}">
       <div class="ptop"><h3>${esc(p.name)}</h3>${a.length?`<span class="tag accent">${a.length===1?a[0]:a.length+" things"}</span>`:""}</div>
       ${p.clients?`<p class="small muted">${esc(p.clients)}</p>`:""}
@@ -359,14 +359,14 @@ function viewHome(){
 function viewDocuments(){
   const d=isDesigner();
   return`<div class="page-head"><p class="label">Documents</p><h1>Your documents</h1><p class="lede">The process, mood boards, fees, architect's drawings.</p></div>
-  <section class="section"><div class="band"><h2>Documents</h2><span class="desc"></span><span class="n">${project.documents.length}</span></div>
+  <section class="section"><div class="band"><h2>Documents</h2><span class="desc"></span></div>
     <div class="cards">${project.documents.map(doc=>`<${doc.url?`a href="${esc(doc.url)}" target="_blank" rel="noopener"`:"div"} class="card"><h3>${esc(doc.title)}</h3><p class="sub">${esc(doc.note)}${d?` · <button class="textlink" data-rmdoc="${doc.id}">remove</button>`:""}</p><span class="side"><span class="tag quiet">${esc(doc.kind||"Link")}</span>${doc.url?`<span class="arrow">→</span>`:`<span class="small muted">Coming</span>`}</span></${doc.url?"a":"div"}>`).join("")||`<p class="muted" style="padding:22px 0">Nothing here yet.</p>`}</div>
     ${d?`<form id="docForm" class="editbox" style="max-width:560px"><p class="label">Add a document</p><div class="row two"><div class="field"><label>Title</label><input class="input" id="docTitle" required placeholder="Signed agreement"></div><div class="field"><label>Type</label><input class="input" id="docKind" placeholder="PDF, Google Doc, Link"></div></div><div class="field"><label>Link (or upload a file)</label><input class="input" id="docUrl" placeholder="https://…"></div><div class="field"><label>One line about it</label><input class="input" id="docNote"></div><div class="actions"><span class="btn ghost tiny filebtn">Choose file<input type="file" id="docFile"></span><span class="small muted" id="docName"></span><button class="btn tiny" type="submit">Add</button></div></form>`:""}
   </section>
   <section class="section"><div class="band"><h2>Mood board</h2><p class="desc">${esc(project.pinterest_note)}</p></div>
     <div class="pin">${project.pinterest_url?`<a class="link url" href="${esc(project.pinterest_url)}" target="_blank" rel="noopener">${esc(project.pinterest_url.replace(/^https?:\/\//,""))}</a>`:`<p class="muted">No board linked yet.</p>`}
       ${d?`<details><summary class="textlink">Edit board</summary><form id="pinForm" class="row" style="margin-top:14px;max-width:560px"><div class="field"><label>Board URL</label><input class="input" id="pinUrl" value="${esc(project.pinterest_url)}"></div><div class="field"><label>Note</label><textarea class="input" id="pinNote">${esc(project.pinterest_note)}</textarea></div><div class="actions"><button class="btn tiny" type="submit">Save</button></div></form></details>`:""}</div></section>
-  <section class="section"><div class="band"><h2>From the architect</h2><span class="desc"></span><span class="n">${project.architect_images.length}</span></div>
+  <section class="section"><div class="band"><h2>From the architect</h2><span class="desc"></span></div>
     <div class="masonry">${project.architect_images.map(i=>`<figure><a href="${esc(i.url)}" target="_blank" rel="noopener"><img src="${esc(i.url)}" alt="${esc(i.caption)}" loading="lazy"></a><figcaption>${esc(i.caption)}${d?` · <button class="textlink" data-rmimg="${i.id}">remove</button>`:""}</figcaption></figure>`).join("")}</div>
     ${d?`<form id="imgForm" class="editbox" style="max-width:560px"><p class="label">Add a drawing or image</p><div class="field"><label>Caption</label><input class="input" id="imgCap" placeholder="Upper floor — revised Nov set"></div><div class="actions"><span class="btn ghost tiny filebtn">Choose file<input type="file" id="imgFile" accept="image/*,.pdf"></span><button class="btn tiny" type="submit">Add</button><span class="small muted" id="imgName"></span></div></form>`:""}
   </section>`;
@@ -377,15 +377,24 @@ function viewDirectives(){
   const convCount=room=>project.notes.filter(n=>n.room===room).length;
   const changedIn=s=>s.questions.filter(q=>q.updated_by&&q.updated_by!==did&&!q.seen_by_designer).length;
   return`<div class="page-head"><p class="label">Directives</p><h1>How you live, and what you need from this house.</h1>${d?"":`<p class="lede">Answer them in your own words, change an answer when you understand it better, and add directives of your own.</p>`}</div>
-  <div class="chips" id="jump">${project.intake.map(s=>`<button class="chip" data-jump="sec-${s.id}">${esc(s.room||s.title)}${changedIn(s)?` <span style="color:var(--accent)">${changedIn(s)}</span>`:""}</button>`).join("")}</div>
-  ${project.intake.map(s=>`<section class="section qa-section" id="sec-${s.id}"><div class="band"><h2>${esc(s.title)}</h2><span class="desc"></span><span class="n">${s.questions.filter(q=>q.a).length}/${s.questions.length}</span></div>
-    <div>${s.questions.map(q=>{
+  <div class="chips" id="jump">${project.intake.map(s=>`<button class="chip ${changedIn(s)?"accent":""}" data-jump="sec-${s.id}">${esc(s.room||s.title)}</button>`).join("")}</div>
+  ${project.intake.map(s=>`<section class="section qa-section" id="sec-${s.id}"><div class="band"><h2>${esc(s.title)}</h2><span class="desc"></span></div>
+    <div class="rows">${s.questions.map(q=>{
       const changed=q.updated_by&&q.updated_by!==did&&!q.seen_by_designer;
       const editing=ui.editing[q.id];
-      return`<div class="qa" id="qa-${q.id}">${q.q?`<p class="q">${esc(q.q)}</p>`:`<p class="label" style="color:var(--accent)">Added by ${esc(nameOf(q.added_by||q.updated_by))}</p>`}
-        ${editing?`<form class="edit" data-qsave="${q.id}"><textarea class="input" id="ans-${q.id}">${esc(q.a)}</textarea><div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-qcancel="${q.id}">Cancel</button></div></form>`
-        :`<p class="a ${q.a?"":"empty"}">${q.a?linkify(q.a):"Open — answer when you're ready."}</p>
-          <div class="meta">${q.updated_at?`<span>${q.updated_by===did?"Recorded":"Updated"} by ${esc(nameOf(q.updated_by))} · ${fmtStamp(q.updated_at)}</span>`:""}${changed?`<span class="tag accent">${q.added_by&&q.added_by!==did?"New":"Changed"}</span>`:""}<button class="textlink" data-qedit="${q.id}">${q.a?"Edit":"Answer"}</button>${d&&changed?`<button class="textlink" data-qseen="${q.id}">Mark seen</button>`:""}</div>`}
+      const open=!!ui.open[q.id]||editing;
+      const title=q.q||q.a;
+      return`<div class="qa ${open?"open":""} ${q.a?"":"blank"}" id="qa-${q.id}">
+        <button class="qrow" data-toggle="${q.id}" aria-expanded="${open}">
+          <span class="qq">${esc(q.q||"Added by "+nameOf(q.added_by||q.updated_by))}</span>
+          <span class="qa-a ${q.a?"":"empty"}">${q.a?esc(q.a):"Open"}</span>
+          <span class="qs">${changed?`<span class="tag accent">${q.added_by&&q.added_by!==did?"New":"Changed"}</span>`:""}<span class="chev">${open?"−":"+"}</span></span>
+        </button>
+        ${open?`<div class="qbody">
+          ${editing?`<form class="edit" data-qsave="${q.id}"><textarea class="input" id="ans-${q.id}">${esc(q.a)}</textarea><div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-qcancel="${q.id}">Cancel</button></div></form>`
+          :`<p class="a ${q.a?"":"empty"}">${q.a?linkify(q.a):"Open — answer when you're ready."}</p>
+            <div class="meta">${q.updated_at?`<span>${q.updated_by===did?"Recorded":"Updated"} by ${esc(nameOf(q.updated_by))} · ${fmtStamp(q.updated_at)}</span>`:""}<button class="textlink" data-qedit="${q.id}">${q.a?"Edit":"Answer"}</button>${d&&changed?`<button class="textlink" data-qseen="${q.id}">Mark seen</button>`:""}</div>`}
+        </div>`:""}
       </div>`;}).join("")}
       ${s.room&&convCount(s.room)?`<div class="qa inconv"><p class="label">From the conversation</p>${project.notes.filter(n=>n.room===s.room).map(n=>`<div class="mini"><div class="rtop"><b>${esc(nameOf(n.author_id))}</b><span>${fmtDate(n.created_at)}</span>${n.integrated_at?`<span class="tag quiet">Integrated</span>`:""}</div><p class="rbody">${linkify(n.body)}</p>${n.replies.map(r=>`<p class="rbody" style="padding-left:16px;border-left:1px solid var(--line)"><b style="font-weight:500">${esc(nameOf(r.author_id))}</b> · ${linkify(r.body)}</p>`).join("")}</div>`).join("")}<div class="actions"><button class="textlink" data-conv="${esc(s.room)}">Open in the conversation →</button></div></div>`:""}
       ${ui.editing["add-"+s.id]?`<form class="qa edit" data-dadd="${s.id}"><p class="label">New directive · ${esc(s.room||s.title)}</p><textarea class="input" id="dir-${s.id}" placeholder="${d?"Something to design to…":"Something you want the design to honor…"}"></textarea><div class="actions"><button class="btn tiny" type="submit">Add</button><button class="textlink" type="button" data-qcancel="add-${s.id}">Cancel</button></div></form>`:`<div class="qa"><div class="actions"><button class="btn ghost tiny" data-dnew="${s.id}">Add a directive</button></div></div>`}
@@ -405,7 +414,7 @@ function viewConversation(){
     <textarea class="input" id="noteBody" placeholder="${d?"Something to show them, or an idea to float…":"We kept thinking about the table…"}"></textarea>
     <div class="files"><span class="btn ghost tiny filebtn">Add image<input type="file" id="noteFiles" accept="image/*" multiple></span>${ui.composeImgs.map(u=>`<img src="${u}" alt="">`).join("")}</div>
     <div class="actions"><button class="btn" type="submit">Post</button></div></form>
-  <section class="section"><div class="band"><div class="chips"><button class="chip ${ui.sort==="recent"?"on":""}" data-sort="recent">Open · recent</button><button class="chip ${ui.sort!=="recent"?"on":""}" data-sort="room">By room</button></div><div class="rooms" ${ui.sort==="recent"?"hidden":""}>${rooms.map(r=>`<button class="chip ${ui.room===r?"on":""}" data-pick="${esc(r)}">${r==="all"?"All":r==="unsorted"?"Unsorted":esc(r)} <span class="muted">${count(r)}</span></button>`).join("")}</div><span class="n">${list.length}</span></div>
+  <section class="section"><div class="band"><div class="chips"><button class="chip ${ui.sort==="recent"?"on":""}" data-sort="recent">Open · recent</button><button class="chip ${ui.sort!=="recent"?"on":""}" data-sort="room">By room</button></div><div class="rooms" ${ui.sort==="recent"?"hidden":""}>${rooms.map(r=>`<button class="chip ${ui.room===r?"on":""}" data-pick="${esc(r)}">${r==="all"?"All":r==="unsorted"?"Unsorted":esc(r)}</button>`).join("")}</div></div>
   ${ui.sort!=="recent"&&ui.room!=="all"&&ui.room!=="unsorted"&&secFor(ui.room)?`<p class="small"><button class="textlink" data-dir="sec-${secFor(ui.room).id}">See the directives for ${esc(ui.room.toLowerCase())} →</button></p>`:""}
   <div class="note-list">${list.map(n=>{
     const mine=n.author_id===me.id,unread=!n.read_at&&n.author_id!==did,editing=ui.editing[n.id];
@@ -430,10 +439,10 @@ function viewTimeline(){
   const cs=currentStage();
   const phases=project.process||[];
   const activePhases=cs?(cs.focus||"").split("·").map(x=>x.trim().toLowerCase()):[];
-  return`<div class="page-head"><p class="label">Timeline</p><h1>Where we are.</h1></div>
-  <section class="section"><div class="band"><h2>How we work</h2><span class="desc"></span><span class="n">${phases.length}</span></div>
+  return`<div class="page-head"><p class="label">Timeline</p><h1>Where things stand.</h1></div>
+  <section class="section"><div class="band"><h2>The process</h2><span class="desc"></span></div>
     <div class="phases">${phases.map((p,i)=>{const on=activePhases.includes(p.title.toLowerCase());return`<div class="phase ${on?"on":""}"><span class="label">${on?"Now":"&nbsp;"}</span><h3>${esc(p.title)}</h3><p class="small">${esc(p.body)}</p></div>`;}).join("")}</div></section>
-  <section class="section"><div class="band"><h2>Meetings</h2><span class="desc"></span><span class="n">${project.stages.filter(s=>s.status==="done").length}/${project.stages.length}</span></div>
+  <section class="section"><div class="band"><h2>Meetings</h2><span class="desc"></span></div>
   <div class="stages">${project.stages.map(s=>{
     const p=s.payment||{};
     if(ui.stageEdit===s.id)return stageForm(s);
@@ -463,7 +472,7 @@ function stageForm(s){
 function viewMeeting(){
   const d=isDesigner(),m=project.meeting;
   const cr=m&&m.change_request;
-  return`<div class="page-head"><p class="label">Meeting</p><h1>Next time we meet.</h1>${d?"":`<p class="lede">If this time doesn't work, the form below will email me. Or text me any time: <span class="phone" id="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></p>`}</div>
+  return`<div class="page-head"><p class="label">Meeting</p><h1>Next meeting</h1>${d?"":`<p class="lede">If this time doesn't work, the form below will email me. Or text me any time: <span class="phone" id="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></p>`}</div>
   <div class="meeting"><div style="display:grid;gap:18px">
     ${m?`<p class="when-big">${fmtWeek(m.when)}<br>${fmtTime(m.when)}</p><p class="label">${esc(m.where)}</p><p style="max-width:52ch;color:var(--ink-2)">${linkify(m.notes)}</p>`:`<p class="when-big">Nothing scheduled.</p>`}
     ${cr?`<div class="req"><span class="label">${cr.kind==="cancel"?"Cancel requested":"Change requested"} · ${esc(nameOf(cr.by))} · ${fmtStamp(cr.at)}</span><p>${linkify(cr.message)}</p>${d?`<div class="actions"><button class="textlink" id="clearReq">Clear request</button></div>`:""}</div>`:""}
@@ -491,7 +500,8 @@ function bind(app){
   const so=$("#signoutBtn",app);if(so)so.onclick=async()=>{await store.signOut();if(LIVE){me=null;project=null;notifs=[];location.hash="";render();}else toast("Preview: sign-out does nothing here");};
   const nt=$("#notifyToggle",app);if(nt)nt.onclick=async()=>{project.notify_clients=!project.notify_clients;await store.setNotifyClients(project.notify_clients);render();toast(project.notify_clients?"Clients will be emailed":"Client emails off");};
   app.querySelectorAll("[data-sort]").forEach(b=>b.onclick=()=>{ui.sort=b.dataset.sort;render();});
-  app.querySelectorAll("[data-qedit]").forEach(b=>b.onclick=()=>{ui.editing[b.dataset.qedit]=true;render();$("#ans-"+b.dataset.qedit).focus();});
+  app.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>{const id=b.dataset.toggle;if(ui.editing[id])return;ui.open[id]=!ui.open[id];render();});
+  app.querySelectorAll("[data-qedit]").forEach(b=>b.onclick=()=>{ui.editing[b.dataset.qedit]=true;ui.open[b.dataset.qedit]=true;render();$("#ans-"+b.dataset.qedit).focus();});
   app.querySelectorAll("[data-qcancel]").forEach(b=>b.onclick=()=>{delete ui.editing[b.dataset.qcancel];render();});
   app.querySelectorAll("[data-qseen]").forEach(b=>b.onclick=async()=>{await store.markAnswerSeen(b.dataset.qseen);project.intake.forEach(s=>s.questions.forEach(q=>{if(q.id===b.dataset.qseen)q.seen_by_designer=true;}));render();});
   app.querySelectorAll("[data-qsave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.qsave,t=$("#ans-"+id).value.trim();await store.saveAnswer(id,t);project.intake.forEach(s=>s.questions.forEach(q=>{if(q.id===id){q.a=t;q.updated_at=new Date().toISOString();q.updated_by=me.id;q.seen_by_designer=isDesigner();}}));delete ui.editing[id];render();toast(isDesigner()?"Saved":`Saved — ${DESIGNER_NAME} will see this`);});
@@ -535,7 +545,7 @@ function bind(app){
 
 /* ---------- boot ---------- */
 function syncRoute(){const h=(location.hash||"").slice(1);route=ROUTES.includes(h)?h:(me&&isDesigner()?"projects":"home");window.scrollTo({top:0});}
-window.addEventListener("hashchange",()=>{summaries=null;syncRoute();ui.editing={};ui.replyOpen={};ui.stageEdit=null;ui.meetingEdit=false;render();});
+window.addEventListener("hashchange",()=>{summaries=null;syncRoute();ui.editing={};ui.open={};ui.replyOpen={};ui.stageEdit=null;ui.meetingEdit=false;render();});
 (async function start(){
   store=LIVE?new SupabaseStore():new MockStore();
   syncRoute();
