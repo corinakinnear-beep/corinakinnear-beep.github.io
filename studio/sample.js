@@ -8,8 +8,8 @@
   const d=(days,h)=>{const t=new Date(2026,10,4,h||10,0,0);t.setDate(t.getDate()+days);return t.toISOString();};
 
   const CORI={id:"u-cori",name:"Corina",email:"designer@example.com",role:"designer"};
-  const BROOK={id:"u-brook",name:"Brook",email:"brook@example.com",role:"client"};
-  const EVAN={id:"u-evan",name:"Evan",email:"evan@example.com",role:"client"};
+  const BROOK={id:"u-brook",name:"Brook",email:"client.one@example.com",role:"client"};
+  const EVAN={id:"u-evan",name:"Evan",email:"client.two@example.com",role:"client"};
 
   window.SAMPLE_PROJECT={
     id:"p-brook-evan",
@@ -102,7 +102,7 @@
   // A second project so the dashboard has something to show.
   const P2=JSON.parse(JSON.stringify(window.SAMPLE_PROJECT));
   P2.id="p-maya";P2.name="Maya's studio apartment";
-  P2.members=[CORI,{id:"u-maya",name:"Maya",email:"maya@example.com",role:"client"}];
+  P2.members=[CORI,{id:"u-maya",name:"Maya",email:"client.three@example.com",role:"client"}];
   P2.notes=[{id:"m1n",author_id:"u-maya",room:"Bedrooms",body:"Could the bed go on the window wall? I keep coming back to waking up with the light.",images:[],created_at:d(-1,21),edited_at:null,read_at:null,integrated_at:null,replies:[]}];
   P2.notifs=[];P2.documents=[];P2.architect_images=[];P2.pinterest_url="";P2.pinterest_note="";
   P2.intake.forEach(s=>s.questions=s.questions.filter(q=>q.q).map(q=>({...q,a:"",updated_at:null,updated_by:null})));
