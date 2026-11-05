@@ -4,7 +4,9 @@
 "use strict";
 const cfg=window.STUDIO_CONFIG||{};
 const LIVE=!!(cfg.SUPABASE_URL&&cfg.SUPABASE_ANON_KEY&&window.supabase);
-const DESIGNER_NAME=cfg.DESIGNER_NAME||"your designer";
+const clone=o=>JSON.parse(JSON.stringify(o));
+/* The designer of the open project, as clients should read it. */
+const dName=()=>(project&&project.designer&&project.designer.name)||"your designer";
 
 /* ---------- helpers ---------- */
 const $=(s,r)=>(r||document).querySelector(s);
@@ -28,20 +30,41 @@ const readFile=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>
 
 /* Automatic room sorting for conversation notes. A note is filed under the room whose
    words it uses most; ties or no match leave it Unsorted for a person to place. */
-const ROOM_WORDS={
-  "Entry & outdoor":["entry","entrance","front door","back door","mudroom","shoes","coats","outdoor","outside","garden","firepit","fire pit","patio","deck","yard","surf","board","bike","wetsuit","outdoor shower","landing","porch","gate","fence","planter"],
-  "Kitchen":["kitchen","island","counter","countertop","range","stove","oven","fridge","sink","pantry","cabinet","backsplash","dishwasher","table","dining","breakfast","toaster","kettle","cooking","cook"],
-  "Living":["living","couch","sofa","fireplace","tv","television","game night","lounge","rug","coffee table","bookshelf","shelves"],
-  "Bedrooms":["bedroom","bed","closet","wardrobe","sleep","nightstand","curtain","blackout","dresser","zoe","nursery","kids room"],
-  "Bathrooms":["bathroom","bath","shower","toilet","vanity","tile","bidet","mirror","towel","tub","sink"],
-  "Loft & office":["loft","office","desk","attic","upstairs","work from home","wfh","study","monitor","projector screen"],
-  "Hosting":["host","hosting","guests","guest","party","dinner party","stay over","overnight","entertain","dishware","plates","glasses"]
+const WORD_BANK={
+  entry:["entry","entrance","front door","back door","mudroom","hallway","shoes","coats","keys","porch"],
+  outdoor:["outdoor","outside","garden","patio","deck","yard","terrace","balcony","fence","gate","planter","firepit","fire pit","bike","shed"],
+  kitchen:["kitchen","island","counter","countertop","range","stove","oven","fridge","sink","pantry","cabinet","backsplash","dishwasher","cooking","cook"],
+  dining:["dining","dining table","dinner table","breakfast"],
+  living:["living","couch","sofa","fireplace","tv","television","lounge","rug","coffee table","bookshelf","shelves"],
+  bedroom:["bedroom","bed","closet","wardrobe","sleep","nightstand","curtain","blackout","dresser","nursery"],
+  bathroom:["bathroom","bath","shower","toilet","vanity","tile","mirror","towel","tub"],
+  office:["office","desk","study","work from home","wfh","monitor"],
+  loft:["loft","attic","upstairs"],
+  laundry:["laundry","washer","dryer","utility"],
+  hosting:["host","hosting","guests","guest","party","dinner party","stay over","overnight","entertain"],
+  garage:["garage","car","parking","workbench"],
+  basement:["basement","cellar"]
 };
+const WORD_ALIAS={work:"office",bath:"bathroom",garden:"outdoor",yard:"outdoor",patio:"outdoor",exterior:"outdoor",outside:"outdoor",lounge:"living",family:"living",closet:"bedroom",sleeping:"bedroom",guest:"hosting",study:"office",entrance:"entry",hall:"entry",mudroom:"entry",utility:"laundry"};
+const ROOM_STOP=["whole","house","home","room","rooms","space","spaces","area","areas","other","general","and","the","main","of"];
+/* Words that file a note under a room: the room's own name, plus everyday words for the kind of room it is. */
+function roomWords(room){
+  const name=String(room||"").toLowerCase().trim();
+  const words=new Set(name?[name]:[]);
+  for(const tok of name.split(/[^a-z0-9']+/).filter(Boolean)){
+    if(ROOM_STOP.includes(tok))continue;
+    const one=tok.replace(/s$/,"");
+    const key=WORD_BANK[tok]?tok:WORD_BANK[one]?one:(WORD_ALIAS[tok]||WORD_ALIAS[one]);
+    if(key)WORD_BANK[key].forEach(w=>words.add(w));
+    else if(one.length>2)words.add(one);
+  }
+  return[...words];
+}
 function autoRoom(text,rooms){
   const t=" "+String(text||"").toLowerCase().replace(/[^a-z0-9' ]+/g," ")+" ";
   let best=null,bestN=0,tie=false;
   for(const room of rooms){
-    const words=ROOM_WORDS[room]||[room.toLowerCase()];
+    const words=roomWords(room);
     let n=0;for(const w of words){const re=new RegExp("(^|\\W)"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(s|es)?(\\W|$)","g");n+=(t.match(re)||[]).length;}
     if(n>bestN){best=room;bestN=n;tie=false;}else if(n===bestN&&n>0)tie=true;
   }
@@ -57,23 +80,35 @@ const nameOf=id=>member(id).name;
 
 /* ---------- Preview store (sample data in this browser only) ---------- */
 class MockStore{
-  constructor(){this.key="studio-preview-"+(cfg.PREVIEW_AS||"any");}
+  constructor(){this.key="studio-preview2-"+(cfg.PREVIEW_AS||"any");}
   load(){
     let saved=null;try{saved=JSON.parse(localStorage.getItem(this.key)||"null");}catch(e){}
     this.all=saved&&saved.all?saved.all:JSON.parse(JSON.stringify(window.SAMPLE_PROJECTS||[window.SAMPLE_PROJECT]));
     this.project=this.all.find(p=>p.id===(saved&&saved.pid))||this.all[0];
-    this.meId=cfg.PREVIEW_AS||(saved&&saved.meId)||"u-cori";
+    this.all.forEach(p=>{p.designer=p.members.find(m=>m.role==="designer")||p.designer;});
+    this.template=saved&&saved.template?saved.template:null;
+    this.meId=cfg.PREVIEW_AS||(saved&&saved.meId)||"u-designer";
   }
-  persist(){try{localStorage.setItem(this.key,JSON.stringify({all:this.all,pid:this.project.id,meId:this.meId}));}catch(e){}}
+  persist(){try{localStorage.setItem(this.key,JSON.stringify({all:this.all,pid:this.project.id,meId:this.meId,template:this.template}));}catch(e){}}
   async init(){this.load();const mine=this.all.filter(p=>p.members.some(m=>m.id===this.meId));if(!mine.includes(this.project))this.project=mine[0];return{me:this.project.members.find(m=>m.id===this.meId),project:this.project};}
   async loadProject(id){this.project=this.all.find(p=>p.id===id)||this.project;this.persist();return this.project;}
   async listProjects(){const did=this.meId;return this.all.filter(p=>p.members.some(m=>m.id===did)).map(p=>{const dz=(p.designer||{}).id;const cs=p.stages.find(s=>s.status==="current");return{id:p.id,name:p.name,clients:p.members.filter(m=>m.role==="client").map(m=>m.name).join(" & "),unread:p.notes.filter(n=>!n.read_at&&n.author_id!==dz).length,changed:p.intake.flatMap(x=>x.questions).filter(q=>q.updated_by&&q.updated_by!==dz&&!q.seen_by_designer).length,stage:cs?cs.title:"",stage_due:cs?cs.due:null,meeting:p.meeting?p.meeting.when:null,meeting_request:!!(p.meeting&&p.meeting.change_request),payment_requested:p.stages.filter(x=>x.payment.status==="requested").length,last_activity:[...p.notes.map(n=>n.created_at),...p.notes.flatMap(n=>n.replies.map(r=>r.created_at))].sort().pop()||null};});}
   switchUser(id){this.meId=id;this.persist();return this.project.members.find(m=>m.id===id);}
   reset(){try{localStorage.removeItem(this.key);}catch(e){}this.load();return{me:this.project.members.find(m=>m.id===this.meId),project:this.project};}
-  async createProject(name,clients){const p=JSON.parse(JSON.stringify(window.SAMPLE_PROJECT));p.id=uid();p.name=name;p.members=[p.designer,...clients.map(c=>({id:uid(),name:c.name||c.email.split("@")[0],email:c.email,role:"client"}))];p.notes=[];p.notifs=[];p.meeting=null;p.documents=[];p.architect_images=[];p.pinterest_url="";p.pinterest_note="";p.intake.forEach(s=>s.questions=s.questions.filter(q=>q.q).map(q=>({...q,a:"",updated_at:null,updated_by:null})));p.stages.forEach((s,i)=>{s.status=i===0?"current":"upcoming";s.due=null;s.payment={status:s.fee?"upcoming":"free",amount:s.fee||0,date:null};});this.all.push(p);this.project=p;this.persist();return p.id;}
+  async createProject(name,clients,t){
+    const dz=this.all.flatMap(p=>p.members).find(m=>m.id===this.meId);
+    const p={id:uid(),name,designer:dz,members:[dz,...clients.map(c=>({id:uid(),name:c.name||c.email.split("@")[0],email:c.email,role:"client"}))],
+      rooms:[...t.rooms],notify_clients:false,pinterest_url:"",pinterest_note:"",documents:[],architect_images:[],notes:[],notifs:[],meeting:null,
+      process:t.process.map(x=>({id:uid(),title:x.title,body:x.body})),
+      intake:t.intake.map(x=>({id:uid(),title:x.title,room:x.room||"",questions:x.questions.map(q=>({id:uid(),q,a:"",updated_at:null,updated_by:null}))})),
+      stages:t.stages.map((x,i)=>({id:uid(),order:i+1,title:x.title,focus:x.focus||"",desc:x.desc||"",deliverable:x.deliverable||"",due:null,status:i===0?"current":"upcoming",standard:x.standard,fee:x.fee,hourly:!!x.hourly,payment:{status:x.fee===0?"free":"upcoming",amount:x.fee||null,date:null}}))};
+    this.all.push(p);this.project=p;this.persist();return p.id;}
+  async getTemplate(){return this.template?clone(this.template):null;}
+  async saveTemplate(t){this.template=clone(t);this.persist();}
+  async saveProfile(pf){this.all.forEach(p=>p.members.forEach(m=>{if(m.id===this.meId)Object.assign(m,pf);}));this.persist();}
   async signIn(){return{ok:true};}
   async signOut(){}
-  async setMyName(n){const m=this.project.members.find(x=>x.id===this.meId);if(m)m.name=n;this.persist();}
+  async setMyName(n){return this.saveProfile({name:n});}
   async loadNotifs(){return (this.project.notifs||[]).filter(n=>n.to===this.meId);}
   async markNotifSeen(id){const n=(this.project.notifs||[]).find(x=>x.id===id);if(n)n.seen_at=new Date().toISOString();this.persist();}
   async markAllNotifsSeen(){(this.project.notifs||[]).forEach(n=>{if(n.to===this.meId&&!n.seen_at)n.seen_at=new Date().toISOString();});this.persist();}
@@ -114,7 +149,9 @@ class SupabaseStore{
     this.projects=(mems||[]).map(m=>m.projects).filter(Boolean);
     // A designer is anyone who runs at least one project, or anyone at all when signup is open and they have no projects yet.
     const designer=(mems||[]).some(m=>m.role==="designer")||(cfg.OPEN_SIGNUP&&!(mems||[]).length);
-    me={id:u.id,email:u.email,name:nm||prefix,role:designer?"designer":"client"};
+    me={id:u.id,email:u.email,name:nm||prefix,named:!!(prof&&prof.name_set),phone:prof&&prof.phone||"",reply_to:prof&&prof.reply_to||"",role:designer?"designer":"client"};
+    // Keep the person's time zone on file so meeting times in emails read in local time.
+    try{const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;if(tz&&prof&&prof.timezone!==tz)await this.sb.from("profiles").update({timezone:tz}).eq("id",u.id);}catch(e){}
     let pid=null;try{pid=localStorage.getItem("studio-project");}catch(e){}
     const chosen=this.projects.find(p=>p.id===pid)||this.projects[0];
     if(!chosen)return{me,project:null};
@@ -125,7 +162,7 @@ class SupabaseStore{
     const sb=this.sb;
     const [{data:p},{data:mems},{data:secs},{data:qs},{data:notes},{data:reps},{data:stages},{data:meet},{data:imgs}]=await Promise.all([
       sb.from("projects").select("*").eq("id",id).single(),
-      sb.from("project_members").select("user_id, role, profiles(id,name,email)").eq("project_id",id),
+      sb.from("project_members").select("user_id, role, profiles(id,name,email,phone)").eq("project_id",id),
       sb.from("intake_sections").select("*").eq("project_id",id).order("position"),
       sb.from("intake_questions").select("*").eq("project_id",id).order("position"),
       sb.from("notes").select("*").eq("project_id",id).order("created_at",{ascending:false}),
@@ -136,12 +173,12 @@ class SupabaseStore{
     ]);
     const {data:docs}=await sb.from("documents").select("*").eq("project_id",id).order("position");
     try{localStorage.setItem("studio-project",id);}catch(e){}
-    const members=(mems||[]).map(m=>({id:m.user_id,role:m.role,name:m.profiles?m.profiles.name:"—",email:m.profiles?m.profiles.email:""}));
+    const members=(mems||[]).map(m=>({id:m.user_id,role:m.role,name:m.profiles?m.profiles.name:"—",email:m.profiles?m.profiles.email:"",phone:m.profiles&&m.profiles.phone||""}));
     this.pid=id;
     const mine=members.find(m=>m.id===me.id);if(mine)me.role=mine.role;
     return{
       id:p.id,name:p.name,designer:members.find(m=>m.role==="designer"),members,
-      rooms:p.rooms||[],designer_phone:p.designer_phone||"",pinterest_url:p.pinterest_url||"",pinterest_note:p.pinterest_note||"",notify_clients:!!p.notify_clients,
+      rooms:p.rooms||[],pinterest_url:p.pinterest_url||"",pinterest_note:p.pinterest_note||"",notify_clients:!!p.notify_clients,
       architect_images:imgs||[],documents:docs||[],
       intake:(secs||[]).map(s=>({id:s.id,title:s.title,room:s.room||"",questions:(qs||[]).filter(q=>q.section_id===s.id).map(q=>({id:q.id,q:q.question||"",a:q.answer||"",updated_at:q.updated_at,updated_by:q.updated_by,added_by:q.added_by,seen_by_designer:q.seen_by_designer}))})),
       notes:(notes||[]).map(n=>({...n,images:n.images||[],replies:(reps||[]).filter(r=>r.note_id===n.id)})),
@@ -150,7 +187,10 @@ class SupabaseStore{
       meeting:meet?{id:meet.id,when:meet.when,where:meet.where||"",notes:meet.notes||"",change_request:meet.change_request}:null
     };
   }
-  async setMyName(n){await this.sb.from("profiles").update({name:n}).eq("id",me.id);}
+  async setMyName(n){await this.sb.from("profiles").update({name:n,name_set:true}).eq("id",me.id);}
+  async saveProfile(pf){const {error}=await this.sb.from("profiles").update({name:pf.name,phone:pf.phone,reply_to:pf.reply_to,name_set:true}).eq("id",me.id);if(error)throw error;}
+  async getTemplate(){const {data}=await this.sb.from("templates").select("data").eq("user_id",me.id).maybeSingle();return data&&data.data||null;}
+  async saveTemplate(t){const {error}=await this.sb.from("templates").upsert({user_id:me.id,data:t,updated_at:new Date().toISOString()});if(error)throw error;}
   async loadNotifs(){const {data}=await this.sb.from("notifications").select("id,subject,body,link,created_at,seen_at").eq("to_user",me.id).order("created_at",{ascending:false}).limit(30);return data||[];}
   async markNotifSeen(id){await this.sb.from("notifications").update({seen_at:new Date().toISOString()}).eq("id",id);}
   async markAllNotifsSeen(){await this.sb.from("notifications").update({seen_at:new Date().toISOString()}).eq("to_user",me.id).is("seen_at",null);}
@@ -180,7 +220,7 @@ class SupabaseStore{
   async removeImage(id){await this.sb.from("architect_images").delete().eq("id",id);}
   async savePinterest(url,note){await this.sb.from("projects").update({pinterest_url:url,pinterest_note:note}).eq("id",this.pid);}
   async setNotifyClients(on){await this.sb.from("projects").update({notify_clients:on}).eq("id",this.pid);}
-  async createProject(name,clients){const {data,error}=await this.sb.rpc("create_project",{p_name:name,p_client_emails:clients.map(c=>c.email),p_client_names:clients.map(c=>c.name),p_intake:window.SAMPLE_PROJECT.intake.map(s=>({title:s.title,room:s.room||"",questions:s.questions.filter(q=>q.q).map(q=>q.q)})),p_process:window.SAMPLE_PROJECT.process,p_stages:window.SAMPLE_PROJECT.stages.map(s=>({title:s.title,focus:s.focus||"",description:s.desc,deliverable:s.deliverable,standard:s.standard,fee:s.fee,hourly:!!s.hourly})),p_rooms:window.SAMPLE_PROJECT.rooms});if(error)throw error;return data;}
+  async createProject(name,clients,t){const {data,error}=await this.sb.rpc("create_project",{p_name:name,p_client_emails:clients.map(c=>c.email),p_client_names:clients.map(c=>c.name),p_intake:t.intake.map(x=>({title:x.title,room:x.room||"",questions:x.questions})),p_process:t.process,p_stages:t.stages.map(x=>({title:x.title,focus:x.focus||"",description:x.desc,deliverable:x.deliverable,standard:x.standard,fee:x.fee,hourly:!!x.hourly})),p_rooms:t.rooms});if(error)throw error;return data;}
 }
 
 /* ---------- derived ---------- */
@@ -189,6 +229,7 @@ const changedAnswers=()=>project.intake.flatMap(s=>s.questions).filter(q=>q.upda
 const openAnswers=()=>project.intake.flatMap(s=>s.questions).filter(q=>!q.a);
 const newRepliesForClient=()=>project.notes.filter(n=>n.author_id!==(project.designer||{}).id&&n.replies.some(r=>r.author_id===(project.designer||{}).id));
 const currentStage=()=>project.stages.find(s=>s.status==="current");
+const clientNames=()=>{const n=project.members.filter(m=>m.role==="client").map(m=>m.name);return n.length>1?n.slice(0,-1).join(", ")+" and "+n[n.length-1]:n[0]||"";};
 function activity(){
   const d=(project.designer||{}).id,a=[];
   for(const n of project.notes){a.push({t:`${nameOf(n.author_id)} added to the conversation${n.room?" · "+n.room:""}`,w:n.created_at,go:"conversation"});for(const r of n.replies)a.push({t:`${nameOf(r.author_id)} replied${n.room?" · "+n.room:""}`,w:r.created_at,go:"conversation"});}
@@ -199,19 +240,20 @@ function activity(){
 
 /* ---------- rendering ---------- */
 const NAV=[["home","Home"],["directives","Directives"],["conversation","Conversation"],["documents","Documents"],["timeline","Timeline"],["meeting","Meeting"]];
-const ROUTES=["projects",...NAV.map(([k])=>k)];
+const ROUTES=["projects","setup",...NAV.map(([k])=>k)];
 let summaries=null;
-function needsName(){return me&&(!me.name||me.name.toLowerCase()===(me.email||"").split("@")[0].toLowerCase());}
+function needsName(){return LIVE&&me&&!me.named;}
 function renderAskName(app){
   $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;
   app.innerHTML=`<div class="signin"><div class="signin-card"><p class="label">One thing</p><h1>What should we call you?</h1><p class="lede">Your first name is how your notes and replies will be signed.</p>
-  <form id="nameForm"><div class="field"><label for="myname">Name</label><input class="input" id="myname" required autocomplete="given-name" placeholder="Brook"></div><div class="actions"><button class="btn" type="submit">That's me</button></div></form></div></div>`;
-  $("#nameForm",app).onsubmit=async e=>{e.preventDefault();const n=$("#myname",app).value.trim();if(!n)return;await store.setMyName(n);me.name=n;const m=(project&&project.members||[]).find(x=>x.id===me.id);if(m)m.name=n;render();};
+  <form id="nameForm"><div class="field"><label for="myname">Name</label><input class="input" id="myname" required autocomplete="given-name" placeholder="Your first name"></div><div class="actions"><button class="btn" type="submit">That's me</button></div></form></div></div>`;
+  $("#nameForm",app).onsubmit=async e=>{e.preventDefault();const n=$("#myname",app).value.trim();if(!n)return;await store.setMyName(n);me.name=n;me.named=true;const m=(project&&project.members||[]).find(x=>x.id===me.id);if(m)m.name=n;render();};
 }
 function render(){
   const app=$("#app");
   if(!me){renderSignIn(app);return;}
   if(needsName()){renderAskName(app);return;}
+  if(route==="setup"){if(isDesigner()){renderSetup(app);return;}route="home";}
   if(isDesigner()&&(route==="projects"||!project)){renderDashboard(app);return;}
   if(!project){renderNoProject(app);return;}
   renderNav();
@@ -230,18 +272,19 @@ function closePops(){$("#menuPop").hidden=true;$("#bellPop").hidden=true;}
 document.addEventListener("click",e=>{if(!e.target.closest(".pop,#menuBtn,#bellBtn"))closePops();});
 function renderNav(){
   const nav=$("#nav");$("#menuBtn").hidden=false;
-  nav.innerHTML=(isDesigner()?`<a href="#projects" class="${route==="projects"?"active":""}">All projects</a>`:"")+NAV.map(([k,l])=>{
+  const P=!!project,D=isDesigner();
+  nav.innerHTML=(D?`<a href="#projects" class="${route==="projects"?"active":""}">All projects</a>`:"")+(P?NAV.map(([k,l])=>{
     let c="";
-    if(isDesigner()){if(k==="conversation"&&unreadNotes().length)c=unreadNotes().length;if(k==="directives"&&changedAnswers().length)c=changedAnswers().length;}
+    if(D){if(k==="conversation"&&unreadNotes().length)c=unreadNotes().length;if(k==="directives"&&changedAnswers().length)c=changedAnswers().length;}
     else{if(k==="conversation"&&newRepliesForClient().length)c=newRepliesForClient().length;if(k==="directives"&&openAnswers().length)c=openAnswers().length;}
-    return`<a href="#${k}" class="${route===k?"active":""}">${l}${c?`<span class="count">${c}</span>`:""}</a>`;}).join("");
+    return`<a href="#${k}" class="${route===k?"active":""}">${l}${c?`<span class="count">${c}</span>`:""}</a>`;}).join(""):"")+(D?`<a href="#setup" class="${route==="setup"?"active":""}">Settings</a>`:"");
   $("#menuBtn").onclick=e=>{e.stopPropagation();const p=$("#menuPop");const open=p.hidden;closePops();p.hidden=!open;};
-  $(".wordmark").href=isDesigner()?"#projects":"#home";
+  $(".wordmark").href=D?"#projects":"#home";
   nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",closePops));
   const r=$("#mastRight");
-  const convCount=isDesigner()?unreadNotes().length:newRepliesForClient().length;
+  const convCount=!P?0:D?unreadNotes().length:newRepliesForClient().length;
   const newN=notifs.filter(n=>!n.seen_at).length;
-  r.innerHTML=`<a class="icon-btn" href="#conversation" aria-label="Conversation">${ICONS.msg}${convCount?`<span class="badge">${convCount}</span>`:""}</a>
+  r.innerHTML=`${P?`<a class="icon-btn" href="#conversation" aria-label="Conversation">${ICONS.msg}${convCount?`<span class="badge">${convCount}</span>`:""}</a>`:""}
     <button class="icon-btn" id="bellBtn" aria-label="Notifications">${ICONS.bell}${newN?`<span class="badge">${newN}</span>`:""}</button>
     <span class="who">${esc(me.name)}${LIVE?` · <button id="signout">Sign out</button>`:""}</span>`;
   if(LIVE)$("#signout",r).onclick=async()=>{await store.signOut();me=null;project=null;render();};
@@ -251,7 +294,7 @@ function renderBell(){
   const p=$("#bellPop");
   const list=notifs.slice(0,20);
   p.innerHTML=`<div class="head"><span class="label">Notifications</span>${list.some(n=>!n.seen_at)?`<button class="textlink" id="seenAll">Mark all read</button>`:""}</div>
-  <div class="items">${list.map(n=>`<button class="notif ${n.seen_at?"":"new"}" data-nid="${n.id}" data-link="${esc(n.link||"#home")}"><span class="s">${n.seen_at?"":`<span class="dot"></span>`}${esc(n.subject)}</span><span class="b">${esc(n.body)}</span><span class="w">${fmtStamp(n.created_at)}</span></button>`).join("")||`<p class="empty">Nothing yet. You'll see it here when ${isDesigner()?"the clients":DESIGNER_NAME} post, reply or change something.</p>`}</div>`;
+  <div class="items">${list.map(n=>`<button class="notif ${n.seen_at?"":"new"}" data-nid="${n.id}" data-link="${esc(n.link||"#home")}"><span class="s">${n.seen_at?"":`<span class="dot"></span>`}${esc(n.subject)}</span><span class="b">${esc(n.body)}</span><span class="w">${fmtStamp(n.created_at)}</span></button>`).join("")||`<p class="empty">Nothing yet. You'll see it here when ${isDesigner()?"your clients":esc(dName())} post, reply or change something.</p>`}</div>`;
   p.querySelectorAll("[data-nid]").forEach(b=>b.onclick=async()=>{const n=notifs.find(x=>x.id===b.dataset.nid);if(n&&!n.seen_at){n.seen_at=new Date().toISOString();await store.markNotifSeen(n.id);}closePops();const h=(b.dataset.link||"#home").replace(/^#/,"");if(h===route)render();else location.hash=h;});
   const sa=$("#seenAll",p);if(sa)sa.onclick=async()=>{for(const n of notifs)if(!n.seen_at){n.seen_at=new Date().toISOString();}await store.markAllNotifsSeen();renderNav();renderBell();};
 }
@@ -260,16 +303,16 @@ function renderPreviewBar(){
   if(LIVE){bar.hidden=true;return;}
   bar.hidden=false;
   const fixed=!!cfg.PREVIEW_AS;
-  bar.innerHTML=`<span>Preview · sample data</span><span class="spacer"></span><span>${fixed?`${me.role==="designer"?"Your side":"Client side"} · ${esc(me.name)}`:"Viewing as"}</span>${fixed?"":project.members.map(m=>`<button class="chip ${m.id===me.id?"on":""}" data-user="${m.id}">${esc(m.name)}</button>`).join("")}<button class="chip" id="resetSample">Reset sample</button>`;
+  bar.innerHTML=`<span>Preview · sample data</span><span class="spacer"></span><span>${fixed?`${me.role==="designer"?"Designer side":"Client side"} · ${esc(me.name)}`:"Viewing as"}</span>${fixed||!project?"":project.members.map(m=>`<button class="chip ${m.id===me.id?"on":""}" data-user="${m.id}">${esc(m.name)}</button>`).join("")}<button class="chip" id="resetSample">Reset sample</button>`;
   bar.querySelectorAll("[data-user]").forEach(b=>b.onclick=()=>{me=store.switchUser(b.dataset.user);ui.editing={};render();});
-  $("#resetSample",bar).onclick=()=>{const r=store.reset();me=r.me;project=r.project;render();toast("Sample data reset");};
+  $("#resetSample",bar).onclick=()=>{const r=store.reset();me=r.me;project=r.project;template=null;T=null;tDirty=false;render();toast("Sample data reset");};
 }
 function renderSignIn(app){
   $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;$("#previewBar").hidden=true;
   app.innerHTML=`<div class="signin"><div class="signin-card">
     <p class="label">Private</p>
     <h1>Welcome.</h1>
-    <p class="lede">Type the email you use with ${esc(DESIGNER_NAME)} and we'll send a link that signs you in. No password.</p>
+    <p class="lede">Type your email and we'll send a link that signs you in. No password.</p>
     <form id="signinForm"><div class="field"><label for="email">Email</label><input class="input" id="email" type="email" required autocomplete="email" placeholder="you@example.com"></div>
     <div class="actions"><button class="btn" type="submit">Send me a link</button></div></form>
     <p class="small muted" id="signinMsg"></p></div></div>`;
@@ -278,7 +321,7 @@ function renderSignIn(app){
 async function renderDashboard(app){
   renderNav();
   $("#foot").hidden=false;$("#footProject").textContent="All projects";
-  if(!summaries){app.innerHTML=`<div class="view"><div class="page-head"><p class="label">Studio</p><h1>Hello, ${esc(me.name.split(" ")[0])}.</h1></div></div>`;summaries=await store.listProjects();if(route!=="projects")return;}
+  if(!summaries){app.innerHTML=`<div class="view"><div class="page-head"><p class="label">Studio</p><h1>Hello, ${esc(me.name.split(" ")[0])}.</h1></div></div>`;summaries=await store.listProjects();if(route!=="projects"&&project)return;}
   const list=summaries;
   const attn=p=>{const a=[];if(p.unread)a.push(`${p.unread} unread`);if(p.changed)a.push(`${p.changed} directive${p.changed>1?"s":""} changed`);if(p.meeting_request)a.push("meeting request");if(p.payment_requested)a.push(`${p.payment_requested} payment${p.payment_requested>1?"s":""} requested`);return a;};
   const needs=list.filter(p=>attn(p).length).length;
@@ -300,25 +343,21 @@ async function renderDashboard(app){
   </div>`;
   app.querySelectorAll("[data-open]").forEach(a=>a.onclick=async e=>{e.preventDefault();project=await store.loadProject(a.dataset.open);summaries=null;ui.room="all";ui.sort="recent";location.hash="home";if(route==="home")render();});
   $("#newProjBtn",app).onclick=()=>{const w=$("#newProjWrap",app);w.hidden=false;renderNewProjectForm(w);w.scrollIntoView({behavior:"smooth",block:"start"});};
+  if(!list.length){const w=$("#newProjWrap",app);w.hidden=false;renderNewProjectForm(w);}
   renderPreviewBar();
 }
 function renderNewProjectForm(w){
-  w.innerHTML=`<section class="section"><div class="band"><h2>New project</h2><p class="desc">Starts with your standard stages, intake questions and rooms. Nobody is emailed by this.</p></div>
-  <form id="newProj" class="row" style="max-width:560px"><div class="field"><label for="pname">Project name</label><input class="input" id="pname" required placeholder="The Nguyens' kitchen"></div>
-  <div class="field"><label for="pemails">Clients, one per line, as Name &lt;email&gt;</label><textarea class="input" id="pemails" required placeholder="Brook &lt;brook@example.com&gt;&#10;Evan &lt;evan@example.com&gt;"></textarea></div>
+  w.innerHTML=`<section class="section"><div class="band"><h2>New project</h2><p class="desc">Starts from your template: rooms, questions and meetings. Nobody is emailed by this. <a class="link" href="#setup">Edit your template</a></p></div>
+  <form id="newProj" class="row" style="max-width:560px"><div class="field"><label for="pname">Project name</label><input class="input" id="pname" required placeholder="The Okafors' kitchen"></div>
+  <div class="field"><label for="pemails">Clients, one per line, as Name &lt;email&gt;</label><textarea class="input" id="pemails" required placeholder="Sam &lt;sam@example.com&gt;&#10;Priya &lt;priya@example.com&gt;"></textarea></div>
   <div class="actions"><button class="btn" type="submit">Create project</button></div></form></section>`;
-  $("#newProj",w).onsubmit=async e=>{e.preventDefault();const name=$("#pname",w).value.trim();const clients=$("#pemails",w).value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(.*?)\s*<([^>]+)>$/);return m?{name:m[1].trim(),email:m[2].trim().toLowerCase()}:{name:"",email:s.toLowerCase()};});try{const id=await store.createProject(name,clients);project=await store.loadProject(id);summaries=null;location.hash="home";render();toast("Project created");}catch(err){toast("Couldn't create: "+err.message);}};
+  $("#newProj",w).onsubmit=async e=>{e.preventDefault();const name=$("#pname",w).value.trim();const clients=$("#pemails",w).value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(.*?)\s*<([^>]+)>$/);return m?{name:m[1].trim(),email:m[2].trim().toLowerCase()}:{name:"",email:s.toLowerCase()};});try{const id=await store.createProject(name,clients,await loadTemplate());project=await store.loadProject(id);summaries=null;if(route==="home")render();else location.hash="home";toast("Project created");}catch(err){toast("Couldn't create: "+err.message);}};
 }
 function renderNoProject(app){
   $("#menuBtn").hidden=true;closePops();$("#foot").hidden=true;
   $("#mastRight").innerHTML=`<span class="who">${esc(me.name)} · <button id="signout">Sign out</button></span>`;
   $("#signout").onclick=async()=>{await store.signOut();me=null;render();};
-  if(!isDesigner()){app.innerHTML=`<div class="signin"><div class="signin-card"><h1>Almost.</h1><p class="lede">You're signed in, but no project is linked to this email yet. ${esc(DESIGNER_NAME)} can add you from her side — if you expected to be here, tell her which email you used.</p></div></div>`;return;}
-  app.innerHTML=`<div class="view"><div class="page-head"><p class="label">New project</p><h1>Start a project.</h1><p class="lede">Give it a name and the clients. It starts with your standard stages, intake questions and rooms, which you can edit after. Nobody is emailed by this; clients only hear about Studio when you tell them.</p></div>
-  <form id="newProj" class="row" style="max-width:560px"><div class="field"><label for="pname">Project name</label><input class="input" id="pname" required placeholder="Brook and Evan's home"></div>
-  <div class="field"><label for="pemails">Clients, one per line, as Name &lt;email&gt;</label><textarea class="input" id="pemails" required placeholder="Brook &lt;brook@example.com&gt;&#10;Evan &lt;evan@example.com&gt;"></textarea></div>
-  <div class="actions"><button class="btn" type="submit">Create project</button></div></form></div>`;
-  $("#newProj",app).onsubmit=async e=>{e.preventDefault();const name=$("#pname",app).value.trim();const clients=$("#pemails",app).value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(.*?)\s*<([^>]+)>$/);return m?{name:m[1].trim(),email:m[2].trim().toLowerCase()}:{name:"",email:s.toLowerCase()};});try{const id=await store.createProject(name,clients);project=await store.loadProject(id);route="home";location.hash="home";render();toast("Project created");}catch(err){toast("Couldn't create: "+err.message);}};
+  app.innerHTML=`<div class="signin"><div class="signin-card"><h1>Almost.</h1><p class="lede">You're signed in, but no project is linked to this email yet. Your designer can add you from their side. If you expected to be here, tell them which email you used.</p></div></div>`;
 }
 
 /* ---------- views ---------- */
@@ -342,23 +381,23 @@ function viewHome(){
   }else{
     lede=`${cs?`We're in the <b>${esc(cs.title.toLowerCase())}</b> stage${cs.due?`, due ${fmtLong(cs.due)}`:""}.`:""} ${m?`Next we meet ${fmtWeek(m.when)} at ${fmtTime(m.when)}.`:""} ${open?`${open} directive${open>1?"s":""} still open.`:""}`;
     cards=[
-      ["conversation","Conversation",`New thoughts, photos and questions, whenever they come${replied?` · ${replied} with replies from ${esc(DESIGNER_NAME)}`:""}`,replied||""],
+      ["conversation","Conversation",`New thoughts, photos and questions, whenever they come${replied?` · ${replied} with replies from ${esc(dName())}`:""}`,replied||""],
       ["directives","Directives",`How you live and what you need from each room — change or add to it any time`,open||""],
       ["meeting","Next meeting",m?`${fmtWeek(m.when)} · ${fmtTime(m.when)}${req?" · change requested":""}`:"Nothing scheduled yet",""],
       ["timeline","Timeline",cs?`${cs.title} now · ${project.stages.filter(s=>s.status==="done").length} of ${project.stages.length} stages done`:"Stages, deliverables and payments",""],
-      ["documents","Documents",`Fees and process, the Pinterest board, the architect's drawings`,""]
+      ["documents","Documents",`Documents, the mood board and drawings`,""]
     ];
   }
   return`<div class="page-head"><p class="label">${esc(project.name)}</p><h1>Hello, ${esc(firstName)}.</h1><p class="lede">${lede}</p></div>
   <div class="home-grid">
     <div class="cards">${cards.map(([k,t,s,n])=>`<a class="card" href="#${k}"><h3>${t}</h3><p class="sub">${s}</p><span class="side">${n?`<span class="tag accent">${n}</span>`:""}<span class="arrow">→</span></span></a>`).join("")}</div>
-    <div class="statline">${d?`<div class="switchrow"><span class="label">Email the clients about replies and meeting changes</span><button class="chip ${project.notify_clients?"on":""}" id="notifyToggle">${project.notify_clients?"On":"Off"}</button>${project.notify_clients?"":`<span class="small muted">Off until you turn it on. Brook and Evan get nothing by email.</span>`}</div>`:""}<p class="label">Recently</p><div class="activity">${activity().map(a=>`<a class="act" href="#${a.go}"><span class="t">${esc(a.t)}</span><span class="w">${fmtStamp(a.w)}</span></a>`).join("")||`<p class="muted small">Nothing yet.</p>`}</div></div>
+    <div class="statline">${d?`<div class="switchrow"><span class="label">Email the clients about replies and meeting changes</span><button class="chip ${project.notify_clients?"on":""}" id="notifyToggle">${project.notify_clients?"On":"Off"}</button>${project.notify_clients?"":`<span class="small muted">Off until you turn it on. ${esc(clientNames()||"Your clients")} ${project.members.filter(m=>m.role==="client").length===1?"gets":"get"} nothing by email.</span>`}</div>`:""}<p class="label">Recently</p><div class="activity">${activity().map(a=>`<a class="act" href="#${a.go}"><span class="t">${esc(a.t)}</span><span class="w">${fmtStamp(a.w)}</span></a>`).join("")||`<p class="muted small">Nothing yet.</p>`}</div></div>
   </div>`;
 }
 
 function viewDocuments(){
   const d=isDesigner();
-  return`<div class="page-head"><p class="label">Documents</p><h1>Your documents</h1><p class="lede">The process, mood boards, fees, architect's drawings.</p></div>
+  return`<div class="page-head"><p class="label">Documents</p><h1>Your documents</h1></div>
   <section class="section"><div class="band"><h2>Documents</h2><span class="desc"></span><span class="n">${project.documents.length}</span></div>
     <div class="cards">${project.documents.map(doc=>`<${doc.url?`a href="${esc(doc.url)}" target="_blank" rel="noopener"`:"div"} class="card"><h3>${esc(doc.title)}</h3><p class="sub">${esc(doc.note)}${d?` · <button class="textlink" data-rmdoc="${doc.id}">remove</button>`:""}</p><span class="side"><span class="tag quiet">${esc(doc.kind||"Link")}</span>${doc.url?`<span class="arrow">→</span>`:`<span class="small muted">Coming</span>`}</span></${doc.url?"a":"div"}>`).join("")||`<p class="muted" style="padding:22px 0">Nothing here yet.</p>`}</div>
     ${d?`<form id="docForm" class="editbox" style="max-width:560px"><p class="label">Add a document</p><div class="row two"><div class="field"><label>Title</label><input class="input" id="docTitle" required placeholder="Signed agreement"></div><div class="field"><label>Type</label><input class="input" id="docKind" placeholder="PDF, Google Doc, Link"></div></div><div class="field"><label>Link (or upload a file)</label><input class="input" id="docUrl" placeholder="https://…"></div><div class="field"><label>One line about it</label><input class="input" id="docNote"></div><div class="actions"><span class="btn ghost tiny filebtn">Choose file<input type="file" id="docFile"></span><span class="small muted" id="docName"></span><button class="btn tiny" type="submit">Add</button></div></form>`:""}
@@ -366,9 +405,9 @@ function viewDocuments(){
   <section class="section"><div class="band"><h2>Mood board</h2><p class="desc">${esc(project.pinterest_note)}</p></div>
     <div class="pin">${project.pinterest_url?`<a class="link url" href="${esc(project.pinterest_url)}" target="_blank" rel="noopener">${esc(project.pinterest_url.replace(/^https?:\/\//,""))}</a>`:`<p class="muted">No board linked yet.</p>`}
       ${d?`<details><summary class="textlink">Edit board</summary><form id="pinForm" class="row" style="margin-top:14px;max-width:560px"><div class="field"><label>Board URL</label><input class="input" id="pinUrl" value="${esc(project.pinterest_url)}"></div><div class="field"><label>Note</label><textarea class="input" id="pinNote">${esc(project.pinterest_note)}</textarea></div><div class="actions"><button class="btn tiny" type="submit">Save</button></div></form></details>`:""}</div></section>
-  <section class="section"><div class="band"><h2>From the architect</h2><span class="desc"></span><span class="n">${project.architect_images.length}</span></div>
+  <section class="section"><div class="band"><h2>Drawings</h2><span class="desc"></span><span class="n">${project.architect_images.length}</span></div>
     <div class="masonry">${project.architect_images.map(i=>`<figure><a href="${esc(i.url)}" target="_blank" rel="noopener"><img src="${esc(i.url)}" alt="${esc(i.caption)}" loading="lazy"></a><figcaption>${esc(i.caption)}${d?` · <button class="textlink" data-rmimg="${i.id}">remove</button>`:""}</figcaption></figure>`).join("")}</div>
-    ${d?`<form id="imgForm" class="editbox" style="max-width:560px"><p class="label">Add a drawing or image</p><div class="field"><label>Caption</label><input class="input" id="imgCap" placeholder="Upper floor — revised Nov set"></div><div class="actions"><span class="btn ghost tiny filebtn">Choose file<input type="file" id="imgFile" accept="image/*,.pdf"></span><button class="btn tiny" type="submit">Add</button><span class="small muted" id="imgName"></span></div></form>`:""}
+    ${d?`<form id="imgForm" class="editbox" style="max-width:560px"><p class="label">Add a drawing or image</p><div class="field"><label>Caption</label><input class="input" id="imgCap" placeholder="Upper floor, revised set"></div><div class="actions"><span class="btn ghost tiny filebtn">Choose file<input type="file" id="imgFile" accept="image/*,.pdf"></span><button class="btn tiny" type="submit">Add</button><span class="small muted" id="imgName"></span></div></form>`:""}
   </section>`;
 }
 
@@ -376,7 +415,7 @@ function viewDirectives(){
   const d=isDesigner(),did=(project.designer||{}).id;
   const convCount=room=>project.notes.filter(n=>n.room===room).length;
   const changedIn=s=>s.questions.filter(q=>q.updated_by&&q.updated_by!==did&&!q.seen_by_designer).length;
-  return`<div class="page-head"><p class="label">Directives</p><h1>How you live, and what you need from this house.</h1>${d?"":`<p class="lede">Answer them in your own words, change an answer when you understand it better, and add directives of your own.</p>`}</div>
+  return`<div class="page-head"><p class="label">Directives</p><h1>How you live, and what you need from this space.</h1>${d?"":`<p class="lede">Answer them in your own words, change an answer when you understand it better, and add directives of your own.</p>`}</div>
   <div class="chips" id="jump">${project.intake.map(s=>`<button class="chip" data-jump="sec-${s.id}">${esc(s.room||s.title)}${changedIn(s)?` <span style="color:var(--accent)">${changedIn(s)}</span>`:""}</button>`).join("")}</div>
   ${project.intake.map(s=>`<section class="section qa-section" id="sec-${s.id}"><div class="band"><h2>${esc(s.title)}</h2><span class="desc"></span><span class="n">${s.questions.filter(q=>q.a).length}/${s.questions.length}</span></div>
     <div>${s.questions.map(q=>{
@@ -410,7 +449,7 @@ function viewConversation(){
   <div class="note-list">${list.map(n=>{
     const mine=n.author_id===me.id,unread=!n.read_at&&n.author_id!==did,editing=ui.editing[n.id];
     const state=[];
-    if(n.author_id!==did){state.push(n.read_at?`<span class="tag quiet">Read by ${esc(DESIGNER_NAME)} · ${fmtDate(n.read_at)}</span>`:`<span class="tag accent">${d?"Unread":"Not read yet"}</span>`);if(n.integrated_at)state.push(`<span class="tag">Integrated · ${fmtDate(n.integrated_at)}</span>`);}
+    if(n.author_id!==did){state.push(n.read_at?`<span class="tag quiet">Read by ${esc(dName())} · ${fmtDate(n.read_at)}</span>`:`<span class="tag accent">${d?"Unread":"Not read yet"}</span>`);if(n.integrated_at)state.push(`<span class="tag">Integrated · ${fmtDate(n.integrated_at)}</span>`);}
     return`<article class="note ${unread?"unread":""}" id="note-${n.id}"><div class="top">${unread&&d?`<span class="dot"></span>`:""}<span class="by">${esc(nameOf(n.author_id))}</span><span class="when">${fmtStamp(n.created_at)}${n.edited_at?` · edited ${fmtStamp(n.edited_at)}`:""}</span>${sel(n.room,n.id)}</div>
       ${editing?`<form data-nsave="${n.id}" class="ask"><textarea class="input" id="nb-${n.id}">${esc(n.body)}</textarea><div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-ncancel="${n.id}">Cancel</button></div></form>`:`<p class="body">${linkify(n.body)}</p>`}
       ${n.images.length?`<div class="imgs">${n.images.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join("")}</div>`:""}
@@ -441,7 +480,7 @@ function viewTimeline(){
       <div class="head"><h3>${esc(s.title)}</h3>${s.status==="current"?`<span class="tag accent">Now</span>`:s.status==="done"?`<span class="tag quiet">Done</span>`:""}${s.due?`<span class="small muted">${s.status==="done"?"":"Expected "}${fmtLong(s.due)}</span>`:""}</div>
       ${s.focus?`<p class="label" style="color:var(--accent)">${esc(s.focus)}</p>`:""}
       <div class="grid"><div class="kv"><span class="label">What happens</span><span class="v">${esc(s.desc)}</span>${s.deliverable?`<span class="label" style="margin-top:8px">You receive</span><span class="v">${esc(s.deliverable)}</span>`:""}</div>
-        <div class="kv"><span class="label">Fee</span><span class="fee">${s.standard!=null?`<s>${money(s.standard)}</s>`:""}${s.fee?money(s.fee)+(s.hourly?"/hr":""):"Free"}</span></div>
+        <div class="kv"><span class="label">Fee</span><span class="fee">${s.standard!=null&&s.standard>(s.fee||0)?`<s>${money(s.standard)}</s>`:""}${s.fee?money(s.fee)+(s.hourly?"/hr":""):s.fee===0?"Free":`<span class="tbc">${d?"Not set":"To be confirmed"}</span>`}</span></div>
         <div class="kv"><span class="label">Payment</span><span class="pay ${p.status}"><span class="sq"></span>${payLabel[p.status]||p.status}${p.amount?` · ${money(p.amount)}`:""}${p.date?` · ${fmtDate(p.date)}`:""}</span></div></div>
       ${d?`<div class="actions"><button class="textlink" data-sedit="${s.id}">Edit stage</button></div>`:""}</div></div>`;}).join("")}
   ${ui.stageEdit==="new"?stageForm({id:"new",order:project.stages.length+1,title:"",focus:"",desc:"",deliverable:"",due:null,status:"upcoming",standard:null,fee:null,hourly:false,payment:{status:"upcoming",amount:null,date:null}}):""}
@@ -451,7 +490,7 @@ function stageForm(s){
   const opt=(v,cur,l)=>`<option value="${v}" ${v===cur?"selected":""}>${l}</option>`;
   return`<form class="editbox" data-ssave="${s.id}"><p class="label">${s.id==="new"?"New stage":"Edit stage"}</p>
   <div class="row two"><div class="field"><label>Title</label><input class="input" name="title" value="${esc(s.title)}" required></div><div class="field"><label>Order</label><input class="input" name="order" type="number" value="${s.order}"></div></div>
-  <div class="field"><label>Focus (phases, separated by ·)</label><input class="input" name="focus" value="${esc(s.focus||"")}" placeholder="Movement patterns · Feeling"></div>
+  <div class="field"><label>Focus (phases, separated by ·)</label><input class="input" name="focus" value="${esc(s.focus||"")}" placeholder="Discover · Concept"></div>
   <div class="field"><label>What happens</label><textarea class="input" name="desc" style="min-height:70px">${esc(s.desc)}</textarea></div>
   <div class="field"><label>They receive</label><textarea class="input" name="deliverable" style="min-height:70px">${esc(s.deliverable)}</textarea></div>
   <div class="row three"><div class="field"><label>Status</label><select class="input" name="status">${opt("upcoming",s.status,"Upcoming")}${opt("current",s.status,"Now")}${opt("done",s.status,"Done")}</select></div><div class="field"><label>Expected date</label><input class="input" name="due" type="date" value="${toDateInput(s.due)}"></div><div class="field"><label>Hourly?</label><select class="input" name="hourly">${opt("0",s.hourly?"1":"0","No")}${opt("1",s.hourly?"1":"0","Yes")}</select></div></div>
@@ -463,7 +502,7 @@ function stageForm(s){
 function viewMeeting(){
   const d=isDesigner(),m=project.meeting;
   const cr=m&&m.change_request;
-  return`<div class="page-head"><p class="label">Meeting</p><h1>Next time we meet.</h1>${d?"":`<p class="lede">If this time doesn't work, the form below will email ${esc((project.designer||{}).name||DESIGNER_NAME)}.${project.designer_phone?` Or text any time: <span class="phone" id="phone">${esc(project.designer_phone)}</span>`:""}</p>`}</div>
+  return`<div class="page-head"><p class="label">Meeting</p><h1>Next time we meet.</h1>${d?"":`<p class="lede">If this time doesn't work, the form below will email ${esc(dName())}.${(project.designer||{}).phone?` Or text any time: <span class="phone" id="phone">${esc(project.designer.phone)}</span>`:""}</p>`}</div>
   <div class="meeting"><div style="display:grid;gap:18px">
     ${m?`<p class="when-big">${fmtWeek(m.when)}<br>${fmtTime(m.when)}</p><p class="label">${esc(m.where)}</p><p style="max-width:52ch;color:var(--ink-2)">${linkify(m.notes)}</p>`:`<p class="when-big">Nothing scheduled.</p>`}
     ${cr?`<div class="req"><span class="label">${cr.kind==="cancel"?"Cancel requested":"Change requested"} · ${esc(nameOf(cr.by))} · ${fmtStamp(cr.at)}</span><p>${linkify(cr.message)}</p>${d?`<div class="actions"><button class="textlink" id="clearReq">Clear request</button></div>`:""}</div>`:""}
@@ -474,6 +513,82 @@ function viewMeeting(){
   </div>`;
 }
 
+/* ---------- settings: the designer's details and their template for new projects ---------- */
+let template=null,T=null,tDirty=false;
+async function loadTemplate(){if(!template)template=(await store.getTemplate())||clone(window.STUDIO_TEMPLATE);return template;}
+const tGet=path=>path.split(".").reduce((o,k)=>o[k],T);
+function tParent(path){const ks=path.split(".");const k=ks.pop();return[ks.length?tGet(ks.join(".")):T,k];}
+const T_BLANK={rooms:()=>"",process:()=>({title:"",body:""}),intake:()=>({title:"",room:"",questions:[""]}),questions:()=>"",stages:()=>({title:"",focus:"",desc:"",deliverable:"",standard:null,fee:null,hourly:false})};
+function cleanTemplate(t){
+  const s=x=>String(x==null?"":x).trim();
+  const rooms=[...new Set(t.rooms.map(s).filter(Boolean))];
+  return{rooms,
+    process:t.process.map(p=>({title:s(p.title),body:s(p.body)})).filter(p=>p.title),
+    intake:t.intake.map(x=>({title:s(x.title)||s(x.room),room:rooms.includes(s(x.room))?s(x.room):"",questions:x.questions.map(s).filter(Boolean)})).filter(x=>x.title),
+    stages:t.stages.map(x=>({title:s(x.title),focus:s(x.focus),desc:s(x.desc),deliverable:s(x.deliverable),standard:x.standard,fee:x.fee,hourly:!!x.hourly})).filter(x=>x.title)};
+}
+async function renderSetup(app){
+  renderNav();
+  $("#foot").hidden=false;$("#footProject").textContent="Settings";
+  if(!T){await loadTemplate();T=clone(template);tDirty=false;if(route!=="setup")return;}
+  const tid=path=>"t-"+path.replace(/\./g,"-");
+  const inp=(path,val,ph,extra)=>`<input class="input" id="${tid(path)}" data-t="${path}" value="${esc(val==null?"":val)}" placeholder="${esc(ph||"")}" ${extra||""}>`;
+  const area=(path,val,ph,cls)=>`<textarea class="input ${cls||""}" id="${tid(path)}" data-t="${path}" placeholder="${esc(ph||"")}">${esc(val||"")}</textarea>`;
+  const tools=(path,i)=>`<span class="tools">${i>0?`<button type="button" class="textlink" data-tup="${path}">Up</button>`:""}<button type="button" class="textlink" data-trm="${path}">Remove</button></span>`;
+  const saveRow=`<div class="actions"><button type="button" class="btn" data-tsave>Save template</button><span class="tag accent" data-dirty ${tDirty?"":"hidden"}>Unsaved changes</span><button type="button" class="textlink" data-treset>Start again from the starter template</button></div>`;
+  const roomOpts=cur=>`<option value="">No room</option>${T.rooms.map((r,i)=>`<option data-ri="${i}" value="${esc(r)}" ${r&&r===cur?"selected":""}>${esc(r||"Unnamed room")}</option>`).join("")}`;
+  app.innerHTML=`<div class="view">
+  <div class="page-head"><p class="label">Settings</p><h1>Your studio.</h1></div>
+  <section class="section"><div class="band"><h2>You</h2><p class="desc">Clients see your name on everything you write and your phone number on the Meeting page. Emails Studio sends them are signed &ldquo;${esc(me.name)} via Studio&rdquo;.</p></div>
+    <form id="profForm" class="row" style="max-width:560px">
+      <div class="field"><label for="pfName">Your name</label><input class="input" id="pfName" required autocomplete="given-name" value="${esc(me.name)}"></div>
+      <div class="field"><label for="pfPhone">Phone, for clients to text</label><input class="input" id="pfPhone" type="tel" autocomplete="tel" value="${esc(me.phone||"")}" placeholder="Leave empty to keep it off the Meeting page"></div>
+      <div class="field"><label for="pfReply">When a client replies to an email from Studio, send it to</label><input class="input" id="pfReply" type="email" value="${esc(me.reply_to||"")}" placeholder="${esc(me.email||"you@example.com")}"></div>
+      <div class="actions"><button class="btn" type="submit">Save</button></div>
+    </form></section>
+  <section class="section"><div class="band"><h2>Your template</h2><p class="desc">What each new project starts with. Projects you've already started keep what they have.</p></div>
+    ${saveRow}
+    <div class="setup-block"><h3>Rooms</h3><p class="hint">Directives are grouped by room, and notes in the conversation are filed under them.</p>
+      <div class="tlist">${T.rooms.map((r,i)=>`<div class="trow">${inp("rooms."+i,r,"Room name")}${tools("rooms."+i,i)}</div>`).join("")}</div>
+      <div class="actions"><button type="button" class="btn ghost tiny" data-tadd="rooms">Add a room</button></div></div>
+    <div class="setup-block"><h3>How you work</h3><p class="hint">The phases of your process, shown at the top of each project's Timeline.</p>
+      <div class="tlist">${T.process.map((p,i)=>`<div class="tcard"><div class="trow">${inp("process."+i+".title",p.title,"Phase name")}${tools("process."+i,i)}</div>${area("process."+i+".body",p.body,"What happens in this phase, in a sentence or two","short")}</div>`).join("")}</div>
+      <div class="actions"><button type="button" class="btn ghost tiny" data-tadd="process">Add a phase</button></div></div>
+    <div class="setup-block"><h3>Directives</h3><p class="hint">The questions you ask every client, in sections. Clients answer in their own words and can add directives of their own.</p>
+      <div class="tlist">${T.intake.map((x,i)=>`<div class="tcard"><div class="trow">${inp("intake."+i+".title",x.title,"Section title")}${tools("intake."+i,i)}</div>
+        <div class="field"><label for="${tid("intake."+i+".room")}">Room</label><select class="input" id="${tid("intake."+i+".room")}" data-t="intake.${i}.room">${roomOpts(x.room)}</select></div>
+        <div class="field"><span class="label">Questions</span>${x.questions.map((q,j)=>`<div class="trow">${area("intake."+i+".questions."+j,q,"A question for your client","short")}${tools("intake."+i+".questions."+j,j)}</div>`).join("")}</div>
+        <div class="actions"><button type="button" class="btn ghost tiny" data-tadd="intake.${i}.questions">Add a question</button></div></div>`).join("")}</div>
+      <div class="actions"><button type="button" class="btn ghost tiny" data-tadd="intake">Add a section</button></div></div>
+    <div class="setup-block"><h3>Meetings</h3><p class="hint">The stages on the Timeline. Leave a fee empty to set it per project; 0 shows as Free. A standard fee higher than the fee is shown crossed out.</p>
+      <div class="tlist">${T.stages.map((x,i)=>`<div class="tcard"><div class="trow">${inp("stages."+i+".title",x.title,"Meeting or stage name")}${tools("stages."+i,i)}</div>
+        <div class="field"><label for="${tid("stages."+i+".focus")}">Phases it covers, separated by ·</label>${inp("stages."+i+".focus",x.focus,T.process.slice(0,2).map(p=>p.title).filter(Boolean).join(" · "))}</div>
+        <div class="field"><label for="${tid("stages."+i+".desc")}">What happens</label>${area("stages."+i+".desc",x.desc,"","short")}</div>
+        <div class="field"><label for="${tid("stages."+i+".deliverable")}">They receive</label>${area("stages."+i+".deliverable",x.deliverable,"","short")}</div>
+        <div class="row three"><div class="field"><label for="${tid("stages."+i+".fee")}">Fee</label>${inp("stages."+i+".fee",x.fee,"Set per project",'type="number" step="0.01" min="0" data-num')}</div>
+          <div class="field"><label for="${tid("stages."+i+".standard")}">Standard fee</label>${inp("stages."+i+".standard",x.standard,"Optional",'type="number" step="0.01" min="0" data-num')}</div>
+          <div class="field"><label for="${tid("stages."+i+".hourly")}">Billed</label><select class="input" id="${tid("stages."+i+".hourly")}" data-t="stages.${i}.hourly" data-bool><option value="0" ${x.hourly?"":"selected"}>Once</option><option value="1" ${x.hourly?"selected":""}>By the hour</option></select></div></div></div>`).join("")}</div>
+      <div class="actions"><button type="button" class="btn ghost tiny" data-tadd="stages">Add a meeting</button></div></div>
+    ${saveRow}
+  </section></div>`;
+  const dirty=()=>{if(!tDirty){tDirty=true;app.querySelectorAll("[data-dirty]").forEach(e=>e.hidden=false);}};
+  app.querySelectorAll("[data-t]").forEach(el=>{el.oninput=()=>{
+    const path=el.dataset.t,[o,k]=tParent(path);let v=el.value;
+    if(el.dataset.num!=null)v=v===""?null:Number(v);
+    if(el.dataset.bool!=null)v=v==="1";
+    const rm=path.match(/^rooms\.(\d+)$/);
+    if(rm){const old=o[k];T.intake.forEach(x=>{if(old&&x.room===old)x.room=v;});app.querySelectorAll(`option[data-ri="${rm[1]}"]`).forEach(op=>{op.value=v;op.textContent=v||"Unnamed room";});}
+    o[k]=v;dirty();};});
+  app.querySelectorAll("[data-tadd]").forEach(b=>b.onclick=()=>{const path=b.dataset.tadd,list=tGet(path);list.push(T_BLANK[path.split(".").pop()]());tDirty=true;renderSetup(app).then(()=>{const last=path+"."+(list.length-1);const el=document.getElementById(tid(last))||document.getElementById(tid(last+".title"));if(el)el.focus();});});
+  app.querySelectorAll("[data-trm]").forEach(b=>b.onclick=()=>{const[o,k]=tParent(b.dataset.trm);if(o===T.rooms){const old=o[k];T.intake.forEach(x=>{if(x.room===old)x.room="";});}o.splice(Number(k),1);tDirty=true;renderSetup(app);});
+  app.querySelectorAll("[data-tup]").forEach(b=>b.onclick=()=>{const[o,k]=tParent(b.dataset.tup),i=Number(k);if(i>0){[o[i-1],o[i]]=[o[i],o[i-1]];tDirty=true;renderSetup(app);}});
+  app.querySelectorAll("[data-tsave]").forEach(b=>b.onclick=async()=>{const c=cleanTemplate(T);if(!c.rooms.length){toast("Add at least one room");return;}try{await store.saveTemplate(c);template=c;T=clone(c);tDirty=false;renderSetup(app);toast("Template saved");}catch(err){toast("Couldn't save: "+err.message);}});
+  app.querySelectorAll("[data-treset]").forEach(b=>b.onclick=()=>{T=clone(window.STUDIO_TEMPLATE);tDirty=true;renderSetup(app);toast("Starter template loaded. Save to keep it");});
+  $("#profForm",app).onsubmit=async e=>{e.preventDefault();const pf={name:$("#pfName",app).value.trim(),phone:$("#pfPhone",app).value.trim(),reply_to:$("#pfReply",app).value.trim()};if(!pf.name)return;
+    try{await store.saveProfile(pf);Object.assign(me,pf,{named:true});if(project)project.members.forEach(m=>{if(m.id===me.id)Object.assign(m,pf);});summaries=null;renderSetup(app);toast("Saved");}catch(err){toast("Couldn't save: "+err.message);}};
+  renderPreviewBar();
+}
+
 /* ---------- events ---------- */
 function bind(app){
   app.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ui.room=b.dataset.pick;render();});
@@ -482,7 +597,7 @@ function bind(app){
   app.querySelectorAll("[data-qedit]").forEach(b=>b.onclick=()=>{ui.editing[b.dataset.qedit]=true;render();$("#ans-"+b.dataset.qedit).focus();});
   app.querySelectorAll("[data-qcancel]").forEach(b=>b.onclick=()=>{delete ui.editing[b.dataset.qcancel];render();});
   app.querySelectorAll("[data-qseen]").forEach(b=>b.onclick=async()=>{await store.markAnswerSeen(b.dataset.qseen);project.intake.forEach(s=>s.questions.forEach(q=>{if(q.id===b.dataset.qseen)q.seen_by_designer=true;}));render();});
-  app.querySelectorAll("[data-qsave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.qsave,t=$("#ans-"+id).value.trim();await store.saveAnswer(id,t);project.intake.forEach(s=>s.questions.forEach(q=>{if(q.id===id){q.a=t;q.updated_at=new Date().toISOString();q.updated_by=me.id;q.seen_by_designer=isDesigner();}}));delete ui.editing[id];render();toast(isDesigner()?"Saved":`Saved — ${DESIGNER_NAME} will see this`);});
+  app.querySelectorAll("[data-qsave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.qsave,t=$("#ans-"+id).value.trim();await store.saveAnswer(id,t);project.intake.forEach(s=>s.questions.forEach(q=>{if(q.id===id){q.a=t;q.updated_at=new Date().toISOString();q.updated_by=me.id;q.seen_by_designer=isDesigner();}}));delete ui.editing[id];render();toast(isDesigner()?"Saved":`Saved. ${dName()} will see this`);});
   const nf=$("#noteFiles",app);if(nf)nf.onchange=async()=>{for(const f of nf.files){try{ui.composeImgs.push(await store.uploadImage(f));}catch(err){toast("Upload failed: "+err.message);}}render();};
   const comp=$("#compose",app);if(comp)comp.onsubmit=async e=>{e.preventDefault();const body=$("#noteBody",app).value.trim();if(!body&&!ui.composeImgs.length)return;const room=autoRoom(body,project.rooms);try{const n=await store.addNote({room,body,images:ui.composeImgs});if(LIVE)project.notes.unshift(n);ui.composeImgs=[];ui.room="all";render();toast(room?"Posted · filed under "+room:"Posted · unsorted for now");}catch(err){toast("Couldn't save: "+err.message);}};
   app.querySelectorAll("select[data-room]").forEach(s=>{s.onchange=async()=>{await store.setNoteRoom(s.dataset.room,s.value);const n=project.notes.find(x=>x.id===s.dataset.room);if(n)n.room=s.value;render();toast(s.value?"Moved to "+s.value:"Unsorted");};});
@@ -490,7 +605,7 @@ function bind(app){
   app.querySelectorAll("[data-conv]").forEach(b=>b.onclick=()=>{ui.room=b.dataset.conv;ui.sort="room";location.hash="conversation";});
   app.querySelectorAll("[data-dir]").forEach(b=>b.onclick=()=>{ui.jump=b.dataset.dir;location.hash="directives";});
   app.querySelectorAll("[data-dnew]").forEach(b=>b.onclick=()=>{ui.editing["add-"+b.dataset.dnew]=true;render();$("#dir-"+b.dataset.dnew).focus();});
-  app.querySelectorAll("[data-dadd]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const sid=f.dataset.dadd,t=$("#dir-"+sid).value.trim();if(!t)return;try{const q=await store.addDirective(sid,t);if(LIVE)project.intake.find(s=>s.id===sid).questions.push(q);delete ui.editing["add-"+sid];ui.jump="sec-"+sid;render();toast(isDesigner()?"Directive added":`Added — ${DESIGNER_NAME} will see it`);}catch(err){toast("Couldn't save: "+err.message);}});
+  app.querySelectorAll("[data-dadd]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const sid=f.dataset.dadd,t=$("#dir-"+sid).value.trim();if(!t)return;try{const q=await store.addDirective(sid,t);if(LIVE)project.intake.find(s=>s.id===sid).questions.push(q);delete ui.editing["add-"+sid];ui.jump="sec-"+sid;render();toast(isDesigner()?"Directive added":`Added. ${dName()} will see it`);}catch(err){toast("Couldn't save: "+err.message);}});
   const df=$("#docFile",app);if(df)df.onchange=()=>{$("#docName",app).textContent=df.files[0]?df.files[0].name:"";};
   const docForm=$("#docForm",app);if(docForm)docForm.onsubmit=async e=>{e.preventDefault();let url=$("#docUrl",app).value.trim();const f=df&&df.files[0];try{if(f)url=await store.uploadImage(f);const doc={title:$("#docTitle",app).value.trim(),kind:$("#docKind",app).value.trim()||(f?f.name.split(".").pop().toUpperCase():"Link"),url,note:$("#docNote",app).value.trim()};await store.addDocument(doc);if(LIVE)project=await store.loadProject(project.id);render();toast("Added");}catch(err){toast("Couldn't add: "+err.message);}};
   app.querySelectorAll("[data-rmdoc]").forEach(b=>b.onclick=async e=>{e.preventDefault();e.stopPropagation();await store.removeDocument(b.dataset.rmdoc);project.documents=project.documents.filter(x=>x.id!==b.dataset.rmdoc);render();});
@@ -514,7 +629,7 @@ function bind(app){
   const mc=$("#meetCancel",app);if(mc)mc.onclick=()=>{ui.meetingEdit=false;render();};
   const mf=$("#meetForm",app);if(mf)mf.onsubmit=async e=>{e.preventDefault();const m={id:project.meeting?project.meeting.id:undefined,when:new Date(mf.elements.when.value).toISOString(),where:mf.elements.where.value.trim(),notes:mf.elements.notes.value.trim(),change_request:null};try{await store.saveMeeting(m);project.meeting=LIVE?(await store.loadProject(project.id)).meeting:m;ui.meetingEdit=false;render();toast("Meeting saved");}catch(err){toast("Couldn't save: "+err.message);}};
   const cq=$("#clearReq",app);if(cq)cq.onclick=async()=>{const m={...project.meeting,change_request:null};await store.saveMeeting(m);project.meeting=m;render();};
-  const rq=$("#reqForm",app);if(rq)rq.onsubmit=async e=>{e.preventDefault();const m={...project.meeting,change_request:{kind:rq.elements.kind.value,message:rq.elements.message.value.trim(),by:me.id,at:new Date().toISOString()}};await store.saveMeeting(m);project.meeting=m;render();toast(`Sent — ${DESIGNER_NAME} will confirm by email`);};
+  const rq=$("#reqForm",app);if(rq)rq.onsubmit=async e=>{e.preventDefault();const m={...project.meeting,change_request:{kind:rq.elements.kind.value,message:rq.elements.message.value.trim(),by:me.id,at:new Date().toISOString()}};await store.saveMeeting(m);project.meeting=m;render();toast(`Sent. ${dName()} will confirm`);};
   const pf=$("#pinForm",app);if(pf)pf.onsubmit=async e=>{e.preventDefault();const u=$("#pinUrl",app).value.trim(),n=$("#pinNote",app).value.trim();await store.savePinterest(u,n);project.pinterest_url=u;project.pinterest_note=n;render();toast("Board updated");};
   const imf=$("#imgFile",app);if(imf)imf.onchange=()=>{$("#imgName",app).textContent=imf.files[0]?imf.files[0].name:"";};
   const imgForm=$("#imgForm",app);if(imgForm)imgForm.onsubmit=async e=>{e.preventDefault();const f=imf.files[0];if(!f){toast("Choose a file first");return;}try{const url=await store.uploadImage(f);const img={url,caption:$("#imgCap",app).value.trim()||f.name};await store.addImage(img);if(LIVE)project=await store.loadProject(project.id);render();toast("Added");}catch(err){toast("Upload failed: "+err.message);}};
@@ -528,6 +643,7 @@ window.addEventListener("hashchange",()=>{summaries=null;syncRoute();ui.editing=
   store=LIVE?new SupabaseStore():new MockStore();
   syncRoute();
   try{const r=await store.init();if(r){me=r.me;project=r.project;if(me)notifs=await store.loadNotifs();}}catch(err){console.error(err);}
+  syncRoute();
   render();
   if(LIVE)setInterval(async()=>{if(me&&project){try{notifs=await store.loadNotifs();renderNav();}catch(e){}}},60000);
   if(LIVE){store.sb.auth.onAuthStateChange(async(ev)=>{if(ev==="SIGNED_IN"&&!me){const r=await store.init();if(r){me=r.me;project=r.project;if(me)notifs=await store.loadNotifs();render();}}});}

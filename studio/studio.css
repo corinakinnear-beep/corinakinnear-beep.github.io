@@ -1,4 +1,4 @@
-/* Parlā Studio — Cori's house style. Light only: the plaster ground is the design.
+/* Studio. Light only: the plaster ground is the design.
    Layout: sticky masthead, one view at a time, generous air, hairline sections. */
 :root{
   --ground:#EDE8DF; --surface:#F8F5F0; --frame:#FFFFFF;
@@ -168,8 +168,6 @@ textarea.input{min-height:110px}
 .mini .rtop b{font-weight:500;color:var(--ink-2);letter-spacing:.04em}
 .mini .rbody{white-space:pre-wrap;color:var(--ink-2)}
 .phone{font-family:var(--sans);font-size:17px;color:var(--ink);user-select:all;white-space:nowrap}
-.cori{padding:16px 18px;background:var(--surface);border-left:2px solid var(--accent);display:grid;gap:6px;max-width:62ch}
-.cori .label{color:var(--accent)}
 
 /* Notes */
 .rooms{display:flex;gap:8px;flex-wrap:wrap}
@@ -199,7 +197,7 @@ textarea.input{min-height:110px}
 
 /* Timeline */
 .phases{display:grid;gap:0;border-top:1px solid var(--line)}
-@media (min-width:760px){.phases{grid-template-columns:repeat(4,1fr);gap:0 36px}}
+@media (min-width:760px){.phases{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0 36px}}
 .phase{display:grid;gap:10px;padding:22px 0;border-bottom:1px solid var(--line-2);align-content:start}
 @media (min-width:760px){.phase{border-bottom:0}}
 .phase .label{color:var(--accent)}
@@ -221,11 +219,24 @@ textarea.input{min-height:110px}
 .stage .kv .v{color:var(--ink-2)}
 .stage .fee{font-family:var(--serif);font-weight:300;font-size:24px;color:var(--ink)}
 .stage .fee s{color:var(--muted);font-size:17px;margin-right:8px}
+.stage .fee .tbc{font-family:var(--sans);font-size:15px;color:var(--muted)}
 .pay{display:inline-flex;align-items:center;gap:8px}
 .pay .sq{width:9px;height:9px;border:1px solid var(--line);background:var(--surface)}
 .pay.paid .sq{background:var(--ink);border-color:var(--ink)}
 .pay.requested .sq{background:var(--accent);border-color:var(--accent)}
 .editbox{display:grid;gap:14px;padding:22px;background:var(--surface);border:1px solid var(--line-2)}
+
+/* Settings */
+.setup-block{display:grid;gap:18px;padding:30px 0 6px;border-top:1px solid var(--line-2)}
+.hint{font-size:14.5px;line-height:1.55;color:var(--muted);max-width:60ch}
+.tlist{display:grid;gap:12px;max-width:760px}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:start}
+.trow .tools{display:flex;gap:14px;align-items:center;min-height:48px}
+.tcard{display:grid;gap:16px;padding:22px;background:var(--surface);border:1px solid var(--line-2)}
+.tcard .input{background:var(--frame)}
+.tcard .field .trow+.trow{margin-top:2px}
+textarea.input.short{min-height:76px}
+@media (max-width:520px){.trow{grid-template-columns:1fr}.trow .tools{min-height:0;justify-content:flex-end}}
 
 /* Meeting */
 .meeting{display:grid;gap:36px}

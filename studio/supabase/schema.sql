@@ -8,7 +8,22 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   name text,
+  name_set boolean default false,   -- true once the person (or the designer inviting them) has given a real name
+  phone text default '',            -- a designer's number, shown to their clients on the Meeting page
+  reply_to text default '',         -- where replies to a designer's notification emails go; blank = their sign-in email
+  timezone text default 'UTC',      -- kept current by the app, so times in emails read in local time
   created_at timestamptz default now()
+);
+alter table public.profiles add column if not exists name_set boolean default false;
+alter table public.profiles add column if not exists phone text default '';
+alter table public.profiles add column if not exists reply_to text default '';
+alter table public.profiles add column if not exists timezone text default 'UTC';
+
+-- Each designer's template for new projects: rooms, phases, intake questions, stages (edited in Settings).
+create table if not exists public.templates (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  data jsonb not null,
+  updated_at timestamptz default now()
 );
 
 -- Create a profile row the moment someone signs in for the first time.
@@ -34,7 +49,6 @@ create table if not exists public.projects (
   rooms text[] default '{}',
   process jsonb default '[]',
   notify_clients boolean default false,
-  designer_phone text default '',
   created_at timestamptz default now()
 );
 alter table public.projects add column if not exists notify_clients boolean default false;
@@ -160,6 +174,14 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.project_members where project_id = pid and user_id = auth.uid() and role = 'designer');
 $$;
 
+-- True when the signed-in person and `other` are in at least one project together.
+create or replace function public.shares_project(other uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.project_members a join public.project_members b on b.project_id = a.project_id
+    where a.user_id = auth.uid() and b.user_id = other);
+$$;
+
 -- Called by the app right after sign-in: turns any invites for this email into memberships.
 create or replace function public.join_invited_projects() returns void
 language plpgsql security definer set search_path = public as $$
@@ -171,14 +193,14 @@ begin
     select i.project_id, auth.uid(), i.role from public.project_invites i
     where lower(i.email) = lower(my_email)
   on conflict do nothing;
-  -- take the name the designer gave on the invite if the profile has none yet
-  update public.profiles p set name = i.name
+  -- take the name the designer gave on the invite, unless the person has already set their own
+  update public.profiles p set name = i.name, name_set = true
     from public.project_invites i
     where p.id = auth.uid() and lower(i.email) = lower(my_email) and i.name <> ''
-      and (p.name is null or p.name = '' or lower(p.name) = lower(split_part(my_email,'@',1)));
+      and not coalesce(p.name_set, false);
 end $$;
 
--- Called by the designer from the app to start a project with the standard template.
+-- Called by the designer from the app to start a project from their template (sent by the app as JSON).
 create or replace function public.create_project(
   p_name text, p_client_emails text[], p_intake jsonb, p_stages jsonb, p_rooms text[], p_process jsonb default '[]', p_client_names text[] default '{}'
 ) returns uuid
@@ -214,7 +236,8 @@ begin
     insert into public.stages (project_id, position, title, focus, description, deliverable, standard, fee, hourly, status, payment_status)
     values (pid, i, st->>'title', coalesce(st->>'focus',''), st->>'description', st->>'deliverable', (st->>'standard')::numeric, (st->>'fee')::numeric,
             coalesce((st->>'hourly')::boolean,false), case when i = 1 then 'current' else 'upcoming' end,
-            case when coalesce((st->>'fee')::numeric,0) = 0 then 'free' else 'upcoming' end);
+            -- fee 0 = free; no fee yet = to be set on the project
+            case when (st->>'fee')::numeric = 0 then 'free' else 'upcoming' end);
   end loop;
   return pid;
 end $$;
@@ -252,10 +275,16 @@ alter table public.stages enable row level security;
 alter table public.meetings enable row level security;
 alter table public.architect_images enable row level security;
 alter table public.documents enable row level security;
+alter table public.templates enable row level security;
 
--- profiles: anyone signed in can read names (needed to show "Brook", "Cori"); you can edit your own
+-- templates: each designer reads and writes only their own
+drop policy if exists templates_own on public.templates;
+create policy templates_own on public.templates for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- profiles: you can read your own and those of people you share a project with (names on notes, the designer's phone);
+-- nobody else's. You can edit your own.
 drop policy if exists profiles_read on public.profiles;
-create policy profiles_read on public.profiles for select to authenticated using (true);
+create policy profiles_read on public.profiles for select to authenticated using (id = auth.uid() or public.shares_project(id));
 drop policy if exists profiles_self on public.profiles;
 create policy profiles_self on public.profiles for all to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
@@ -427,14 +456,17 @@ create trigger question_insert_notify after insert on public.intake_questions fo
 
 create or replace function public.on_meeting_change() returns trigger
 language plpgsql security definer set search_path = public as $$
-declare pname text; who text;
+declare pname text; who text; tz text;
 begin
   select name into pname from public.projects where id = new.project_id;
+  -- write the time the way the designer's clock reads it
+  select pr.timezone into tz from public.projects p join public.profiles pr on pr.id = p.designer_id where p.id = new.project_id;
+  if tz is null or not exists (select 1 from pg_timezone_names where name = tz) then tz := 'UTC'; end if;
   if new.change_request is not null and (old.change_request is null or new.change_request <> old.change_request) then
     select coalesce(name, email) into who from public.profiles where id = (new.change_request->>'by')::uuid;
     perform public.notify_project(new.project_id, (new.change_request->>'by')::uuid, 'designer', who || ' asked to ' || coalesce(new.change_request->>'kind','change') || ' the meeting · ' || pname, coalesce(new.change_request->>'message',''), '#meeting');
   elsif new."when" is distinct from old."when" or new."where" is distinct from old."where" then
-    perform public.notify_project(new.project_id, null, 'client', 'Meeting updated · ' || pname, 'Now ' || to_char(new."when" at time zone 'UTC', 'Day, Month DD at HH12:MI AM') || coalesce(' · ' || nullif(new."where",''), ''), '#meeting');
+    perform public.notify_project(new.project_id, null, 'client', 'Meeting updated · ' || pname, 'Now ' || to_char(new."when" at time zone tz, 'FMDay, FMMonth FMDD "at" FMHH12:MI AM') || coalesce(' · ' || nullif(new."where",''), ''), '#meeting');
   end if;
   return new;
 end $$;
