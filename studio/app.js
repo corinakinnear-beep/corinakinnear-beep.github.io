@@ -206,8 +206,8 @@ let summaries=null;
 function needsName(){return me&&(!me.name||me.name.toLowerCase()===(me.email||"").split("@")[0].toLowerCase());}
 function renderAskName(app){
   $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;
-  app.innerHTML=`<div class="signin"><div class="signin-card"><p class="label">One thing</p><h1>What should we call you?</h1><p class="lede">Your first name is how your notes and replies will be signed.</p>
-  <form id="nameForm"><div class="field"><label for="myname">Name</label><input class="input" id="myname" required autocomplete="given-name" placeholder="Brook"></div><div class="actions"><button class="btn" type="submit">That's me</button></div></form></div></div>`;
+  app.innerHTML=`<div class="signin"><div class="signin-card"><h1>Name</h1>
+  <form id="nameForm"><div class="field"><input class="input" id="myname" required autocomplete="given-name" placeholder="Your name" aria-label="Name"></div><div class="actions"><button class="btn" type="submit">Save</button></div></form></div></div>`;
   $("#nameForm",app).onsubmit=async e=>{e.preventDefault();const n=$("#myname",app).value.trim();if(!n)return;await store.setMyName(n);me.name=n;const m=(project&&project.members||[]).find(x=>x.id===me.id);if(m)m.name=n;render();};
 }
 function render(){
@@ -475,11 +475,11 @@ function viewMeeting(){
 }
 
 function viewSettings(){
-  return`<div class="page-head"><p class="label">Settings</p><h1>You.</h1></div>
+  return`<div class="page-head"><p class="label">Settings</p><h1>Settings</h1></div>
   <section class="section"><div class="band"><h2>Name</h2><span class="desc"></span></div>
-    <form id="nameSet" class="row" style="max-width:460px"><div class="field"><label for="setName">How your notes and replies are signed</label><input class="input" id="setName" value="${esc(me.name)}" required></div><div class="actions"><button class="btn tiny" type="submit">Save name</button></div></form></section>
+    <form id="nameSet" class="row" style="max-width:460px"><div class="field"><label for="setName">Name</label><input class="input" id="setName" value="${esc(me.name)}" required></div><div class="actions"><button class="btn tiny" type="submit">Save name</button></div></form></section>
   <section class="section"><div class="band"><h2>Email</h2><span class="desc"></span></div>
-    <form id="emailSet" class="row" style="max-width:460px"><div class="field"><label for="setEmail">The address you sign in with</label><input class="input" id="setEmail" type="email" value="${esc(me.email||"")}" required></div><div class="actions"><button class="btn tiny" type="submit">Change email</button></div><p class="small muted" id="emailMsg">${LIVE?"A confirmation link goes to both the old and the new address; the change takes effect once you've clicked both.":""}</p></form></section>
+    <form id="emailSet" class="row" style="max-width:460px"><div class="field"><label for="setEmail">Email</label><input class="input" id="setEmail" type="email" value="${esc(me.email||"")}" required></div><div class="actions"><button class="btn tiny" type="submit">Change email</button></div><p class="small muted" id="emailMsg">${LIVE?"A confirmation link goes to both the old and the new address; the change takes effect once you've clicked both.":""}</p></form></section>
   <section class="section"><div class="band"><h2>Sign out</h2><span class="desc"></span></div>
     <div class="actions"><button class="btn ghost" id="signoutBtn">Sign out of this device</button></div></section>`;
 }
