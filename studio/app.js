@@ -86,12 +86,15 @@ class MockStore{
   async createProject(name,clients){const p=JSON.parse(JSON.stringify(window.SAMPLE_PROJECT));p.id=uid();p.name=name;p.members=[p.designer,...clients.map(c=>({id:uid(),name:c.name||c.email.split("@")[0],email:c.email,role:"client"}))];p.notes=[];p.notifs=[];p.meeting=null;p.documents=[];p.architect_images=[];p.pinterest_url="";p.pinterest_note="";p.intake.forEach(s=>{s.title=s.room||s.title;s.questions=[];});p.stages.forEach((s,i)=>{s.status=i===0?"current":"upcoming";s.due=null;s.payment={status:s.fee?"upcoming":"free",amount:s.fee||0,date:null};});this.all.push(p);this.project=p;this.persist();return p.id;}
   async signIn(){return{ok:true};}
   async signInEmail(){return{ok:true};}
+  async checkPin(){return true;}
+  async tellClients(qid){const q=this.project.intake.flatMap(s=>s.questions).find(x=>x.id===qid);this.project.notifs=this.project.notifs||[];this.project.members.filter(m=>m.role==="client").forEach(m=>this.project.notifs.push({id:uid(),to:m.id,subject:"New directive · "+this.project.name,body:q?q.directive:"",link:"#directives",created_at:new Date().toISOString(),seen_at:null}));this.persist();}
   async ensureCred(){}
   async signOut(){}
   async setMyName(n){this.all.forEach(p=>{const m=p.members.find(x=>x.id===this.meId);if(m)m.name=n;});this.persist();}
   async setMyEmail(em){this.all.forEach(p=>{const m=p.members.find(x=>x.id===this.meId);if(m)m.email=em;});this.persist();return{ok:true};}
   async loadNotifs(){return (this.project.notifs||[]).filter(n=>n.to===this.meId);}
   async markNotifSeen(id){const n=(this.project.notifs||[]).find(x=>x.id===id);if(n)n.seen_at=new Date().toISOString();this.persist();}
+  async markNotifsSeenByLink(link){(this.project.notifs||[]).forEach(n=>{if(n.to===this.meId&&!n.seen_at&&n.link===link)n.seen_at=new Date().toISOString();});this.persist();}
   async markAllNotifsSeen(){(this.project.notifs||[]).forEach(n=>{if(n.to===this.meId&&!n.seen_at)n.seen_at=new Date().toISOString();});this.persist();}
   async uploadImage(file){return readFile(file);}
   async saveAnswer(qid,text){for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid){q.a=text;q.updated_at=new Date().toISOString();q.updated_by=me.id;q.seen_by_designer=me.role==="designer";}this.persist();}
@@ -101,7 +104,7 @@ class MockStore{
   async deleteDirective(qid){for(const s of this.project.intake)s.questions=s.questions.filter(q=>q.id!==qid);this.persist();}
   async addComment(qid,body){const c={id:uid(),author_id:me.id,body,created_at:new Date().toISOString()};for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid){q.comments=q.comments||[];q.comments.push(c);if(me.role!=="designer"){q.seen_by_designer=false;q.updated_by=me.id;q.updated_at=c.created_at;}}this.persist();return c;}
   async saveDirective(qid,patch){for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid)Object.assign(q,patch);this.persist();}
-  async addDocument(doc){this.project.documents.push({id:uid(),...doc});this.persist();}
+  async addDocument(doc){this.project.documents.push({id:uid(),added_by:me.id,...doc});this.persist();}
   async removeDocument(id){this.project.documents=this.project.documents.filter(x=>x.id!==id);this.persist();}
   async addNote(n){const note={id:uid(),author_id:me.id,room:n.room||"",body:n.body,images:n.images||[],created_at:new Date().toISOString(),edited_at:null,read_at:me.role==="designer"?new Date().toISOString():null,integrated_at:null,replies:[]};this.project.notes.unshift(note);this.persist();return note;}
   async editNote(id,body){const n=this.project.notes.find(x=>x.id===id);if(n){n.body=body;n.edited_at=new Date().toISOString();if(me.role!=="designer")n.read_at=null;}this.persist();}
@@ -179,6 +182,7 @@ class SupabaseStore{
   async setMyEmail(em){const {error}=await this.sb.auth.updateUser({email:em},{emailRedirectTo:location.origin+location.pathname});if(error)return{ok:false,error:error.message};return{ok:true};}
   async loadNotifs(){const {data}=await this.sb.from("notifications").select("id,subject,body,link,created_at,seen_at").eq("to_user",me.id).order("created_at",{ascending:false}).limit(30);return data||[];}
   async markNotifSeen(id){await this.sb.from("notifications").update({seen_at:new Date().toISOString()}).eq("id",id);}
+  async markNotifsSeenByLink(link){await this.sb.from("notifications").update({seen_at:new Date().toISOString()}).eq("to_user",me.id).eq("link",link).is("seen_at",null);}
   async markAllNotifsSeen(){await this.sb.from("notifications").update({seen_at:new Date().toISOString()}).eq("to_user",me.id).is("seen_at",null);}
   // Email-only sign-in: the account credential is derived from the address, so nothing to remember.
   async cred(email){const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("parla-studio:"+email.toLowerCase()));return "s"+Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,40);}
@@ -193,6 +197,8 @@ class SupabaseStore{
     if(!r.data.session)return{ok:false,error:"Check your email to confirm, then sign in again."};
     return{ok:true};
   }
+  async tellClients(qid){await this.sb.rpc("notify_directive",{p_question:qid});}
+  async checkPin(pin){const {data}=await this.sb.rpc("designer_pin_ok",{p_pin:pin});return !!data;}
   // One-time: an account that signed in by link (before email-only) gets its derived credential set.
   async ensureCred(){try{if(localStorage.getItem("parla-studio-cred")==="1")return;const password=await this.cred(me.email);const {error}=await this.sb.auth.updateUser({password});if(!error)localStorage.setItem("parla-studio-cred","1");}catch(e){}}
   async signIn(email){const {error}=await this.sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});return{ok:!error,error:error&&error.message};}
@@ -210,7 +216,7 @@ class SupabaseStore{
   async deleteDirective(qid){await this.sb.from("intake_questions").delete().eq("id",qid);}
   async addComment(qid,body){const {data,error}=await this.sb.from("directive_comments").insert({question_id:qid,project_id:this.pid,author_id:me.id,body}).select().single();if(error)throw error;if(me.role!=="designer")await this.sb.from("intake_questions").update({seen_by_designer:false,updated_by:me.id,updated_at:new Date().toISOString()}).eq("id",qid);return data;}
   async saveDirective(qid,patch){const row={};if("directive"in patch)row.directive=patch.directive;if("a"in patch)row.answer=patch.a;for(const k of ["updated_at","updated_by","seen_by_designer","directive_reviewed"])if(k in patch)row[k]=patch[k];await this.sb.from("intake_questions").update(row).eq("id",qid);}
-  async addDocument(doc){await this.sb.from("documents").insert({project_id:this.pid,title:doc.title,kind:doc.kind,url:doc.url,note:doc.note,position:Date.now()});}
+  async addDocument(doc){await this.sb.from("documents").insert({project_id:this.pid,title:doc.title,kind:doc.kind,url:doc.url,note:doc.note,position:Date.now(),added_by:me.id});}
   // (documents.created_at is set by the database)
   async removeDocument(id){await this.sb.from("documents").delete().eq("id",id);}
   async addNote(n){const row={project_id:this.pid,author_id:me.id,room:n.room||"",body:n.body,images:n.images||[],read_at:me.role==="designer"?new Date().toISOString():null};const {data,error}=await this.sb.from("notes").insert(row).select().single();if(error)throw error;return{...data,replies:[]};}
@@ -254,6 +260,15 @@ const NAV=[["home","Home"],["directives","Design directives"],["conversation","M
 const ROUTES=["projects",...NAV.map(([k])=>k)];
 let summaries=null;
 function needsName(){return me&&(!me.name||(LIVE&&me.name===(me.email||"").split("@")[0]));}
+function pinOk(){try{return sessionStorage.getItem("parla-studio-pin")==="ok";}catch(e){return false;}}
+function renderAskPin(app){
+  $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;$("#projName").hidden=true;
+  app.innerHTML=`<div class="signin"><div class="signin-card"><h1>PIN</h1>
+  <form id="pinForm"><div class="field"><input class="input" id="pinIn" type="password" inputmode="numeric" autocomplete="one-time-code" required aria-label="PIN" placeholder="••••"></div><div class="actions"><button class="btn" type="submit">Continue</button><button class="textlink" type="button" id="pinOut">Sign out</button></div></form><p class="small muted" id="pinMsg"></p></div></div>`;
+  $("#pinIn",app).focus();
+  $("#pinForm",app).onsubmit=async e=>{e.preventDefault();const ok=await store.checkPin($("#pinIn",app).value.trim());if(ok){try{sessionStorage.setItem("parla-studio-pin","ok");}catch(e){}render();}else{$("#pinMsg",app).textContent="That's not it.";$("#pinIn",app).value="";}};
+  $("#pinOut",app).onclick=async()=>{await store.signOut();me=null;project=null;notifs=[];render();};
+}
 function renderAskName(app){
   $("#menuBtn").hidden=true;closePops();$("#mastRight").innerHTML="";$("#foot").hidden=true;$("#projName").hidden=true;
   app.innerHTML=`<div class="signin"><div class="signin-card"><h1>Name</h1>
@@ -264,6 +279,7 @@ function render(){
   const app=$("#app");
   if(!me){renderSignIn(app);return;}
   if(needsName()){renderAskName(app);return;}
+  if(isDesigner()&&LIVE&&!pinOk()){renderAskPin(app);return;}
   if(isDesigner()&&(route==="projects"||!project)){renderDashboard(app);return;}
   if(!project){renderNoProject(app);return;}
   renderNav();
@@ -285,14 +301,14 @@ function renderNav(){
   nav.innerHTML=(isDesigner()?`<a href="#projects" class="${route==="projects"?"active":""}">All projects</a>`:"")+NAV.map(([k,l])=>{
     let c="";
     if(isDesigner()){if(k==="conversation"&&unreadNotes().length)c=unreadNotes().length;if(k==="directives"&&changedAnswers().length)c=changedAnswers().length;}
-    else{if(k==="conversation"&&newRepliesForClient().length)c=newRepliesForClient().length;if(k==="directives"&&openAnswers().length)c=openAnswers().length;}
+    else{const nm=notifs.filter(n=>!n.seen_at&&(n.link||"")==="#conversation").length;if(k==="conversation"&&nm)c=nm;if(k==="directives"&&openAnswers().length)c=openAnswers().length;}
     return`<a href="#${k}" class="${route===k?"active":""}">${l}${c?`<span class="count">${c}</span>`:""}</a>`;}).join("");
   $("#menuBtn").onclick=e=>{e.stopPropagation();const p=$("#menuPop");const open=p.hidden;closePops();p.hidden=!open;};
   $(".wordmark").href=isDesigner()?"#projects":"#home";
   const pn=$("#projName");if(pn){pn.textContent=isDesigner()&&project&&route!=="projects"?project.name:"";pn.hidden=!pn.textContent;}
   nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",closePops));
   const r=$("#mastRight");
-  const convCount=isDesigner()?unreadNotes().length:newRepliesForClient().length;
+  const convCount=isDesigner()?unreadNotes().length:notifs.filter(n=>!n.seen_at&&(n.link||"")==="#conversation").length;
   const newN=notifs.filter(n=>!n.seen_at).length;
   r.innerHTML=`<a class="icon-btn" href="#conversation" aria-label="Messages">${ICONS.msg}${convCount?`<span class="badge">${convCount}</span>`:""}</a>
     <button class="icon-btn" id="bellBtn" aria-label="Notifications">${ICONS.bell}${newN?`<span class="badge">${newN}</span>`:""}</button>`;
@@ -398,9 +414,9 @@ function viewHome(){
     ];
   }
   return`<div class="page-head"><p class="label">${esc(project.name)}</p><h1 class="big">Hello, ${esc(firstName)}.</h1><p class="lede">${lede}</p></div>
-  <div class="home-grid">
+  <div class="home-grid ${d?"":"one"}">
     <div class="cards">${cards.map(([k,t,s,n])=>`<a class="card" href="#${k}"><h3>${t}</h3><p class="sub">${s}</p><span class="side">${n?`<span class="tag accent">${n}</span>`:""}<span class="arrow">→</span></span></a>`).join("")}</div>
-    <div class="statline">${d?`<div class="switchrow"><span class="label">Project</span>${ui.projEdit?`<form id="projForm" class="row"><div class="field"><label for="pjName">Name</label><input class="input" id="pjName" value="${esc(project.name)}" required></div><div class="field"><label for="pjClients">Clients, one per line, as Name &lt;email&gt;</label><textarea class="input" id="pjClients">${esc(clientLines())}</textarea></div><div class="field"><label for="pjRooms">Spaces, one per line</label><textarea class="input" id="pjRooms">${esc(project.rooms.join("\n"))}</textarea></div><div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" id="projCancel">Cancel</button></div><p class="small muted">Nobody is emailed by this.</p></form>`:`<p>${esc(project.name)}</p><p class="small muted">${esc(clientNames()||"No clients yet")}</p><div class="actions"><button class="textlink" id="projEdit">Edit name or clients</button><button class="textlink" id="copyLink">Copy project link</button></div><p class="small muted" id="projLink" hidden>${esc(projectLink())}</p>`}</div>`:""}<p class="label">Recently</p><div class="activity">${activity().map(a=>`<a class="act" href="#${a.go}"><span class="t">${esc(a.t)}</span><span class="w">${fmtStamp(a.w)}</span></a>`).join("")||`<p class="muted small">Nothing yet.</p>`}</div></div>
+    <div class="statline">${d?`<div class="switchrow"><span class="label">Project</span>${ui.projEdit?`<form id="projForm" class="row"><div class="field"><label for="pjName">Name</label><input class="input" id="pjName" value="${esc(project.name)}" required></div><div class="field"><label for="pjClients">Clients, one per line, as Name &lt;email&gt;</label><textarea class="input" id="pjClients">${esc(clientLines())}</textarea></div><div class="field"><label for="pjRooms">Spaces, one per line</label><textarea class="input" id="pjRooms">${esc(project.rooms.join("\n"))}</textarea></div><div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" id="projCancel">Cancel</button></div><p class="small muted">Nobody is emailed by this.</p></form>`:`<p>${esc(project.name)}</p><p class="small muted">${esc(clientNames()||"No clients yet")}</p><div class="actions"><button class="textlink" id="projEdit">Edit name or clients</button><button class="textlink" id="copyLink">Copy project link</button></div><p class="small muted" id="projLink" hidden>${esc(projectLink())}</p>`}</div><p class="label">Recently</p><div class="activity">${activity().map(a=>`<a class="act" href="#${a.go}"><span class="t">${esc(a.t)}</span><span class="w">${fmtStamp(a.w)}</span></a>`).join("")||`<p class="muted small">Nothing yet.</p>`}</div>`:""}</div>
   </div>`;
 }
 
@@ -409,8 +425,8 @@ function viewDocuments(){
   const docs=[...project.documents].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
   return`<div class="page-head"><p class="label">Documents</p><h1>Your documents</h1></div>
   <section class="section">
-    <div class="cards">${docs.map(doc=>`<${doc.url?`a href="${esc(doc.url)}" target="_blank" rel="noopener"`:"div"} class="card"><h3>${esc(doc.title)}</h3><p class="sub">${esc(doc.note)}${d?` · <button class="textlink" data-rmdoc="${doc.id}">remove</button>`:""}</p><span class="side"><span class="small muted">${doc.created_at?"Added "+fmtLong(doc.created_at):""}</span><span class="tag quiet">${esc(doc.kind||"Link")}</span>${doc.url?"":`<span class="small muted">Coming</span>`}</span></${doc.url?"a":"div"}>`).join("")||`<p class="muted" style="padding:22px 0">Nothing here yet.</p>`}</div>
-    ${d?`<form id="docForm" class="editbox" style="max-width:560px"><p class="label">Add a document</p><div class="row two"><div class="field"><label>Title</label><input class="input" id="docTitle" required placeholder="Signed agreement"></div><div class="field"><label>Type</label><input class="input" id="docKind" placeholder="PDF, Mood board, Drawings, Link"></div></div><div class="field"><label>Link (or upload a file)</label><input class="input" id="docUrl" placeholder="https://…"></div><div class="field"><label>One line about it</label><input class="input" id="docNote"></div><div class="actions"><span class="btn ghost tiny filebtn">Choose file<input type="file" id="docFile"></span><span class="small muted" id="docName"></span><button class="btn tiny" type="submit">Add</button></div></form>`:""}
+    <div class="cards">${docs.map(doc=>`<${doc.url?`a href="${esc(doc.url)}" target="_blank" rel="noopener"`:"div"} class="card"><h3>${esc(doc.title)}</h3><p class="sub">${esc(doc.note)}${doc.added_by&&doc.added_by!==(project.designer||{}).id?` · added by ${esc(nameOf(doc.added_by))}`:""}${d||doc.added_by===me.id?` · <button class="textlink" data-rmdoc="${doc.id}">remove</button>`:""}</p><span class="side"><span class="small muted">${doc.created_at?"Added "+fmtLong(doc.created_at):""}</span><span class="tag quiet">${esc(doc.kind||"Link")}</span>${doc.url?"":`<span class="small muted">Coming</span>`}</span></${doc.url?"a":"div"}>`).join("")||`<p class="muted" style="padding:22px 0">Nothing here yet.</p>`}</div>
+    ${`<form id="docForm" class="editbox" style="max-width:560px"><p class="label">Add a document</p><div class="row two"><div class="field"><label>Title</label><input class="input" id="docTitle" required placeholder="Signed agreement"></div><div class="field"><label>Type</label><input class="input" id="docKind" placeholder="PDF, Mood board, Drawings, Link"></div></div><div class="field"><label>Link (or upload a file)</label><input class="input" id="docUrl" placeholder="https://…"></div><div class="field"><label>One line about it</label><input class="input" id="docNote"></div><div class="actions"><span class="btn ghost tiny filebtn">Choose file<input type="file" id="docFile"></span><span class="small muted" id="docName"></span><button class="btn tiny" type="submit">Add</button></div></form>`}
   </section>`;
 }
 
@@ -445,7 +461,7 @@ function viewDirectives(){
         </div>`:""}
       </div>`;}).join("")}
       ${s.room&&convCount(s.room)?`<div class="qa inconv"><p class="label">From messages</p>${project.notes.filter(n=>n.room===s.room).map(n=>`<div class="mini"><div class="rtop"><b>${esc(nameOf(n.author_id))}</b><span>${fmtDate(n.created_at)}</span>${n.integrated_at?`<span class="tag quiet">Integrated</span>`:""}</div><p class="rbody">${linkify(n.body)}</p>${n.replies.map(r=>`<p class="rbody" style="padding-left:16px;border-left:1px solid var(--line)"><b style="font-weight:500">${esc(nameOf(r.author_id))}</b> · ${linkify(r.body)}</p>`).join("")}</div>`).join("")}<div class="actions"><button class="textlink" data-conv="${esc(s.room)}">Open in messages →</button></div></div>`:""}
-      ${ui.editing["add-"+s.id]?`<form class="qa edit" data-dadd="${s.id}"><p class="label">New directive · ${esc(s.room||s.title)}</p><textarea class="input" id="dir-${s.id}" placeholder="${d?"Something to design to…":"Something you want the design to honor…"}"></textarea><div class="actions"><button class="btn tiny" type="submit">Add</button><button class="textlink" type="button" data-qcancel="add-${s.id}">Cancel</button></div></form>`:`<div class="qa"><div class="actions"><button class="btn ghost tiny" data-dnew="${s.id}">Add a directive</button></div></div>`}
+      ${ui.editing["add-"+s.id]?`<form class="qa edit" data-dadd="${s.id}"><p class="label">New directive · ${esc(s.room||s.title)}</p><textarea class="input" id="dir-${s.id}" placeholder="${d?"Something to design to…":"Something you want the design to honor…"}"></textarea>${d?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="tell-${s.id}"> Let the clients know</label>`:""}<div class="actions"><button class="btn tiny" type="submit">Add</button><button class="textlink" type="button" data-qcancel="add-${s.id}">Cancel</button></div></form>`:`<div class="qa"><div class="actions"><button class="btn ghost tiny" data-dnew="${s.id}">Add a directive</button></div></div>`}
     </div></section>`).join("")}
   ${d?(ui.roomAdd?roomAddForm():`<div class="actions"><button class="btn ghost" id="roomAddDir">Add a space</button></div>`):""}`;
 }
@@ -464,6 +480,7 @@ function viewReview(){
 
 function viewConversation(){
   const d=isDesigner(),did=(project.designer||{}).id;
+  if(!d){const pend=notifs.filter(n=>!n.seen_at&&(n.link||"")==="#conversation");if(pend.length){pend.forEach(n=>n.seen_at=new Date().toISOString());store.markNotifsSeenByLink("#conversation");setTimeout(renderNav,0);}}
   const rooms=["all","unsorted",...project.rooms];
   const count=r=>r==="all"?project.notes.length:r==="unsorted"?project.notes.filter(n=>!n.room).length:project.notes.filter(n=>n.room===r).length;
   const list=ui.sort==="recent"?project.notes.filter(n=>!n.integrated_at):project.notes.filter(n=>ui.room==="all"||(ui.room==="unsorted"?!n.room:n.room===ui.room));
@@ -475,7 +492,7 @@ function viewConversation(){
     <textarea class="input" id="noteBody" placeholder="${d?"Something to show them, or an idea to float…":"We kept thinking about the table…"}"></textarea>
     <div class="files"><span class="btn ghost tiny filebtn">Add image<input type="file" id="noteFiles" accept="image/*" multiple></span>${ui.composeImgs.map(u=>`<img src="${u}" alt="">`).join("")}</div>
     <div class="actions"><button class="btn" type="submit">Post</button></div></form>
-  <section class="section"><div class="band"><div class="chips"><button class="chip ${ui.sort==="recent"?"on":""}" data-sort="recent">Open · recent</button><button class="chip ${ui.sort!=="recent"?"on":""}" data-sort="room">By room</button></div><div class="rooms" ${ui.sort==="recent"?"hidden":""}>${rooms.map(r=>`<button class="chip ${ui.room===r?"on":""}" data-pick="${esc(r)}">${r==="all"?"All":r==="unsorted"?"Other":esc(r)}</button>`).join("")}${d?`<button class="textlink" id="roomAddMsg">Add a space</button>`:""}</div></div>
+  <section class="section"><div class="band"><div class="chips"><button class="chip ${ui.sort==="recent"?"on":""}" data-sort="recent">Open · recent</button><button class="chip ${ui.sort!=="recent"?"on":""}" data-sort="room">By room</button>${d&&unreadNotes().length?`<button class="textlink" id="readAllMsgs">Mark all read</button>`:""}</div><div class="rooms" ${ui.sort==="recent"?"hidden":""}>${rooms.map(r=>`<button class="chip ${ui.room===r?"on":""}" data-pick="${esc(r)}">${r==="all"?"All":r==="unsorted"?"Other":esc(r)}</button>`).join("")}${d?`<button class="textlink" id="roomAddMsg">Add a space</button>`:""}</div></div>
   ${d&&ui.roomAdd?roomAddForm():""}
   ${ui.sort!=="recent"&&ui.room!=="all"&&ui.room!=="unsorted"&&secFor(ui.room)?`<p class="small"><button class="textlink" data-dir="sec-${secFor(ui.room).id}">See the directives for ${esc(ui.room.toLowerCase())} →</button></p>`:""}
   <div class="note-list">${list.map(n=>{
@@ -548,8 +565,8 @@ function meetingBlock(){
     ${m?`<p class="when-big">${fmtWeek(m.when)}<br>${fmtTime(m.when)}</p><p class="label">${esc(m.where)}</p><p style="max-width:52ch;color:var(--ink-2)">${linkify(m.notes)}</p>`:`<p class="when-big">Nothing scheduled.</p>`}
     ${cr?`<div class="req"><span class="label">${cr.kind==="cancel"?"Cancel requested":"Change requested"} · ${esc(nameOf(cr.by))} · ${fmtStamp(cr.at)}</span><p>${linkify(cr.message)}</p>${d?`<div class="actions"><button class="textlink" id="clearReq">Clear request</button></div>`:""}</div>`:""}
     ${d?`<div class="actions"><button class="btn ghost tiny" id="meetEdit">${m?"Edit meeting":"Schedule a meeting"}</button></div>`:""}
-    ${!d&&m&&!showReq?`<div class="actions"><button class="btn ghost tiny" id="reqOpen">Need a different time?</button><span class="small muted">Or text me: <span class="phone" id="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></span></div>`:""}
-    ${d&&ui.meetingEdit?`<form class="editbox" id="meetForm"><div class="field"><label>When</label><input class="input" name="when" type="datetime-local" value="${toLocalInput(m&&m.when)}" required></div><div class="field"><label>Where</label><input class="input" name="where" value="${esc(m?m.where:"")}"></div><div class="field"><label>Notes for them</label><textarea class="input" name="notes">${esc(m?m.notes:"")}</textarea></div><div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" id="meetCancel">Cancel</button></div></form>`:""}
+    ${!d&&!showReq&&!ui.meetingEdit?`<div class="actions">${m?`<button class="btn ghost tiny" id="reqOpen">Need a different time?</button>`:`<button class="btn ghost tiny" id="meetEdit">Propose a meeting</button>`}<span class="small muted">Or text ${esc(DESIGNER_NAME)}: <span class="phone" id="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></span></div>`:""}
+    ${ui.meetingEdit?`<form class="editbox" id="meetForm"><div class="field"><label>When</label><input class="input" name="when" type="datetime-local" value="${toLocalInput(m&&m.when)}" required></div><div class="field"><label>Where</label><input class="input" name="where" value="${esc(m?m.where:"")}"></div><div class="field"><label>${d?"Notes for them":"Anything to add"}</label><textarea class="input" name="notes">${esc(m?m.notes:"")}</textarea></div><div class="actions"><button class="btn tiny" type="submit">${d?"Save":"Propose"}</button><button class="textlink" type="button" id="meetCancel">Cancel</button></div></form>`:""}
   </div>
   ${showReq?`<form class="editbox" id="reqForm"><p class="label">This emails ${esc(DESIGNER_NAME)}.</p><div class="field"><label>Request</label><select class="input" name="kind"><option value="move">Move it</option><option value="cancel">Cancel it</option></select></div><div class="field"><label>What works</label><textarea class="input" name="message" placeholder="Could we do the following Tuesday instead, any time after 10?" required></textarea></div><div class="actions"><button class="btn" type="submit">Send request</button><button class="textlink" type="button" id="reqCancel">Cancel</button></div></form>`:""}
   </div></section>`;
@@ -561,7 +578,7 @@ function viewSettings(){
   <section class="section"><div class="band"><h2>Email</h2><span class="desc"></span></div>
     <form id="emailSet" class="row" style="max-width:460px"><div class="field"><label for="setEmail">Email</label><input class="input" id="setEmail" type="email" value="${esc(me.email||"")}" required></div><div class="actions"><button class="btn tiny" type="submit">Change email</button></div><p class="small muted" id="emailMsg">${LIVE?"A confirmation link goes to the new address.":""}</p></form></section>
   <section class="section"><div class="band"><h2>Email alerts</h2><span class="desc"></span></div>
-    <div class="switchrow" style="border:0;padding:0"><span class="small muted">${isDesigner()?"An email when a client posts, changes a directive or asks about a meeting.":`An email when ${esc(DESIGNER_NAME)} replies or moves a meeting.`}</span><button class="chip ${me.email_alerts?"on":""}" id="alertsToggle">${me.email_alerts?"On":"Off"}</button></div></section>
+    <div class="switchrow" style="border:0;padding:0"><span class="small muted">${isDesigner()?"An email when a client posts, changes a directive or asks about a meeting.":`An email when ${esc(DESIGNER_NAME)} replies or moves a meeting.`}</span><div class="chips"><button class="chip ${me.email_alerts?"on":""}" data-alerts="1">On</button><button class="chip ${me.email_alerts?"":"on"}" data-alerts="0">Off</button></div></div></section>
   <section class="section"><div class="band"><h2>Sign out</h2><span class="desc"></span></div>
     <div class="actions"><button class="btn ghost" id="signoutBtn">Sign out of this device</button></div></section>`;
 }
@@ -577,14 +594,15 @@ function bind(app){
   const raf=$("#roomAddForm",app);if(raf)raf.onsubmit=async e=>{e.preventDefault();const r=$("#newRoom",app).value.trim();if(!r)return;if(project.rooms.includes(r)){toast("Already there");return;}try{await store.setRooms([...project.rooms,r]);if(LIVE)project=await store.loadProject(project.id);ui.roomAdd=false;render();toast("Added "+r);}catch(err){toast("Couldn't add: "+err.message);}};
   const ns=$("#nameSet",app);if(ns)ns.onsubmit=async e=>{e.preventDefault();const n=$("#setName",app).value.trim();if(!n)return;await store.setMyName(n);me.name=n;const m=(project.members||[]).find(x=>x.id===me.id);if(m)m.name=n;render();toast("Name saved");};
   const es=$("#emailSet",app);if(es)es.onsubmit=async e=>{e.preventDefault();const em=$("#setEmail",app).value.trim().toLowerCase();if(!em||em===(me.email||"").toLowerCase())return;const r=await store.setMyEmail(em);$("#emailMsg",app).textContent=r.ok?(LIVE?`Check ${me.email} and ${em} for confirmation links.`:"Email changed."):`Couldn't change it: ${r.error}`;if(r.ok&&!LIVE){me.email=em;const m=(project.members||[]).find(x=>x.id===me.id);if(m)m.email=em;}};
-  const so=$("#signoutBtn",app);if(so)so.onclick=async()=>{await store.signOut();if(LIVE){me=null;project=null;notifs=[];summaries=null;try{localStorage.removeItem("parla-studio-project");}catch(e){}location.hash="";render();}else toast("Preview: sign-out does nothing here");};
+  const so=$("#signoutBtn",app);if(so)so.onclick=async()=>{await store.signOut();if(LIVE){me=null;project=null;notifs=[];summaries=null;try{localStorage.removeItem("parla-studio-project");sessionStorage.removeItem("parla-studio-pin");}catch(e){}location.hash="";render();}else toast("Preview: sign-out does nothing here");};
   const cl=$("#copyLink",app);if(cl)cl.onclick=async()=>{const t=projectLink();try{await navigator.clipboard.writeText(t);toast("Link copied");}catch(e){const el=$("#projLink",app);el.hidden=false;const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);toast("Select and copy the link");}};
   const pe=$("#projEdit",app);if(pe)pe.onclick=()=>{ui.projEdit=true;render();};
   const pc=$("#projCancel",app);if(pc)pc.onclick=()=>{ui.projEdit=false;render();};
   const pf=$("#projForm",app);if(pf)pf.onsubmit=async e=>{e.preventDefault();const name=$("#pjName",app).value.trim();const clients=$("#pjClients",app).value.split(/[\n,]/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.match(/^(.*?)\s*<([^>]+)>$/);return m?{name:m[1].trim(),email:m[2].trim().toLowerCase()}:{name:"",email:x.toLowerCase()};});const rooms=[...new Set($("#pjRooms",app).value.split(/\n/).map(x=>x.trim()).filter(Boolean))];try{await store.updateProject(name,clients);await store.setRooms(rooms);if(LIVE)project=await store.loadProject(project.id);else{project.name=name;project.rooms=rooms;}ui.projEdit=false;summaries=null;render();toast("Project saved");}catch(err){toast("Couldn't save: "+err.message);}};
-  const ea=$("#alertsToggle",app);if(ea)ea.onclick=async()=>{me.email_alerts=!me.email_alerts;await store.setEmailAlerts(me.email_alerts);render();toast(me.email_alerts?"Email alerts on":"Email alerts off");};
+  app.querySelectorAll("[data-alerts]").forEach(b=>b.onclick=async()=>{const on=b.dataset.alerts==="1";if(on===!!me.email_alerts)return;me.email_alerts=on;await store.setEmailAlerts(on);render();toast(on?"Email alerts on":"Email alerts off");});
 
   app.querySelectorAll("[data-sort]").forEach(b=>b.onclick=()=>{ui.sort=b.dataset.sort;render();});
+  const ram=$("#readAllMsgs",app);if(ram)ram.onclick=async()=>{for(const n of unreadNotes()){await store.markRead(n.id,true);n.read_at=new Date().toISOString();}render();toast("All read");};
   app.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>{const id=b.dataset.toggle;if(ui.editing[id])return;ui.open[id]=!ui.open[id];render();});
   const rb=$("#reviewBtn",app);if(rb)rb.onclick=()=>{ui.review=true;render();};
   const rk=$("#reviewBack",app);if(rk)rk.onclick=()=>{ui.review=false;render();};
@@ -610,7 +628,7 @@ function bind(app){
   app.querySelectorAll("[data-conv]").forEach(b=>b.onclick=()=>{ui.room=b.dataset.conv;ui.sort="room";location.hash="conversation";});
   app.querySelectorAll("[data-dir]").forEach(b=>b.onclick=()=>{ui.jump=b.dataset.dir;location.hash="directives";});
   app.querySelectorAll("[data-dnew]").forEach(b=>b.onclick=()=>{ui.editing["add-"+b.dataset.dnew]=true;render();$("#dir-"+b.dataset.dnew).focus();});
-  app.querySelectorAll("[data-dadd]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const sid=f.dataset.dadd,t=$("#dir-"+sid).value.trim();if(!t)return;try{const q=await store.addDirective(sid,t);if(LIVE)project.intake.find(s=>s.id===sid).questions.push(q);delete ui.editing["add-"+sid];ui.jump="sec-"+sid;render();toast(isDesigner()?"Directive added":`Added — ${DESIGNER_NAME} will see it`);}catch(err){toast("Couldn't save: "+err.message);}});
+  app.querySelectorAll("[data-dadd]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const sid=f.dataset.dadd,t=$("#dir-"+sid).value.trim();if(!t)return;try{const q=await store.addDirective(sid,t);if(LIVE)project.intake.find(s=>s.id===sid).questions.push(q);const tell=$("#tell-"+sid);if(tell&&tell.checked)await store.tellClients(q.id);delete ui.editing["add-"+sid];ui.jump="sec-"+sid;render();toast(isDesigner()?(tell&&tell.checked?"Directive added · clients notified":"Directive added"):`Added — ${DESIGNER_NAME} will see it`);}catch(err){toast("Couldn't save: "+err.message);}});
   const df=$("#docFile",app);if(df)df.onchange=()=>{$("#docName",app).textContent=df.files[0]?df.files[0].name:"";};
   const docForm=$("#docForm",app);if(docForm)docForm.onsubmit=async e=>{e.preventDefault();let url=$("#docUrl",app).value.trim();const f=df&&df.files[0];try{if(f)url=await store.uploadImage(f);const doc={title:$("#docTitle",app).value.trim(),kind:$("#docKind",app).value.trim()||(f?f.name.split(".").pop().toUpperCase():"Link"),url,note:$("#docNote",app).value.trim(),created_at:new Date().toISOString()};await store.addDocument(doc);if(LIVE)project=await store.loadProject(project.id);render();toast("Added");}catch(err){toast("Couldn't add: "+err.message);}};
   app.querySelectorAll("[data-rmdoc]").forEach(b=>b.onclick=async e=>{e.preventDefault();e.stopPropagation();await store.removeDocument(b.dataset.rmdoc);project.documents=project.documents.filter(x=>x.id!==b.dataset.rmdoc);render();});

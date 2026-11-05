@@ -69,8 +69,10 @@ create table if not exists public.project_invites (
 alter table public.project_invites add column if not exists name text default '';
 
 -- Who may start projects. Add a row per designer email.
-create table if not exists public.designers (email text primary key);
+create table if not exists public.designers (email text primary key, pin text default '');
+alter table public.designers add column if not exists pin text default '';
 insert into public.designers (email) values ('corina@parladesigns.com'), ('corina.kinnear@gmail.com') on conflict do nothing;
+-- set the PIN: update public.designers set pin = '....';
 alter table public.designers enable row level security;
 
 create table if not exists public.intake_sections (
@@ -164,9 +166,11 @@ create table if not exists public.documents (
   url text default '',
   note text default '',
   position bigint default 0,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  added_by uuid references public.profiles(id)
 );
 alter table public.documents add column if not exists created_at timestamptz default now();
+alter table public.documents add column if not exists added_by uuid references public.profiles(id);
 
 create table if not exists public.architect_images (
   id uuid primary key default gen_random_uuid(),
@@ -305,6 +309,23 @@ begin
   update public.notes set room = p_new where project_id = p_project and room = p_old;
 end $$;
 
+-- Designer PIN, checked after the email sign-in.
+create or replace function public.designer_pin_ok(p_pin text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.designers d join auth.users u on lower(u.email) = lower(d.email) where u.id = auth.uid() and d.pin <> '' and d.pin = p_pin);
+$$;
+
+-- Designer chooses to tell the clients about a directive.
+create or replace function public.notify_directive(p_question uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare q record; pname text;
+begin
+  select * into q from public.intake_questions where id = p_question;
+  if q.id is null or not public.is_designer(q.project_id) then return; end if;
+  select name into pname from public.projects where id = q.project_id;
+  perform public.notify_project(q.project_id, auth.uid(), 'client', 'New directive · ' || pname, left(coalesce(nullif(q.directive,''), q.question), 400), '#directives');
+end $$;
+
 -- Dashboard: one row per project the signed-in designer runs.
 create or replace function public.project_summaries() returns table (
   id uuid, name text, clients text, unread int, changed int, stage text, stage_due date,
@@ -380,6 +401,10 @@ drop policy if exists documents_read on public.documents;
 create policy documents_read on public.documents for select to authenticated using (public.is_member(project_id));
 drop policy if exists documents_designer on public.documents;
 create policy documents_designer on public.documents for all to authenticated using (public.is_designer(project_id)) with check (public.is_designer(project_id));
+drop policy if exists documents_client_add on public.documents;
+create policy documents_client_add on public.documents for insert to authenticated with check (public.is_member(project_id) and added_by = auth.uid());
+drop policy if exists documents_client_own on public.documents;
+create policy documents_client_own on public.documents for delete to authenticated using (added_by = auth.uid());
 drop policy if exists images_read on public.architect_images;
 create policy images_read on public.architect_images for select to authenticated using (public.is_member(project_id));
 drop policy if exists images_designer on public.architect_images;
@@ -520,9 +545,9 @@ begin
   select name into pname from public.projects where id = new.project_id;
   if new.change_request is not null and (old.change_request is null or new.change_request <> old.change_request) then
     select coalesce(name, email) into who from public.profiles where id = (new.change_request->>'by')::uuid;
-    perform public.notify_project(new.project_id, (new.change_request->>'by')::uuid, 'designer', who || ' asked to ' || coalesce(new.change_request->>'kind','change') || ' the meeting · ' || pname, coalesce(new.change_request->>'message',''), '#meeting');
+    perform public.notify_project(new.project_id, (new.change_request->>'by')::uuid, 'designer', who || ' asked to ' || coalesce(new.change_request->>'kind','change') || ' the meeting · ' || pname, coalesce(new.change_request->>'message',''), '#timeline');
   elsif new."when" is distinct from old."when" or new."where" is distinct from old."where" then
-    perform public.notify_project(new.project_id, null, 'client', 'Meeting updated · ' || pname, 'Now ' || to_char(new."when" at time zone 'America/Los_Angeles', 'Day, Month DD at HH12:MI AM') || coalesce(' · ' || nullif(new."where",''), ''), '#meeting');
+    perform public.notify_project(new.project_id, auth.uid(), null, 'Meeting updated · ' || pname, 'Now ' || to_char(new."when" at time zone 'America/Los_Angeles', 'Day, Month DD at HH12:MI AM') || coalesce(' · ' || nullif(new."where",''), ''), '#timeline');
   end if;
   return new;
 end $$;
@@ -540,6 +565,50 @@ begin
 end $$;
 drop trigger if exists dcomment_insert_notify on public.directive_comments;
 create trigger dcomment_insert_notify after insert on public.directive_comments for each row execute function public.on_dcomment_insert();
+
+create or replace function public.on_document_insert() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text;
+begin
+  select name into pname from public.projects where id = new.project_id;
+  select coalesce(name, email) into who from public.profiles where id = new.added_by;
+  select role into author_role from public.project_members where project_id = new.project_id and user_id = new.added_by;
+  perform public.notify_project(new.project_id, new.added_by, case when author_role = 'designer' then 'client' else 'designer' end,
+    coalesce(who,'Someone') || ' added a document · ' || pname, new.title || coalesce(' — ' || nullif(new.note,''), ''), '#documents');
+  return new;
+end $$;
+drop trigger if exists document_insert_notify on public.documents;
+create trigger document_insert_notify after insert on public.documents for each row execute function public.on_document_insert();
+
+create or replace function public.on_stage_payment() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text;
+begin
+  if new.payment_status is distinct from old.payment_status then
+    select name into pname from public.projects where id = new.project_id;
+    perform public.notify_project(new.project_id, auth.uid(), 'client',
+      case new.payment_status when 'requested' then 'Payment requested · ' when 'paid' then 'Payment received · ' else 'Payment updated · ' end || new.title,
+      case when new.payment_amount is not null then '$' || to_char(new.payment_amount, 'FM999,999.00') else '' end || ' · ' || pname, '#timeline');
+  end if;
+  return new;
+end $$;
+drop trigger if exists stage_payment_notify on public.stages;
+create trigger stage_payment_notify after update on public.stages for each row execute function public.on_stage_payment();
+
+create or replace function public.on_meeting_insert() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text;
+begin
+  select name into pname from public.projects where id = new.project_id;
+  select coalesce(name, email) into who from public.profiles where id = auth.uid();
+  select role into author_role from public.project_members where project_id = new.project_id and user_id = auth.uid();
+  perform public.notify_project(new.project_id, auth.uid(), case when author_role = 'designer' then 'client' else 'designer' end,
+    coalesce(who,'Someone') || (case when author_role = 'designer' then ' scheduled a meeting · ' else ' proposed a meeting · ' end) || pname,
+    to_char(new."when" at time zone 'America/Los_Angeles', 'Day, Month DD at HH12:MI AM') || coalesce(' · ' || nullif(new."where",''), ''), '#timeline');
+  return new;
+end $$;
+drop trigger if exists meeting_insert_notify on public.meetings;
+create trigger meeting_insert_notify after insert on public.meetings for each row execute function public.on_meeting_insert();
 
 drop trigger if exists meeting_change_notify on public.meetings;
 create trigger meeting_change_notify after update on public.meetings for each row execute function public.on_meeting_change();
