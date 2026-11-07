@@ -1,6 +1,6 @@
 // Parlā Studio — keeps a short directive-style summary ready for each conversation.
 // Deploy: supabase functions deploy summarize --no-verify-jwt
-// Secrets: ANTHROPIC_API_KEY (required), ANTHROPIC_MODEL (optional), DESIGNER_NAME (optional)
+// Secrets: GEMINI_API_KEY (required, free tier from aistudio.google.com), GEMINI_MODEL (optional), DESIGNER_NAME (optional)
 // Called two ways:
 //   - by pg_cron every 5 minutes with the service role key and an empty body: summarizes every note flagged summary_stale
 //   - by the app with the signed-in user's token and {"note_id": "..."}: summarizes that one note now and returns it
@@ -9,8 +9,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
-const KEY = Deno.env.get("ANTHROPIC_API_KEY");
-const MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-5";
+const KEY = Deno.env.get("GEMINI_API_KEY");
+const MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
 const DESIGNER = Deno.env.get("DESIGNER_NAME") || "Corina";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
@@ -35,21 +35,25 @@ Write two or three short sentences addressed to the clients in the second person
 Keep only decisions, preferences and constraints that matter to the design, with their specifics (which wall, which room, materials, sizes, what to avoid). Drop pleasantries and uncertainty.
 If the designer made a decision in a reply, state it as an instruction. Output only the sentences.`;
 
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
     method: "POST",
-    headers: { "x-api-key": KEY!, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-    body: JSON.stringify({ model: MODEL, max_tokens: 300, system, messages: [{ role: "user", content: `Space: ${n.room || "not sorted yet"}\n\n${transcript}` }] }),
+    headers: { "x-goog-api-key": KEY!, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: `Space: ${n.room || "not sorted yet"}\n\n${transcript}` }] }],
+      generationConfig: { maxOutputTokens: 400, temperature: 0.3, thinkingConfig: { thinkingBudget: 0 } },
+    }),
   });
-  if (!r.ok) throw new Error(`Anthropic ${r.status}: ${(await r.text()).slice(0, 300)}`);
+  if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 300)}`);
   const out = await r.json();
-  const text = (out.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join(" ").replace(/\s+/g, " ").trim();
+  const text = ((out.candidates?.[0]?.content?.parts ?? []) as { text?: string }[]).map(p => p.text || "").join(" ").replace(/\s+/g, " ").trim();
   if (!text) throw new Error("Empty summary");
   return text;
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (!KEY) return json({ error: "ANTHROPIC_API_KEY not set" }, 500);
+  if (!KEY) return json({ error: "GEMINI_API_KEY not set" }, 500);
   const admin = createClient(URL, SERVICE);
   const auth = req.headers.get("Authorization") || "";
   let body: { note_id?: string } = {};
