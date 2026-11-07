@@ -10,7 +10,7 @@ const URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 const KEY = Deno.env.get("GEMINI_API_KEY");
-const MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
+const MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash-lite";
 const DESIGNER = Deno.env.get("DESIGNER_NAME") || "Corina";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
@@ -41,7 +41,7 @@ If the designer made a decision in a reply, state it as an instruction. Output o
     body: JSON.stringify({
       system_instruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: `Space: ${n.room || "not sorted yet"}\n\n${transcript}` }] }],
-      generationConfig: { maxOutputTokens: 400, temperature: 0.3, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: { maxOutputTokens: 400, temperature: 0.3 },
     }),
   });
   if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 300)}`);
@@ -49,6 +49,17 @@ If the designer made a decision in a reply, state it as an instruction. Output o
   const text = ((out.candidates?.[0]?.content?.parts ?? []) as { text?: string }[]).map(p => p.text || "").join(" ").replace(/\s+/g, " ").trim();
   if (!text) throw new Error("Empty summary");
   return text;
+}
+
+function roleOf(auth: string): string {
+  const t = auth.replace(/^Bearer\s+/i, "");
+  if (!t) return "";
+  if (t === SERVICE || t.startsWith("sb_secret_")) return "service_role";
+  if (t.startsWith("sb_publishable_")) return "anon";
+  try {
+    const p = JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return p.sub ? "user" : (p.role || "");
+  } catch { return ""; }
 }
 
 Deno.serve(async (req) => {
@@ -72,16 +83,19 @@ Deno.serve(async (req) => {
     } catch (e) { return json({ error: String(e) }, 502); }
   }
 
-  // The scheduled sweep: only with the service role key.
-  if (auth !== `Bearer ${SERVICE}`) return json({ error: "Not allowed" }, 403);
-  const { data: rows } = await admin.from("notes").select("id,body,author_id,room,project_id").eq("summary_stale", true).order("created_at", { ascending: false }).limit(10);
+  // The scheduled sweep: with a project key (service or publishable), never with a person's sign-in token.
+  if (!["service_role", "anon"].includes(roleOf(auth))) return json({ error: "Not allowed" }, 403);
+  const { data: rows } = await admin.from("notes").select("id,body,author_id,room,project_id").eq("summary_stale", true).order("summary_at", { ascending: true, nullsFirst: true }).limit(10);
   let done = 0; const errors: string[] = [];
-  for (const n of rows ?? []) {
+  await Promise.all((rows ?? []).map(async (n) => {
     try {
       const summary = await summarize(admin, n as Note);
       await admin.from("notes").update({ summary, summary_at: new Date().toISOString(), summary_stale: false }).eq("id", n.id);
       done++;
-    } catch (e) { errors.push(String(e)); }
-  }
+    } catch (e) {
+      errors.push(String(e));
+      await admin.from("notes").update({ summary_at: new Date().toISOString() }).eq("id", n.id);
+    }
+  }));
   return json({ done, errors });
 });

@@ -659,3 +659,5 @@ create trigger replies_flag_summary after insert or update or delete on public.n
 select cron.unschedule(jobid) from cron.job where jobname = 'studio-summarize';
 select cron.schedule('studio-summarize', '*/5 * * * *', replace(j.command, 'functions/v1/notify', 'functions/v1/summarize')) from cron.job j where j.jobname = 'studio-notify';
 select jobname, schedule, left(replace(command, 'Bearer ', 'Bearer …'), 120) from cron.job;
+-- the sweep can take longer than pg_net's 5 s default
+select cron.alter_job(jobid, command := regexp_replace(command, 'body\s*:=', 'timeout_milliseconds := 120000, body :=')) from cron.job where jobname = 'studio-summarize' and command not like '%timeout_milliseconds%';
