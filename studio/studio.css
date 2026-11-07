@@ -287,3 +287,6 @@ a.payopt:hover span:last-child{color:var(--accent)}
 .toast.show{opacity:1}
 
 footer{max-width:var(--max);margin:0 auto;padding:0 var(--gutter-r) calc(80px + env(safe-area-inset-bottom,0px)) var(--gutter);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.src.conv{gap:10px}
+.src.conv .mini{border-left:0;padding:0}
+.src.conv .imgs{margin-top:4px}
