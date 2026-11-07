@@ -203,9 +203,9 @@ textarea.input{min-height:110px}
 .note .body{white-space:pre-wrap;max-width:64ch;font-size:17px}
 .note.unread .body{color:var(--ink)}
 .note .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block}
-.note .imgs{display:flex;flex-wrap:wrap;gap:14px}
-.note .imgs img{height:150px;width:auto;max-width:100%;transition:opacity .2s}
-.note .imgs img:hover{opacity:.88}
+.imgs{display:flex;flex-wrap:wrap;gap:14px}
+.imgs img{height:150px;width:auto;max-width:100%;transition:opacity .2s}
+.imgs img:hover{opacity:.88}
 .note .state{display:flex;flex-wrap:wrap;gap:8px}
 .replies{display:grid;gap:14px;padding-left:18px;border-left:1px solid var(--line)}
 .reply{display:grid;gap:4px;max-width:62ch}

@@ -95,8 +95,12 @@ create table if not exists public.intake_questions (
   added_by uuid references public.profiles(id),
   seen_by_designer boolean default true,
   directive text default '',
-  directive_reviewed boolean default false
+  directive_reviewed boolean default false,
+  images text[] default '{}',
+  source_note_id uuid
 );
+alter table public.intake_questions add column if not exists images text[] default '{}';
+alter table public.intake_questions add column if not exists source_note_id uuid;
 alter table public.intake_questions add column if not exists directive text default '';
 alter table public.intake_questions add column if not exists directive_reviewed boolean default false;
 
@@ -119,8 +123,12 @@ create table if not exists public.notes (
   created_at timestamptz default now(),
   edited_at timestamptz,
   read_at timestamptz,
-  integrated_at timestamptz
+  integrated_at timestamptz,
+  status text default '',
+  status_at timestamptz
 );
+alter table public.notes add column if not exists status text default '';
+alter table public.notes add column if not exists status_at timestamptz;
 
 create table if not exists public.note_replies (
   id uuid primary key default gen_random_uuid(),
