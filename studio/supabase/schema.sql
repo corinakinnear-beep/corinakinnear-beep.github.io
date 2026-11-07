@@ -636,3 +636,26 @@ create trigger meeting_insert_notify after insert on public.meetings for each ro
 
 drop trigger if exists meeting_change_notify on public.meetings;
 create trigger meeting_change_notify after update on public.meetings for each row execute function public.on_meeting_change();
+-- Summaries kept ready for "Make a directive"
+alter table public.notes add column if not exists summary text default '';
+alter table public.notes add column if not exists summary_at timestamptz;
+alter table public.notes add column if not exists summary_stale boolean default true;
+create or replace function public.flag_note_summary() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if tg_table_name = 'notes' then
+    if tg_op = 'INSERT' or new.body is distinct from old.body then new.summary_stale := true; end if;
+    return new;
+  else
+    update public.notes set summary_stale = true where id = coalesce(new.note_id, old.note_id);
+    return coalesce(new, old);
+  end if;
+end $$;
+drop trigger if exists notes_flag_summary on public.notes;
+create trigger notes_flag_summary before insert or update of body on public.notes for each row execute function public.flag_note_summary();
+drop trigger if exists replies_flag_summary on public.note_replies;
+create trigger replies_flag_summary after insert or update or delete on public.note_replies for each row execute function public.flag_note_summary();
+-- sweep every 5 minutes, same call shape as studio-notify
+select cron.unschedule(jobid) from cron.job where jobname = 'studio-summarize';
+select cron.schedule('studio-summarize', '*/5 * * * *', replace(j.command, 'functions/v1/notify', 'functions/v1/summarize')) from cron.job j where j.jobname = 'studio-notify';
+select jobname, schedule, left(replace(command, 'Bearer ', 'Bearer …'), 120) from cron.job;
