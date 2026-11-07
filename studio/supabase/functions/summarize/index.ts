@@ -30,10 +30,9 @@ async function summarize(admin: ReturnType<typeof createClient>, n: Note): Promi
   };
   const transcript = [`${who(n.author_id)}: ${n.body}`, ...(replies ?? []).map((r: { author_id: string; body: string }) => `${who(r.author_id)}: ${r.body}`)].join("\n\n");
 
-  const system = `You turn a conversation between an interior designer (${DESIGNER}) and her clients into a design directive.
-Write two or three short sentences addressed to the clients in the second person ("You want…", "Keep…"), statements only, no questions, no greetings, no names.
-Keep only decisions, preferences and constraints that matter to the design, with their specifics (which wall, which room, materials, sizes, what to avoid). Drop pleasantries and uncertainty.
-If the designer made a decision in a reply, state it as an instruction. Output only the sentences.`;
+  const system = `You turn a conversation between an interior designer (${DESIGNER}) and her clients into a design directive: a short brief the designer will design to.
+Write one to three short sentences as directives, not as a description of what someone wants. Lead with the thing itself. Example: "Entertainment unit on the northern wall with inlaid storage for books, using the pitched ceiling space. Keep the storage integrated into that un-walkable area."
+Never start with "You want", "They want", "The clients" or a name. No questions, no greetings, no hedging. Keep only decisions, preferences and constraints that matter to the design, with their specifics (which wall, which room, materials, sizes, what to avoid). If the designer decided something in a reply, state it as the directive. Output only the sentences.`;
 
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
     method: "POST",

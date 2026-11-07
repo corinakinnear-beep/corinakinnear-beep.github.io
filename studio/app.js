@@ -93,7 +93,7 @@ const STATUS={noted:"Noted",directive:"Added as a directive",integrated:"Integra
 const noteStatus=n=>n.status||(n.integrated_at?"integrated":"");
 /* ---------- state ---------- */
 let store=null, me=null, project=null, route="home", notifs=[];
-let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false};
+let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false,jumpNote:null};
 const isDesigner=()=>me&&me.role==="designer";
 const member=id=>(project.members||[]).find(m=>m.id===id)||{name:"—"};
 const nameOf=id=>member(id).name;
@@ -321,6 +321,7 @@ function render(){
   const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewTimeline,account:viewSettings};
   app.innerHTML=`<div class="view">${(views[route]||viewHome)()}</div>`;
   bind(app);
+  if(ui.jumpNote&&route==="conversation"){const el=$("#note-"+ui.jumpNote);ui.jumpNote=null;if(el){el.scrollIntoView({block:"center"});const nid=el.id.slice(5);const ta=$("#td-"+nid);if(ta){ta.focus();fillSummary(nid);}}}
   renderPreviewBar();
   if(ui.jump){const el=document.getElementById(ui.jump);ui.jump=null;if(el)setTimeout(()=>el.scrollIntoView({block:"start"}),30);}
 }
@@ -465,6 +466,20 @@ function viewDocuments(){
 }
 
 function dirText(q){return (q.directive||"").trim();}
+/* Conversations in a room that have not become a directive yet. */
+function otherConvs(sec){
+  const linked=new Set(project.intake.flatMap(x=>x.questions).map(q=>q.source_note_id).filter(Boolean));
+  return project.notes.filter(n=>n.room===sec.room&&!linked.has(n.id)&&noteStatus(n)!=="directive");
+}
+/* Put the ready summary into an open "Make a directive" box, fetching one if it isn't ready yet. */
+async function fillSummary(id){
+  const n=project.notes.find(x=>x.id===id);const ta=$("#td-"+id);
+  if(!n||!ta||(n.summary&&!n.summary_stale))return;
+  const draft=ta.value;
+  try{const sum=await store.summarize(id);n.summary=sum;n.summary_stale=false;const now=$("#td-"+id),hint=$("#tdhint-"+id);if(now&&now.value===draft)now.value=sum;if(hint)hint.textContent="A few sentences from the conversation. Edit before adding.";}
+  catch(e){const hint=$("#tdhint-"+id);if(hint)hint.textContent="Couldn't reach the summary service — this is a rough draft. Edit before adding.";}
+}
+function convSummary(n){return n.summary&&!n.summary_stale?n.summary:suggestDirective(n);}
 function viewDirectives(){
   const d=isDesigner(),did=(project.designer||{}).id;
   const convCount=room=>project.notes.filter(n=>n.room===room).length;
@@ -497,7 +512,9 @@ function viewDirectives(){
             <div class="meta">${q.updated_at?`<span>${q.updated_by===did?"Recorded":"Updated"} by ${esc(nameOf(q.updated_by))} · ${fmtStamp(q.updated_at)}</span>`:""}${d||!q.q?`<button class="textlink" data-qedit="${q.id}">${text?"Edit":"Answer"}</button>`:""}${!ui.commentOpen[q.id]?`<button class="textlink" data-comment="${q.id}">Comment</button>`:""}${d&&changed?`<button class="textlink" data-qseen="${q.id}">Mark seen</button>`:""}</div>`}
         </div>`:""}
       </div>`;}).join("")}
-      ${s.room&&convCount(s.room)?`<div class="qa inconv"><p class="label">From messages</p>${project.notes.filter(n=>n.room===s.room).map(n=>`<div class="mini"><div class="rtop"><b>${esc(nameOf(n.author_id))}</b><span>${fmtDate(n.created_at)}</span>${noteStatus(n)?`<span class="tag quiet">${STATUS[noteStatus(n)]}</span>`:""}</div><p class="rbody">${linkify(n.body)}</p>${n.replies.map(r=>`<p class="rbody" style="padding-left:16px;border-left:1px solid var(--line)"><b style="font-weight:500">${esc(nameOf(r.author_id))}</b> · ${linkify(r.body)}</p>`).join("")}</div>`).join("")}<div class="actions"><button class="textlink" data-conv="${esc(s.room)}">Open in messages →</button></div></div>`:""}
+      ${(()=>{const others=otherConvs(s);if(!others.length)return"";const key="other-"+s.id,open=!!ui.open[key];
+        return`<div class="qa other ${open?"open":""}" id="qa-${key}"><button class="qrow one" data-toggle="${key}" aria-expanded="${open}"><span class="qq">Other conversations</span><span class="qs"><span class="chev">${open?"−":"+"}</span></span></button>
+        ${open?`<div class="qbody">${others.map(n=>`<div class="mini"><div class="rtop"><b>${esc(nameOf(n.author_id))}</b><span>${fmtDate(n.created_at)}</span>${noteStatus(n)?`<span class="tag quiet">${STATUS[noteStatus(n)]}</span>`:""}</div><p class="rbody">${linkify(convSummary(n))}</p><div class="actions"><button class="textlink" data-conv="${esc(s.room)}" data-note="${n.id}">Open in messages →</button>${d?`<button class="textlink" data-conv="${esc(s.room)}" data-note="${n.id}" data-make="1">Make a directive</button>`:""}</div></div>`).join("")}</div>`:""}</div>`;})()}
       ${ui.editing["add-"+s.id]?`<form class="qa edit" data-dadd="${s.id}"><p class="label">New directive · ${esc(s.room||s.title)}</p><textarea class="input" id="dir-${s.id}" placeholder="${d?"Something to design to…":"Something you want the design to honor…"}"></textarea>${d?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="tell-${s.id}"> Let the clients know</label>`:""}<div class="actions"><button class="btn tiny" type="submit">Add</button><button class="textlink" type="button" data-qcancel="add-${s.id}">Cancel</button></div></form>`:`<div class="qa"><div class="actions"><button class="btn ghost tiny" data-dnew="${s.id}">Add a directive</button></div></div>`}
     </div></section>`).join("")}
   ${d?(ui.roomAdd?roomAddForm():`<div class="actions"><button class="btn ghost" id="roomAddDir">Add a space</button></div>`):""}`;
@@ -662,7 +679,7 @@ function bind(app){
   const comp=$("#compose",app);if(comp)comp.onsubmit=async e=>{e.preventDefault();const body=$("#noteBody",app).value.trim();if(!body&&!ui.composeImgs.length)return;const room=autoRoom(body,project.rooms);try{const n=await store.addNote({room,body,images:ui.composeImgs});if(LIVE)project.notes.unshift(n);ui.composeImgs=[];ui.room="all";render();toast(room?"Posted · filed under "+room:"Posted · under Other for now");}catch(err){toast("Couldn't save: "+err.message);}};
   app.querySelectorAll("select[data-room]").forEach(s=>{s.onchange=async()=>{await store.setNoteRoom(s.dataset.room,s.value);const n=project.notes.find(x=>x.id===s.dataset.room);if(n)n.room=s.value;render();toast(s.value?"Moved to "+s.value:"Moved to Other");};});
   app.querySelectorAll("[data-jump]").forEach(b=>b.onclick=()=>{const el=document.getElementById(b.dataset.jump);if(el)el.scrollIntoView({block:"start",behavior:"smooth"});});
-  app.querySelectorAll("[data-conv]").forEach(b=>b.onclick=()=>{ui.room=b.dataset.conv;ui.sort="room";location.hash="conversation";});
+  app.querySelectorAll("[data-conv]").forEach(b=>b.onclick=()=>{ui.room=b.dataset.conv||"unsorted";ui.sort="room";if(b.dataset.note){ui.jumpNote=b.dataset.note;if(b.dataset.make)ui.toDir[b.dataset.note]=true;}if(location.hash==="#conversation")render();else location.hash="conversation";});
   app.querySelectorAll("[data-dir]").forEach(b=>b.onclick=()=>{ui.jump=b.dataset.dir;location.hash="directives";});
   app.querySelectorAll("[data-dnew]").forEach(b=>b.onclick=()=>{ui.editing["add-"+b.dataset.dnew]=true;render();$("#dir-"+b.dataset.dnew).focus();});
   app.querySelectorAll("[data-dadd]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const sid=f.dataset.dadd,t=$("#dir-"+sid).value.trim();if(!t)return;try{const q=await store.addDirective(sid,t);if(LIVE)project.intake.find(s=>s.id===sid).questions.push(q);const tell=$("#tell-"+sid);if(tell&&tell.checked)await store.tellClients(q.id);delete ui.editing["add-"+sid];ui.jump="sec-"+sid;render();toast(isDesigner()?(tell&&tell.checked?"Directive added · clients notified":"Directive added"):`Added — ${DESIGNER_NAME} will see it`);}catch(err){toast("Couldn't save: "+err.message);}});
@@ -671,7 +688,7 @@ function bind(app){
   app.querySelectorAll("[data-rmdoc]").forEach(b=>b.onclick=async e=>{e.preventDefault();e.stopPropagation();await store.removeDocument(b.dataset.rmdoc);project.documents=project.documents.filter(x=>x.id!==b.dataset.rmdoc);render();});
   app.querySelectorAll("[data-read]").forEach(b=>b.onclick=async()=>{const on=b.dataset.on==="1";await store.markRead(b.dataset.read,on);const n=project.notes.find(x=>x.id===b.dataset.read);n.read_at=on?new Date().toISOString():null;render();});
   app.querySelectorAll("[data-status]").forEach(b=>b.onclick=async()=>{const n=project.notes.find(x=>x.id===b.dataset.note);const st=noteStatus(n)===b.dataset.status?"":b.dataset.status;await store.setStatus(n.id,st);n.status=st;n.status_at=st?new Date().toISOString():null;n.integrated_at=st==="integrated"?n.status_at:null;if(st&&!n.read_at)n.read_at=n.status_at;render();toast(st?STATUS[st]:"Status cleared");});
-  app.querySelectorAll("[data-todir]").forEach(b=>b.onclick=async()=>{const id=b.dataset.todir;ui.toDir[id]=true;render();const ta=$("#td-"+id);ta.focus();const n=project.notes.find(x=>x.id===id);if(n&&!(n.summary&&!n.summary_stale)){const draft=ta.value;try{const sum=await store.summarize(id);n.summary=sum;n.summary_stale=false;const now=$("#td-"+id),hint=$("#tdhint-"+id);if(now&&now.value===draft){now.value=sum;}if(hint)hint.textContent="A few sentences from the conversation. Edit before adding.";}catch(e){const hint=$("#tdhint-"+id);if(hint)hint.textContent="Couldn't reach the summary service — this is a rough draft. Edit before adding.";}}});
+  app.querySelectorAll("[data-todir]").forEach(b=>b.onclick=()=>{const id=b.dataset.todir;ui.toDir[id]=true;render();$("#td-"+id).focus();fillSummary(id);});
   app.querySelectorAll("[data-tdcancel]").forEach(b=>b.onclick=()=>{delete ui.toDir[b.dataset.tdcancel];render();});
   app.querySelectorAll("[data-dirsave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.dirsave,text=$("#td-"+id).value.trim(),sid=$("#tdroom-"+id).value;if(!text)return;const n=project.notes.find(x=>x.id===id);try{const q=await store.addDirective(sid,text,{images:n?n.images:[],source_note_id:id});if(LIVE)project.intake.find(x=>x.id===sid).questions.push(q);if(n){await store.setStatus(id,"directive");n.status="directive";n.status_at=new Date().toISOString();n.integrated_at=null;if(!n.read_at)n.read_at=n.status_at;}delete ui.toDir[id];render();toast("Added as a directive");}catch(err){toast("Couldn't add: "+err.message);}});
   app.querySelectorAll("[data-reply]").forEach(b=>b.onclick=()=>{ui.replyOpen[b.dataset.reply]=true;render();$("#rb-"+b.dataset.reply).focus();});
