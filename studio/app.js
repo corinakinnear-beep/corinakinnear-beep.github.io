@@ -48,18 +48,46 @@ function autoRoom(text,rooms){
   return bestN>0&&!tie?best:"";
 }
 
-/* Draft a directive from a message: second person, statements only, first two sentences. */
+/* Draft a directive from a conversation: a few short statements, second person, from the message and its replies. */
+function secondPerson(t){
+  const map=[[/\bwe'd\b/gi,"you'd"],[/\bwe're\b/gi,"you're"],[/\bwe've\b/gi,"you've"],[/\bwe\b/gi,"you"],[/\bour\b/gi,"your"],[/\bours\b/gi,"yours"],[/\bus\b/gi,"you"],[/\bI'd\b/g,"you'd"],[/\bI'm\b/g,"you're"],[/\bIm\b/g,"you're"],[/\bI've\b/g,"you've"],[/\bI\b/g,"you"],[/\bmy\b/gi,"your"],[/\bmine\b/gi,"yours"],[/\bme\b/gi,"you"]];
+  for(const [re,to] of map)t=t.replace(re,(m,_g,off)=>off===0?to[0].toUpperCase()+to.slice(1):to);
+  return t.replace(/\byou (am|are)\b/g,"you are").replace(/\byou was\b/g,"you were");
+}
+const DIR_WORDS=/\b(want|wants|need|needs|prefer|keep|move|remove|add|put|place|use|store|storage|open|close|wall|window|door|light|lighting|shelf|shelves|unit|desk|table|bed|sofa|couch|kitchen|bath|closet|office|studio|loft|room|space|corner|north|south|east|west|white|wood|warm|dark|soft|quiet|big|bigger|small|smaller|more|less|without|instead|rather|so that|because|important|love|hate|like|dislike|should|must|always|never|idea|thinking|plan)\b/i;
 function suggestDirective(n){
-  let t=String(n.body||"").replace(/\s+/g," ").trim();
-  const sentences=t.match(/[^.!?]+[.!?]?/g)||[t];
-  const keep=sentences.map(x=>x.trim()).filter(x=>x&&!/\?$/.test(x)).slice(0,2);
-  t=(keep.length?keep:sentences.slice(0,1)).join(" ").replace(/\?/g,".");
-  const map=[[/\bwe'd\b/gi,"you'd"],[/\bwe're\b/gi,"you're"],[/\bwe've\b/gi,"you've"],[/\bwe\b/gi,"you"],[/\bour\b/gi,"your"],[/\bours\b/gi,"yours"],[/\bus\b/gi,"you"],[/\bI'd\b/g,"you'd"],[/\bI'm\b/g,"you're"],[/\bI've\b/g,"you've"],[/\bI\b/g,"you"],[/\bmy\b/gi,"your"],[/\bmine\b/gi,"yours"],[/\bme\b/gi,"you"]];
-  for(const [re,to] of map)t=t.replace(re,m=>m[0]===m[0].toUpperCase()&&m[0]!==m[0].toLowerCase()?to[0].toUpperCase()+to.slice(1):to);
-  t=t.replace(/^(so|also|and|but)\s+/i,"");
-  t=t.charAt(0).toUpperCase()+t.slice(1);
-  if(!/[.!]$/.test(t))t+=".";
-  return t;
+  const did=(project&&project.designer||{}).id;
+  const texts=[{t:n.body||"",d:n.author_id===did}].concat((n.replies||[]).map(r=>({t:r.body||"",d:r.author_id===did})));
+  const all=[];
+  texts.forEach(({t,d:byDesigner},ti)=>{
+    const clean=String(t).replace(/https?:\/\/\S+/g,"").replace(/\s+/g," ").trim();
+    (clean.match(/[^.!?\n]+[.!?]?/g)||[]).forEach((x,i)=>{
+      x=x.trim();if(!x)return;
+      const words=x.split(/\s+/).length;
+      let score=0;
+      if(/\?$/.test(x))score-=5;
+      if(/^(hi|hey|hello|thanks|thank you|ok|okay|yes|no|sure|great|sounds good)\b/i.test(x))score-=5;
+      if(words<4)score-=3;
+      if(words>=6&&words<=24)score+=2;
+      if(words>34)score-=2;
+      score+=Math.min(3,(x.match(new RegExp(DIR_WORDS.source,"gi"))||[]).length);
+      if(ti===0&&i===0)score+=1;
+      all.push({x,score,order:all.length,byDesigner,greeting:/^(hi|hey|hello|thanks|thank you)\b/i.test(x)});
+    });
+  });
+  let keep=all.filter(a=>a.score>0).sort((a,b)=>b.score-a.score).slice(0,3).sort((a,b)=>a.order-b.order);
+  if(!keep.length)keep=all.filter(a=>!a.greeting).sort((a,b)=>b.score-a.score).slice(0,1);
+  if(!keep.length)keep=all.slice(0,1);
+  const out=keep.map(({x,byDesigner})=>{
+    let t=x.replace(/\?$/,".").replace(/^(can|could|would|will|should|do you think) (we|you|i) /i,"").replace(/^(can|could|should|will) (the|a|an) /i,"$2 ");
+    if(t.length>160){const cut=t.slice(0,160);const at=Math.max(cut.lastIndexOf(", "),cut.lastIndexOf(" and "),cut.lastIndexOf(" so "));t=(at>60?cut.slice(0,at):cut).trim();}
+    t=t.replace(/^(so|also|and|but|ok|okay|well|yes|sure)[,\s]+/i,"");
+    t=byDesigner?t.replace(/^(I would|I'd|I'll|I think|I'd suggest|I suggest|I would suggest|let's|we'll|we could|we can)\s+/i,""):secondPerson(t);
+    t=t.charAt(0).toUpperCase()+t.slice(1);
+    if(!/[.!]$/.test(t))t+=".";
+    return t;
+  });
+  return out.join(" ");
 }
 const STATUS={noted:"Noted",directive:"Added as a directive",integrated:"Integrated"};
 const noteStatus=n=>n.status||(n.integrated_at?"integrated":"");
@@ -458,8 +486,9 @@ function viewDirectives(){
         ${open?`<div class="qbody">
           ${editing?`<form class="edit" data-qsave="${q.id}"><div class="field"><label>Directive</label><textarea class="input" id="ans-${q.id}">${esc(text)}</textarea></div>${d&&q.q?`<div class="field"><label>Notes from the meeting</label><textarea class="input small" id="notes-${q.id}">${esc(q.a||"")}</textarea></div>`:""}<div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-qcancel="${q.id}">Cancel</button>${d?`<button class="textlink" type="button" data-qdel="${q.id}">Delete</button>`:""}</div></form>`
           :`${text?`<p class="a">${linkify(text)}</p>`:""}
-            ${(q.images||[]).length?`<div class="imgs">${q.images.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join("")}</div>`:""}
-            ${q.source_note_id?`<p class="small muted">From a message${(()=>{const sn=project.notes.find(x=>x.id===q.source_note_id);return sn?` by ${esc(nameOf(sn.author_id))} · ${fmtDate(sn.created_at)}`:"";})()}</p>`:""}
+            ${(()=>{const sn=q.source_note_id&&project.notes.find(x=>x.id===q.source_note_id);
+              if(sn)return`<div class="src conv"><span class="label">The conversation</span><div class="mini"><div class="rtop"><b>${esc(nameOf(sn.author_id))}</b><span>${fmtStamp(sn.created_at)}</span></div><p class="rbody">${linkify(sn.body)}</p>${(sn.images||[]).length?`<div class="imgs">${sn.images.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join("")}</div>`:""}</div>${(sn.replies||[]).map(r=>`<div class="mini"><div class="rtop"><b>${esc(nameOf(r.author_id))}</b><span>${fmtStamp(r.created_at)}</span></div><p class="rbody">${linkify(r.body)}</p></div>`).join("")}<div class="actions"><button class="textlink" data-conv="${esc(sn.room||"unsorted")}">Open in messages →</button></div></div>`;
+              return (q.images||[]).length?`<div class="imgs">${q.images.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join("")}</div>`:"";})()}
             ${q.q?`<div class="src"><span class="label">From the first meeting</span><p class="small">${esc(q.q)}</p>${q.a?`<p class="small muted">${esc(q.a)}</p>`:""}</div>`:""}
             ${(q.comments||[]).length?`<div class="replies">${q.comments.map(c=>`<div class="reply"><div class="rtop"><b>${esc(nameOf(c.author_id))}</b><span>${fmtStamp(c.created_at)}</span></div><p class="rbody">${linkify(c.body)}</p></div>`).join("")}</div>`:""}
             ${ui.commentOpen[q.id]?`<form class="ask" data-csave="${q.id}"><textarea class="input" id="cb-${q.id}" placeholder="${d?"A note back to them…":"A comment or a clarification…"}"></textarea><div class="actions"><button class="btn tiny" type="submit">Comment</button><button class="textlink" type="button" data-ccancel="${q.id}">Cancel</button></div></form>`:""}
@@ -510,7 +539,7 @@ function viewConversation(){
       ${n.images.length?`<div class="imgs">${n.images.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join("")}</div>`:""}
       <div class="state">${state.join("")}</div>
       ${n.replies.length?`<div class="replies">${n.replies.map(r=>`<div class="reply"><div class="rtop"><b>${esc(nameOf(r.author_id))}</b><span>${fmtStamp(r.created_at)}</span></div><p class="rbody">${linkify(r.body)}</p></div>`).join("")}</div>`:""}
-      ${ui.toDir[n.id]?`<form class="ask editbox" data-dirsave="${n.id}"><p class="label">Suggested directive</p><textarea class="input" id="td-${n.id}">${esc(suggestDirective(n))}</textarea><div class="row two"><div class="field"><label>Space</label><select class="input" id="tdroom-${n.id}">${project.intake.map(s=>`<option value="${s.id}" ${s.room===n.room?"selected":""}>${esc(s.room||s.title)}</option>`).join("")}</select></div></div><div class="actions"><button class="btn tiny" type="submit">Add directive</button><button class="textlink" type="button" data-tdcancel="${n.id}">Cancel</button></div></form>`:""}
+      ${ui.toDir[n.id]?`<form class="ask editbox" data-dirsave="${n.id}"><p class="label">Suggested directive</p><p class="small muted">A few sentences from the conversation. Edit before adding.</p><textarea class="input" id="td-${n.id}">${esc(suggestDirective(n))}</textarea><div class="row two"><div class="field"><label>Space</label><select class="input" id="tdroom-${n.id}">${project.intake.map(s=>`<option value="${s.id}" ${s.room===n.room?"selected":""}>${esc(s.room||s.title)}</option>`).join("")}</select></div></div><div class="actions"><button class="btn tiny" type="submit">Add directive</button><button class="textlink" type="button" data-tdcancel="${n.id}">Cancel</button></div></form>`:""}
       ${ui.replyOpen[n.id]?`<form class="ask" data-rsave="${n.id}"><textarea class="input" id="rb-${n.id}" placeholder="${d?"Yes — and here's what I'm thinking…":"Reply…"}"></textarea><div class="actions"><button class="btn tiny" type="submit">Reply</button><button class="textlink" type="button" data-rcancel="${n.id}">Cancel</button></div></form>`:""}
       <div class="actions">
         ${d&&n.author_id!==did?`<button class="btn ghost tiny" data-read="${n.id}" data-on="${n.read_at?"0":"1"}">${n.read_at?"Mark unread":"Mark read"}</button><span class="chips">${Object.entries(STATUS).map(([k,l])=>`<button class="chip ${noteStatus(n)===k?"on":""}" data-status="${k}" data-note="${n.id}">${l}</button>`).join("")}</span>`:""}
