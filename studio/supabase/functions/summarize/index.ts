@@ -50,6 +50,39 @@ Never start with "You want", "They want", "The clients" or a name. No questions,
   return text;
 }
 
+// Meeting notes -> draft directives. Related notes are merged; every note id comes back in exactly one draft.
+type MNote = { id: string; room: string; body: string };
+async function draftFromNotes(notes: MNote[], rooms: string[]): Promise<{ room: string; directive: string; note_ids: string[] }[]> {
+  const system = `You help an interior designer (${DESIGNER}) turn the notes she typed during a client meeting into design directives: short briefs she will design to.
+Combine notes about the same thing into one directive; keep different topics separate. Each directive is one to three short sentences that lead with the thing itself, for example: "Entertainment unit on the northern wall with inlaid storage for books, using the pitched ceiling space. Keep the storage integrated into that un-walkable area."
+Never start with "You want", "They want", "The clients" or a name. No questions, no hedging. Keep the specifics (walls, materials, sizes, what to avoid).
+Room must be one of: ${rooms.map(r => JSON.stringify(r)).join(", ")}. Use the note's room when it has one; otherwise pick the best fit.
+Every note id must appear in exactly one item. Return only a JSON array of {"room": string, "directive": string, "note_ids": string[]}.`;
+  const text = notes.map(n => `[${n.id}] (${n.room || "no room"}) ${n.body}`).join("\n");
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+    method: "POST",
+    headers: { "x-goog-api-key": KEY!, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text }] }],
+      generationConfig: { maxOutputTokens: 4000, temperature: 0.3, responseMimeType: "application/json" },
+    }),
+  });
+  if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 300)}`);
+  const out = await r.json();
+  const raw = ((out.candidates?.[0]?.content?.parts ?? []) as { text?: string }[]).map(p => p.text || "").join("");
+  const parsed = JSON.parse(raw.replace(/^```(json)?|```$/g, "").trim());
+  const ids = new Set(notes.map(n => n.id)), seen = new Set<string>();
+  const drafts = (Array.isArray(parsed) ? parsed : []).map((d: { room?: string; directive?: string; note_ids?: string[] }) => ({
+    room: rooms.includes(d.room || "") ? d.room! : "",
+    directive: String(d.directive || "").replace(/\s+/g, " ").trim(),
+    note_ids: (d.note_ids || []).filter(id => ids.has(id) && !seen.has(id) && (seen.add(id), true)),
+  })).filter(d => d.directive && d.note_ids.length);
+  // anything the model dropped comes back as its own draft
+  for (const n of notes) if (!seen.has(n.id)) drafts.push({ room: n.room, directive: n.body, note_ids: [n.id] });
+  return drafts;
+}
+
 function roleOf(auth: string): string {
   const t = auth.replace(/^Bearer\s+/i, "");
   if (!t) return "";
@@ -66,8 +99,18 @@ Deno.serve(async (req) => {
   if (!KEY) return json({ error: "GEMINI_API_KEY not set" }, 500);
   const admin = createClient(URL, SERVICE);
   const auth = req.headers.get("Authorization") || "";
-  let body: { note_id?: string } = {};
+  let body: { note_id?: string; meeting_note_ids?: string[] } = {};
   try { body = await req.json(); } catch { /* empty body from cron */ }
+
+  // Meeting notes -> directive drafts, for the designer (row security only lets her read them).
+  if (Array.isArray(body.meeting_note_ids) && body.meeting_note_ids.length) {
+    const user = createClient(URL, ANON, { global: { headers: { Authorization: auth } } });
+    const { data: notes, error } = await user.from("meeting_notes").select("id,room,body,project_id").in("id", body.meeting_note_ids.slice(0, 200));
+    if (error || !notes?.length) return json({ error: "Not allowed" }, 403);
+    const { data: proj } = await admin.from("projects").select("rooms").eq("id", notes[0].project_id).single();
+    try { return json({ drafts: await draftFromNotes(notes as MNote[], (proj?.rooms ?? []) as string[]) }); }
+    catch (e) { return json({ error: String(e) }, 502); }
+  }
 
   // One note, right now, for a signed-in member of its project.
   if (body.note_id) {

@@ -290,3 +290,39 @@ footer{max-width:var(--max);margin:0 auto;padding:0 var(--gutter-r) calc(80px + 
 .src.conv{gap:10px}
 .src.conv .mini{border-left:0;padding:0}
 .src.conv .imgs{margin-top:4px}
+/* meeting status + history */
+.mstatus{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.mthread{display:grid;gap:12px;max-width:640px}
+.mhist{display:grid;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.mlastrow{display:flex;align-items:flex-start;gap:14px}
+.mlastrow .mentry{flex:1;min-width:0}
+.mentry{display:grid;gap:4px}
+.mentry .rtop{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--muted)}
+.mentry .rtop b{color:var(--ink);font-weight:500}
+.mentry .rbody{margin:0;color:var(--ink-2)}
+.mhist .mentry .rbody{color:var(--muted)}
+.mentry.k-confirm .rtop span:first-of-type{color:var(--accent)}
+.mlastrow .chev{flex:none;background:none;border:0;cursor:pointer;font-size:20px;line-height:1;color:var(--ink-2);padding:2px 4px}
+.mlastrow .chev:hover{color:var(--accent)}
+.checkrow{display:flex;align-items:center;gap:8px;color:var(--ink-2)}
+/* time options */
+.optlist{display:grid;gap:6px}
+.when-mid{font-family:var(--serif);font-weight:300;font-size:clamp(22px,2.6vw,30px);line-height:1.2;margin:0}
+.picks{display:grid;gap:8px}
+.pick{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink);cursor:pointer}
+/* meeting notes */
+.notetake{display:grid;gap:16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:none;border-radius:2px;padding:6px 12px;font:inherit;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);cursor:pointer}
+.chip.on{border-color:var(--accent);color:var(--accent);background:var(--surface)}
+.noteadd{display:flex;gap:10px;align-items:flex-end;max-width:760px}
+.noteadd textarea{flex:1;min-height:56px}
+.mnotes{display:grid;max-width:760px}
+.mnote{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.mnote p{margin:0;color:var(--ink)}
+.mnote.done p,.mnote.skipped p{color:var(--muted)}
+.mnote .mmeta{display:flex;gap:10px;align-items:center;flex:none}
+.mnote.editing{display:grid;gap:8px}
+.input.tiny{padding:6px 8px;font-size:13px;width:auto}
+.drafts{display:grid;gap:18px;max-width:760px;margin-bottom:18px}
+.field label.pick{text-transform:none;letter-spacing:0;font-size:15px;color:var(--ink)}
