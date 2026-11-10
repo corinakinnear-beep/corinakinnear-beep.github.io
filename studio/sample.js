@@ -97,9 +97,23 @@
       {id:"nt6",to:"u-brook",subject:"Meeting updated · Brook and Evan's home",body:"Now Friday, November 20 at 10:00 AM · At the house",link:"#meeting",created_at:d(-4,12),seen_at:d(-4,13)},
       {id:"nt7",to:"u-evan",subject:"Corina replied · Kitchen",body:"Yes — this is the direction I was hoping you'd land on…",link:"#conversation",created_at:d(-2,9),seen_at:null}
     ],
-    meeting:{id:"m1",when:d(16,10),where:"At the house",notes:"Concept presentation. I'll bring printed plans; please have the architect's latest set open on a screen if you can.",change_request:null},
+    meeting:{id:"m1",when:d(16,10),where:"At the house",notes:"Moved half an hour later so Evan can make it.",change_request:null,status:"proposed",proposed_by:"u-cori",thread:[
+      {id:"mt1",by:"u-cori",at:d(-6,9),kind:"set",when:d(16,9),where:"At the house",message:"Concept presentation. I'll bring printed plans; please have the architect's latest set open on a screen if you can."},
+      {id:"mt2",by:"u-brook",at:d(-2,18),kind:"note",message:"Evan has a call until 10 that morning — could we start a little later?"},
+      {id:"mt3",by:"u-cori",at:d(-1,8),kind:"propose",when:d(16,10),where:"At the house",message:"Moved half an hour later so Evan can make it."}]},
     activity:[]
   };
+
+  // Past meeting with notes typed during it, so the notes page has something to show.
+  const S=window.SAMPLE_PROJECT;
+  S.meetings=[S.meeting,{id:"m0",when:d(-12,10),where:"At the house",notes:"First meeting.",change_request:null,status:"confirmed",proposed_by:"u-cori",options:[],thread:[{id:"mt0",by:"u-cori",at:d(-20,9),kind:"set",when:d(-12,10),where:"At the house",message:"First meeting — questions, measuring, wishes and budget."}]}];
+  S.meetingNotes=[
+    {id:"mn1",meeting_id:"m0",room:"Kitchen",body:"island needs seating for 4, they eat there most nights",created_at:d(-12,10),author_id:"u-cori",directive_id:null,skipped:false},
+    {id:"mn2",meeting_id:"m0",room:"Kitchen",body:"Evan cooks — wants 6 burners, gas. no hood over island",created_at:d(-12,10),author_id:"u-cori",directive_id:null,skipped:false},
+    {id:"mn3",meeting_id:"m0",room:"Kitchen",body:"brook: hates upper cabinets, prefers open shelves near the window",created_at:d(-12,10),author_id:"u-cori",directive_id:null,skipped:false},
+    {id:"mn4",meeting_id:"m0",room:"Living",body:"keep gas fireplace, it works. tv NOT over it",created_at:d(-12,11),author_id:"u-cori",directive_id:null,skipped:false},
+    {id:"mn5",meeting_id:"m0",room:"",body:"budget flexible on kitchen, tight everywhere else",created_at:d(-12,11),author_id:"u-cori",directive_id:null,skipped:false}];
+  S.meeting.options=[];
 
   // A second project so the dashboard has something to show.
   const P2=JSON.parse(JSON.stringify(window.SAMPLE_PROJECT));
@@ -109,6 +123,6 @@
   P2.notifs=[];P2.documents=[];P2.architect_images=[];P2.pinterest_url="";P2.pinterest_note="";
   P2.intake.forEach(s=>s.questions=s.questions.filter(q=>q.q).map(q=>({...q,a:"",updated_at:null,updated_by:null})));
   P2.stages.forEach((s,i)=>{s.status=i===0?"done":i===1?"current":"upcoming";s.due=i===1?d(30):null;s.payment={status:i===0?"free":i===1?"requested":"upcoming",amount:s.fee||0,date:null};});
-  P2.meeting={id:"m2",when:d(6,14),where:"Zoom",notes:"Layout proposal.",change_request:null};
+  P2.meeting={id:"m2",when:d(6,14),where:"Zoom",notes:"Layout proposal.",change_request:null,status:"confirmed",options:[],thread:[]};P2.meetings=[P2.meeting];P2.meetingNotes=[];
   window.SAMPLE_PROJECTS=[window.SAMPLE_PROJECT,P2];
 })();

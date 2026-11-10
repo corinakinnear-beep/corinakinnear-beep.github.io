@@ -10,6 +10,7 @@ const DESIGNER_NAME=cfg.DESIGNER_NAME||"Corina";
 const $=(s,r)=>(r||document).querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid=()=>"x"+Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+const mapMeeting=mt=>({id:mt.id,when:mt.when,where:mt.where||"",notes:mt.notes||"",change_request:mt.change_request,status:mt.status||"confirmed",proposed_by:mt.proposed_by,thread:mt.thread||[],options:mt.options||[]});
 const linkify=t=>esc(t).replace(/(https?:\/\/[^\s<]+)/g,u=>`<a class="link" href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\//,"").replace(/\/$/,"")}</a>`);
 const DF=new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric"});
 const DFY=new Intl.DateTimeFormat("en-US",{month:"long",day:"numeric",year:"numeric"});
@@ -93,7 +94,7 @@ const STATUS={noted:"Noted",directive:"Added as a directive",integrated:"Integra
 const noteStatus=n=>n.status||(n.integrated_at?"integrated":"");
 /* ---------- state ---------- */
 let store=null, me=null, project=null, route="home", notifs=[];
-let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false,jumpNote:null};
+let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false,jumpNote:null,meetHist:false,meetReply:false,noteRoom:"",noteEdit:null,notesMeeting:null,notesDrafts:null,notesDrafting:false,focusNote:false};
 const isDesigner=()=>me&&me.role==="designer";
 const member=id=>(project.members||[]).find(m=>m.id===id)||{name:"—"};
 const nameOf=id=>member(id).name;
@@ -129,7 +130,7 @@ class MockStore{
   async uploadImage(file){return readFile(file);}
   async saveAnswer(qid,text){for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid){q.a=text;q.updated_at=new Date().toISOString();q.updated_by=me.id;q.seen_by_designer=me.role==="designer";}this.persist();}
   async markAnswerSeen(qid){for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid)q.seen_by_designer=true;this.persist();}
-  async addDirective(sid,text,extra){const s=this.project.intake.find(x=>x.id===sid);const q={id:uid(),q:"",a:"",directive:text,directive_reviewed:true,images:(extra&&extra.images)||[],source_note_id:(extra&&extra.source_note_id)||null,updated_at:new Date().toISOString(),updated_by:me.id,added_by:me.id,seen_by_designer:me.role==="designer"};s.questions.push(q);this.persist();return q;}
+  async addDirective(sid,text,extra){const s=this.project.intake.find(x=>x.id===sid);const q={id:uid(),q:"",a:"",directive:text,directive_reviewed:true,images:(extra&&extra.images)||[],source_note_id:(extra&&extra.source_note_id)||null,source_meeting_id:(extra&&extra.source_meeting_id)||null,updated_at:new Date().toISOString(),updated_by:me.id,added_by:me.id,seen_by_designer:me.role==="designer"};s.questions.push(q);this.persist();return q;}
   async addQuestion(sid,text){const s=this.project.intake.find(x=>x.id===sid);const q={id:uid(),q:text,a:"",directive:"",directive_reviewed:false,updated_at:null,updated_by:null,seen_by_designer:true};s.questions.push(q);this.persist();return q;}
   async deleteDirective(qid){for(const s of this.project.intake)s.questions=s.questions.filter(q=>q.id!==qid);this.persist();}
   async addComment(qid,body){const c={id:uid(),author_id:me.id,body,created_at:new Date().toISOString()};for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid){q.comments=q.comments||[];q.comments.push(c);if(me.role!=="designer"){q.seen_by_designer=false;q.updated_by=me.id;q.updated_at=c.created_at;}}this.persist();return c;}
@@ -146,7 +147,11 @@ class MockStore{
   async addReply(noteId,body){const n=this.project.notes.find(x=>x.id===noteId);const r={id:uid(),author_id:me.id,body,created_at:new Date().toISOString()};n.replies.push(r);this.persist();return r;}
   async saveStage(st){const i=this.project.stages.findIndex(x=>x.id===st.id);if(i<0){st.id=uid();this.project.stages.push(st);}else this.project.stages[i]=st;this.project.stages.sort((a,b)=>a.order-b.order);this.persist();}
   async deleteStage(id){this.project.stages=this.project.stages.filter(x=>x.id!==id);this.persist();}
-  async saveMeeting(m){this.project.meeting=m;this.persist();}
+  async saveMeeting(m){if(!m.id)m.id=uid();const p=this.project;p.meetings=p.meetings||[];const i=p.meetings.findIndex(x=>x.id===m.id);if(i>=0)p.meetings[i]=m;else p.meetings.unshift(m);p.meetings.sort((a,b)=>new Date(b.when)-new Date(a.when));p.meeting=p.meetings[0];this.persist();}
+  async addMeetingNote(n){const p=this.project;p.meetingNotes=p.meetingNotes||[];const row={id:uid(),created_at:new Date().toISOString(),author_id:me.id,directive_id:null,skipped:false,...n};p.meetingNotes.push(row);this.persist();return row;}
+  async updateMeetingNote(id,patch){const n=(this.project.meetingNotes||[]).find(x=>x.id===id);if(n)Object.assign(n,patch);this.persist();}
+  async deleteMeetingNote(id){this.project.meetingNotes=(this.project.meetingNotes||[]).filter(x=>x.id!==id);this.persist();}
+  async draftFromNotes(ids){await new Promise(r=>setTimeout(r,500));return draftsFallback(ids);}
   async addImage(img){this.project.architect_images.push({id:uid(),...img});this.persist();}
   async removeImage(id){this.project.architect_images=this.project.architect_images.filter(x=>x.id!==id);this.persist();}
   async savePinterest(url,note){this.project.pinterest_url=url;this.project.pinterest_note=note;this.persist();}
@@ -190,12 +195,14 @@ class SupabaseStore{
       sb.from("notes").select("*").eq("project_id",id).order("created_at",{ascending:false}),
       sb.from("note_replies").select("*").eq("project_id",id).order("created_at"),
       sb.from("stages").select("*").eq("project_id",id).order("position"),
-      sb.from("meetings").select("*").eq("project_id",id).order("when").limit(1).maybeSingle(),
+      sb.from("meetings").select("*").eq("project_id",id).order("when",{ascending:false}),
       sb.from("architect_images").select("*").eq("project_id",id).order("position")
     ]);
     const {data:docs}=await sb.from("documents").select("*").eq("project_id",id).order("position");
     const {data:invs}=await sb.from("project_invites").select("email,name").eq("project_id",id);
     const {data:cmts}=await sb.from("directive_comments").select("*").eq("project_id",id).order("created_at");
+    const {data:mnotes}=await sb.from("meeting_notes").select("*").eq("project_id",id).order("created_at");
+    const meets=(meet||[]).map(mapMeeting);
     try{localStorage.setItem("parla-studio-project",id);}catch(e){}
     const members=(mems||[]).map(m=>({id:m.user_id,role:m.role,name:m.profiles?m.profiles.name:"—",email:m.profiles?m.profiles.email:""}));
     this.pid=id;
@@ -203,11 +210,11 @@ class SupabaseStore{
       id:p.id,name:p.name,designer:members.find(m=>m.role==="designer"),members,invites:invs||[],
       rooms:p.rooms||[],pin:p.pin||"",pinterest_url:p.pinterest_url||"",pinterest_note:p.pinterest_note||"",
       architect_images:imgs||[],documents:docs||[],
-      intake:(secs||[]).map(s=>({id:s.id,title:s.title,room:s.room||"",questions:(qs||[]).filter(q=>q.section_id===s.id).map(q=>({id:q.id,q:q.question||"",a:q.answer||"",directive:q.directive||"",directive_reviewed:!!q.directive_reviewed,images:q.images||[],source_note_id:q.source_note_id,comments:(cmts||[]).filter(c=>c.question_id===q.id),updated_at:q.updated_at,updated_by:q.updated_by,added_by:q.added_by,seen_by_designer:q.seen_by_designer}))})),
+      intake:(secs||[]).map(s=>({id:s.id,title:s.title,room:s.room||"",questions:(qs||[]).filter(q=>q.section_id===s.id).map(q=>({id:q.id,q:q.question||"",a:q.answer||"",directive:q.directive||"",directive_reviewed:!!q.directive_reviewed,images:q.images||[],source_note_id:q.source_note_id,source_meeting_id:q.source_meeting_id,comments:(cmts||[]).filter(c=>c.question_id===q.id),updated_at:q.updated_at,updated_by:q.updated_by,added_by:q.added_by,seen_by_designer:q.seen_by_designer}))})),
       notes:(notes||[]).map(n=>({...n,images:n.images||[],replies:(reps||[]).filter(r=>r.note_id===n.id)})),
       process:p.process||[],
       stages:(stages||[]).map(s=>({id:s.id,order:s.position,title:s.title,focus:s.focus||"",desc:s.description||"",deliverable:s.deliverable||"",due:s.due,status:s.status,standard:s.standard,fee:s.fee,hourly:s.hourly,payment:{status:s.payment_status||"upcoming",amount:s.payment_amount,date:s.payment_date}})),
-      meeting:meet?{id:meet.id,when:meet.when,where:meet.where||"",notes:meet.notes||"",change_request:meet.change_request}:null
+      meetings:meets,meeting:meets[0]||null,meetingNotes:mnotes||[]
     };
   }
   async setMyName(n){await this.sb.from("profiles").update({name:n}).eq("id",me.id);}
@@ -243,7 +250,7 @@ class SupabaseStore{
   }
   async saveAnswer(qid,text){await this.sb.from("intake_questions").update({answer:text,updated_at:new Date().toISOString(),updated_by:me.id,seen_by_designer:me.role==="designer"}).eq("id",qid);}
   async markAnswerSeen(qid){await this.sb.from("intake_questions").update({seen_by_designer:true}).eq("id",qid);}
-  async addDirective(sid,text,extra){const {data,error}=await this.sb.from("intake_questions").insert({project_id:this.pid,section_id:sid,position:Date.now(),question:"",answer:"",directive:text,directive_reviewed:true,images:(extra&&extra.images)||[],source_note_id:(extra&&extra.source_note_id)||null,updated_at:new Date().toISOString(),updated_by:me.id,added_by:me.id,seen_by_designer:me.role==="designer"}).select().single();if(error)throw error;return{id:data.id,q:"",a:"",directive:data.directive,directive_reviewed:true,images:data.images||[],source_note_id:data.source_note_id,comments:[],updated_at:data.updated_at,updated_by:data.updated_by,added_by:data.added_by,seen_by_designer:data.seen_by_designer};}
+  async addDirective(sid,text,extra){const {data,error}=await this.sb.from("intake_questions").insert({project_id:this.pid,section_id:sid,position:Date.now(),question:"",answer:"",directive:text,directive_reviewed:true,images:(extra&&extra.images)||[],source_note_id:(extra&&extra.source_note_id)||null,source_meeting_id:(extra&&extra.source_meeting_id)||null,updated_at:new Date().toISOString(),updated_by:me.id,added_by:me.id,seen_by_designer:me.role==="designer"}).select().single();if(error)throw error;return{id:data.id,q:"",a:"",directive:data.directive,directive_reviewed:true,images:data.images||[],source_note_id:data.source_note_id,source_meeting_id:data.source_meeting_id,comments:[],updated_at:data.updated_at,updated_by:data.updated_by,added_by:data.added_by,seen_by_designer:data.seen_by_designer};}
   async addQuestion(sid,text){const {data,error}=await this.sb.from("intake_questions").insert({project_id:this.pid,section_id:sid,position:Date.now(),question:text}).select().single();if(error)throw error;return{id:data.id,q:text,a:"",directive:"",directive_reviewed:false,updated_at:null,updated_by:null,seen_by_designer:true};}
   async deleteDirective(qid){await this.sb.from("intake_questions").delete().eq("id",qid);}
   async addComment(qid,body){const {data,error}=await this.sb.from("directive_comments").insert({question_id:qid,project_id:this.pid,author_id:me.id,body}).select().single();if(error)throw error;if(me.role!=="designer")await this.sb.from("intake_questions").update({seen_by_designer:false,updated_by:me.id,updated_at:new Date().toISOString()}).eq("id",qid);return data;}
@@ -261,7 +268,11 @@ class SupabaseStore{
   async addReply(noteId,body){const {data,error}=await this.sb.from("note_replies").insert({note_id:noteId,project_id:this.pid,author_id:me.id,body}).select().single();if(error)throw error;return data;}
   async saveStage(st){const row={project_id:this.pid,position:st.order,title:st.title,focus:st.focus||"",description:st.desc,deliverable:st.deliverable,due:st.due?st.due.slice(0,10):null,status:st.status,standard:st.standard,fee:st.fee,hourly:!!st.hourly,payment_status:st.payment.status,payment_amount:st.payment.amount,payment_date:st.payment.date?st.payment.date.slice(0,10):null};if(st.id&&!st.id.startsWith("new"))row.id=st.id;const {error}=await this.sb.from("stages").upsert(row);if(error)throw error;}
   async deleteStage(id){await this.sb.from("stages").delete().eq("id",id);}
-  async saveMeeting(m){const row={project_id:this.pid,when:m.when,where:m.where,notes:m.notes,change_request:m.change_request};if(m.id)row.id=m.id;const {error}=await this.sb.from("meetings").upsert(row);if(error)throw error;}
+  async addMeetingNote(n){const {data,error}=await this.sb.from("meeting_notes").insert({project_id:this.pid,meeting_id:n.meeting_id||null,room:n.room||"",body:n.body}).select().single();if(error)throw error;return data;}
+  async updateMeetingNote(id,patch){const {error}=await this.sb.from("meeting_notes").update(patch).eq("id",id);if(error)throw error;}
+  async deleteMeetingNote(id){const {error}=await this.sb.from("meeting_notes").delete().eq("id",id);if(error)throw error;}
+  async draftFromNotes(ids){try{const {data,error}=await this.sb.functions.invoke("summarize",{body:{meeting_note_ids:ids}});if(error)throw error;if(!data||data.error||!Array.isArray(data.drafts))throw new Error((data&&data.error)||"No drafts");return data.drafts;}catch(e){console.warn("drafts",e);toast("Couldn't reach the summary service — rough drafts below");return draftsFallback(ids);}}
+  async saveMeeting(m){const row={project_id:this.pid,when:m.when,where:m.where,notes:m.notes,change_request:m.change_request||null,status:m.status||"confirmed",proposed_by:m.proposed_by||null,thread:m.thread||[],options:m.options||[]};if(m.id)row.id=m.id;const {error}=await this.sb.from("meetings").upsert(row);if(error)throw error;}
   async addImage(img){await this.sb.from("architect_images").insert({project_id:this.pid,url:img.url,caption:img.caption,position:Date.now()});}
   async removeImage(id){await this.sb.from("architect_images").delete().eq("id",id);}
   async savePinterest(url,note){await this.sb.from("projects").update({pinterest_url:url,pinterest_note:note}).eq("id",this.pid);}
@@ -291,7 +302,7 @@ function activity(){
 
 /* ---------- rendering ---------- */
 const NAV=[["home","Home"],["directives","Design directives"],["conversation","Messages"],["documents","Documents"],["timeline","Timeline"],["account","Settings"]];
-const ROUTES=["projects",...NAV.map(([k])=>k)];
+const ROUTES=["projects","notes",...NAV.map(([k])=>k)];
 let summaries=null;
 function needsName(){return me&&(!me.name||(LIVE&&me.name===(me.email||"").split("@")[0]));}
 function pinOk(){try{return sessionStorage.getItem("parla-studio-pin")==="ok";}catch(e){return false;}}
@@ -318,9 +329,10 @@ function render(){
   if(!project){renderNoProject(app);return;}
   renderNav();
   $("#foot").hidden=false;$("#footProject").textContent=project.name;
-  const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewTimeline,account:viewSettings};
+  const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewTimeline,account:viewSettings,notes:isDesigner()?viewMeetingNotes:viewHome};
   app.innerHTML=`<div class="view">${(views[route]||viewHome)()}</div>`;
   bind(app);
+  if(route==="notes"&&ui.focusNote){ui.focusNote=false;const t=$("#noteIn");if(t)t.focus();}
   if(ui.jumpNote&&route==="conversation"){const el=$("#note-"+ui.jumpNote);ui.jumpNote=null;if(el){el.scrollIntoView({block:"center"});const nid=el.id.slice(5);const ta=$("#td-"+nid);if(ta){ta.focus();fillSummary(nid);}}}
   renderPreviewBar();
   if(ui.jump){const el=document.getElementById(ui.jump);ui.jump=null;if(el)setTimeout(()=>el.scrollIntoView({block:"start"}),30);}
@@ -381,7 +393,7 @@ async function renderDashboard(app){
   $("#foot").hidden=false;$("#footProject").textContent="All projects";
   if(!summaries){app.innerHTML=`<div class="view"><div class="page-head"><p class="label">Studio</p><h1>Hello, ${esc(me.name.split(" ")[0])}.</h1></div></div>`;summaries=await store.listProjects();if(route!=="projects")return;}
   const list=summaries;
-  const attn=p=>{const a=[];if(p.unread)a.push(`${p.unread} unread`);if(p.changed)a.push(`${p.changed} directive${p.changed>1?"s":""} changed`);if(p.meeting_request)a.push("meeting request");if(p.payment_requested)a.push(`${p.payment_requested} payment${p.payment_requested>1?"s":""} requested`);return a;};
+  const attn=p=>{const a=[];if(p.unread)a.push(`${p.unread} unread`);if(p.changed)a.push(`${p.changed} directive${p.changed>1?"s":""} changed`);if(p.meeting_request)a.push("meeting to confirm");if(p.payment_requested)a.push(`${p.payment_requested} payment${p.payment_requested>1?"s":""} requested`);return a;};
   const needs=list.filter(p=>attn(p).length).length;
   app.innerHTML=`<div class="view">
     <div class="page-head"><p class="label">Studio</p><h1 class="big">Hello, ${esc(me.name.split(" ")[0])}.</h1><p class="lede">${list.length?(needs?`${needs===1?"One project needs":needs+" projects need"} you.`:"Nothing waiting on you."):"No projects yet."}</p></div>
@@ -391,7 +403,7 @@ async function renderDashboard(app){
       ${p.clients?`<p class="small muted">${esc(p.clients)}</p>`:""}
       <div class="pgrid">
         <div class="kv"><span class="label">Stage</span><span class="v">${esc(p.stage||"—")}${p.stage_due?`<br><span class="small muted">${fmtLong(p.stage_due)}</span>`:""}</span></div>
-        <div class="kv"><span class="label">Next meeting</span><span class="v">${p.meeting?`${fmtWeek(p.meeting)}<br><span class="small muted">${fmtTime(p.meeting)}</span>`:"—"}</span></div>
+        <div class="kv"><span class="label">Next meeting</span><span class="v">${p.meeting?`${fmtWeek(p.meeting)}<br><span class="small muted">${fmtTime(p.meeting)}${p.meeting_request?" · waiting on you":""}</span>`:"—"}</span></div>
         <div class="kv"><span class="label">Last activity</span><span class="v">${p.last_activity?fmtStamp(p.last_activity):"—"}</span></div>
       </div>
       ${a.length>1?`<p class="small" style="color:var(--accent)">${a.join(" · ")}</p>`:""}
@@ -427,24 +439,24 @@ function viewHome(){
   const d=isDesigner(),cs=currentStage(),m=project.meeting;
   const firstName=me.name.split(" ")[0];
   const unread=unreadNotes().length,changed=changedAnswers().length,open=openAnswers().length,replied=newRepliesForClient().length;
-  const req=m&&m.change_request;
+  const req=meetWaitingOnMe(m);
   const unsorted=project.notes.filter(n=>!n.room).length;
   let lede,cards;
   if(d){
-    const needs=[];if(unread)needs.push(`${unread} unread message${unread>1?"s":""}`);if(changed)needs.push(`${changed} directive${changed>1?"s":""} changed`);if(req)needs.push("a meeting request");if(unsorted)needs.push(`${unsorted} under Other`);
+    const needs=[];if(unread)needs.push(`${unread} unread message${unread>1?"s":""}`);if(changed)needs.push(`${changed} directive${changed>1?"s":""} changed`);if(req)needs.push("a meeting to confirm");if(unsorted)needs.push(`${unsorted} under Other`);
     lede=`${needs.length?`Needs you: ${needs.join(", ")}.`:"Nothing waiting on you."} ${cs?`${esc(cs.title)} is the current stage${cs.due?`, due ${fmtLong(cs.due)}`:""}.`:""}`;
     cards=[
       ["conversation","Messages",`${unread?unread+" unread":"Nothing unread"}${project.notes.some(n=>n.author_id!==(project.designer||{}).id&&!noteStatus(n))?" · some not yet marked":""}`,unread||""],
       ["directives","Design directives",changed?`${changed} changed or added by the clients`:"Nothing new since you last looked",changed||""],
-      ["timeline","Timeline",`${cs?cs.title+" now":"Stages and payments"}${m?` · next meeting ${fmtDate(m.when)}`:""}${req?" · change requested":""}${project.stages.some(s=>s.payment.status==="requested")?" · payment requested":""}`,req?"!":""],
+      ["timeline","Timeline",`${cs?cs.title+" now":"Stages and payments"}${m?` · ${meetStatus(m)==="confirmed"?"next meeting":"meeting proposed for"} ${fmtDate(m.when)}`:""}${req?" · waiting on you":""}${project.stages.some(s=>s.payment.status==="requested")?" · payment requested":""}`,req?"!":""],
       ["documents","Documents",`Process, fees, mood board, drawings`,""]
     ];
   }else{
-    lede=`${cs?`Now in the <b>${esc(cs.title.toLowerCase())}</b> stage.`:""} ${m?`Next we meet ${fmtWeek(m.when)} at ${fmtTime(m.when)}.`:""} ${open?`${open} directive${open>1?"s":""} still open.`:""}`;
+    lede=`${cs?`Now in the <b>${esc(cs.title.toLowerCase())}</b> stage.`:""} ${m?(req?(meetOpts(m).length?`${esc(DESIGNER_NAME)} offered a few times for the next meeting — pick one below.`:`${esc(DESIGNER_NAME)} proposed a meeting for ${fmtWeek(m.when)} at ${fmtTime(m.when)} — confirm below.`):meetStatus(m)==="confirmed"?`Next meeting ${fmtWeek(m.when)} at ${fmtTime(m.when)}.`:""):""} ${open?`${open} directive${open>1?"s":""} still open.`:""}`;
     cards=[
       ["conversation","Messages",`New thoughts, photos and questions, whenever they come${replied?` · ${replied} with replies from ${esc(DESIGNER_NAME)}`:""}`,replied||""],
       ["directives","Design directives",`How you live and what you need from each room — change or add to it any time`,open||""],
-      ["timeline","Timeline",`${cs?cs.title+" now":"Stages, meetings and payments"}${m?` · next meeting ${fmtDate(m.when)}`:""}${project.stages.some(s=>s.payment.status==="requested")?" · payment requested":""}`,project.stages.some(s=>s.payment.status==="requested")?"!":""],
+      ["timeline","Timeline",`${cs?cs.title+" now":"Stages, meetings and payments"}${m?` · ${meetStatus(m)==="confirmed"?"next meeting":"meeting proposed for"} ${fmtDate(m.when)}`:""}${project.stages.some(s=>s.payment.status==="requested")?" · payment requested":""}`,project.stages.some(s=>s.payment.status==="requested")?"!":""],
       ["documents","Documents",`Fees and process, the Pinterest board, the architect's drawings`,""]
     ];
   }
@@ -452,7 +464,8 @@ function viewHome(){
   <div class="home-grid ${d?"":"one"}">
     <div class="cards">${cards.map(([k,t,s,n])=>`<a class="card" href="#${k}"><h3>${t}</h3><p class="sub">${s}</p><span class="side">${n?`<span class="tag accent">${n}</span>`:""}<span class="arrow">→</span></span></a>`).join("")}</div>
     <div class="statline">${d?`<div class="switchrow"><span class="label">Project</span>${ui.projEdit?`<form id="projForm" class="row"><div class="field"><label for="pjName">Name</label><input class="input" id="pjName" value="${esc(project.name)}" required></div><div class="field"><label for="pjClients">Clients, one per line, as Name &lt;email&gt;</label><textarea class="input" id="pjClients">${esc(clientLines())}</textarea></div><div class="field"><label for="pjRooms">Spaces, one per line</label><textarea class="input" id="pjRooms">${esc(project.rooms.join("\n"))}</textarea></div><div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" id="projCancel">Cancel</button></div><p class="small muted">Nobody is emailed by this.</p></form>`:`<p>${esc(project.name)}</p><p class="small muted">${esc(clientNames()||"No clients yet")}</p><div class="actions"><button class="textlink" id="projEdit">Edit name or clients</button><button class="textlink" id="copyLink">Copy project link</button></div><p class="small muted" id="projLink" hidden>${esc(projectLink())}</p>`}</div><p class="label">Recently</p><div class="activity">${activity().map(a=>`<a class="act" href="#${a.go}"><span class="t">${esc(a.t)}</span><span class="w">${fmtStamp(a.w)}</span></a>`).join("")||`<p class="muted small">Nothing yet.</p>`}</div>`:""}</div>
-  </div>`;
+  </div>
+  ${meetingBlock()}`;
 }
 
 function viewDocuments(){
@@ -487,7 +500,7 @@ function viewDirectives(){
   const toReview=project.intake.flatMap(s=>s.questions).filter(q=>dirText(q)&&!q.directive_reviewed).length;
   if(d&&ui.review)return viewReview();
   return`<div class="page-head"><p class="label">Design directives</p><h1>How you live, and what you need from this house.</h1>${d?"":`<p class="lede">Clarify any of these, change one when you understand it better, or add your own.</p>`}
-  ${d?`<div class="actions"><button class="btn ghost tiny" id="reviewBtn">${toReview?`Review ${toReview} from meeting notes`:"Meeting notes"}</button></div>`:""}</div>
+  ${d?`<div class="actions">${toReview?`<button class="btn ghost tiny" id="reviewBtn">Review the first meeting</button>`:""}<a class="btn ghost tiny" href="#notes">Meeting notes</a></div>`:""}</div>
   <div class="chips" id="jump">${project.intake.map(s=>`<button class="chip ${changedIn(s)?"accent":""}" data-jump="sec-${s.id}">${esc(s.room||s.title)}</button>`).join("")}</div>
   ${project.intake.map(s=>`<section class="section qa-section" id="sec-${s.id}"><div class="band">${d&&ui.roomEdit===s.room?`<form class="row" data-roomrename="${esc(s.room)}" style="max-width:420px"><div class="field"><input class="input" id="rn-${s.id}" value="${esc(s.room)}" required aria-label="Space name"></div><div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" id="roomCancel">Cancel</button>${!s.questions.length?`<button class="textlink" type="button" data-roomdel="${esc(s.room)}">Remove</button>`:""}</div></form>`:`<h2>${esc(s.room||s.title)}</h2><span class="desc">${d?`<button class="textlink" data-roomedit="${esc(s.room)}">Rename</button>`:""}</span>`}</div>
     <div class="rows">${s.questions.map(q=>{
@@ -506,6 +519,7 @@ function viewDirectives(){
             ${(()=>{const sn=q.source_note_id&&project.notes.find(x=>x.id===q.source_note_id);
               if(sn)return`<div class="src conv"><span class="label">The conversation</span><div class="mini"><div class="rtop"><b>${esc(nameOf(sn.author_id))}</b><span>${fmtStamp(sn.created_at)}</span></div><p class="rbody">${linkify(sn.body)}</p>${(sn.images||[]).length?`<div class="imgs">${sn.images.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join("")}</div>`:""}</div>${(sn.replies||[]).map(r=>`<div class="mini"><div class="rtop"><b>${esc(nameOf(r.author_id))}</b><span>${fmtStamp(r.created_at)}</span></div><p class="rbody">${linkify(r.body)}</p></div>`).join("")}<div class="actions"><button class="textlink" data-conv="${esc(sn.room||"unsorted")}">Open in messages →</button></div></div>`;
               return (q.images||[]).length?`<div class="imgs">${q.images.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join("")}</div>`:"";})()}
+            ${q.source_meeting_id?(()=>{const mt=(project.meetings||[]).find(x=>x.id===q.source_meeting_id);const src=(project.meetingNotes||[]).filter(n=>n.directive_id===q.id);return`<div class="src"><span class="label">From the meeting${mt?` on ${fmtLong(mt.when)}`:""}</span>${src.map(n=>`<p class="small muted">${linkify(n.body)}</p>`).join("")}</div>`;})():""}
             ${q.q?`<div class="src"><span class="label">From the first meeting</span><p class="small">${esc(q.q)}</p>${q.a?`<p class="small muted">${esc(q.a)}</p>`:""}</div>`:""}
             ${(q.comments||[]).length?`<div class="replies">${q.comments.map(c=>`<div class="reply"><div class="rtop"><b>${esc(nameOf(c.author_id))}</b><span>${fmtStamp(c.created_at)}</span></div><p class="rbody">${linkify(c.body)}</p></div>`).join("")}</div>`:""}
             ${ui.commentOpen[q.id]?`<form class="ask" data-csave="${q.id}"><textarea class="input" id="cb-${q.id}" placeholder="${d?"A note back to them…":"A comment or a clarification…"}"></textarea><div class="actions"><button class="btn tiny" type="submit">Comment</button><button class="textlink" type="button" data-ccancel="${q.id}">Cancel</button></div></form>`:""}
@@ -610,20 +624,117 @@ function stageForm(s){
   <div class="actions"><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-scancel="1">Cancel</button>${s.id!=="new"?`<button class="textlink" type="button" data-sdel="${s.id}">Remove stage</button>`:""}</div></form>`;
 }
 
+/* ---------- meetings: propose, confirm or decline, with a short message history ---------- */
+const MEET_KIND={propose:"Proposed",set:"Scheduled",confirm:"Confirmed",decline:"Can't make it",note:"Note"};
+const meetThread=m=>(m&&Array.isArray(m.thread))?m.thread:[];
+const meetStatus=m=>m?(m.status||"confirmed"):null;
+/* Waiting on me: someone else proposed it and I haven't answered. */
+const meetWaitingOnMe=m=>{if(!m||meetStatus(m)!=="proposed"||!m.proposed_by)return false;const byDesigner=m.proposed_by===(project.designer||{}).id;return isDesigner()?!byDesigner:byDesigner;};
+const otherSide=()=>isDesigner()?(project.members.filter(x=>x.role!=="designer").map(x=>x.name.split(" ")[0]).join(" & ")||"the clients"):DESIGNER_NAME;
+function calLink(m){
+  const f=d=>new Date(d).toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+  const end=new Date(new Date(m.when).getTime()+60*60*1000);
+  return`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(project.name+" · Parlā Studio")}&dates=${f(m.when)}/${f(end)}&location=${encodeURIComponent(m.where||"")}&details=${encodeURIComponent(m.notes||"")}`;
+}
+const meetPast=m=>!!m&&new Date(m.when).getTime()<Date.now()-3*3600e3;
+const meetOpts=m=>(m&&Array.isArray(m.options)&&m.options.length>1&&meetStatus(m)==="proposed")?m.options:[];
+const fmtWhen=iso=>`${fmtWeek(iso)}, ${fmtTime(iso)}`;
+function meetEntry(e,last){
+  const k=e.kind==="propose"&&(e.options||[]).length>1?"Offered times":(MEET_KIND[e.kind]||"Note");
+  const t=(e.options||[]).length>1&&e.kind==="propose"?e.options.map(fmtWhen).join(" · or "):e.when&&(e.kind==="propose"||e.kind==="set"||e.kind==="confirm")?fmtWhen(e.when):"";
+  return`<div class="mentry ${last?"last":""} k-${esc(e.kind)}"><div class="rtop"><b>${esc(nameOf(e.by))}</b><span>${k}${t?` · ${t}`:""}</span><span>${fmtStamp(e.at)}</span></div>${e.message?`<p class="rbody">${linkify(e.message)}</p>`:""}</div>`;
+}
 function meetingBlock(){
-  const d=isDesigner(),m=project.meeting;
-  const cr=m&&m.change_request;
-  const showReq=!d&&m&&ui.reqOpen;
-  return`<section class="section" id="meeting"><div class="band"><h2>Next meeting</h2><span class="desc"></span></div>
+  const d=isDesigner(),m=project.meeting,st=meetStatus(m),th=meetThread(m);
+  const past=meetPast(m),opts=meetOpts(m);
+  const last=th[th.length-1],earlier=th.slice(0,-1);
+  const waiting=!past&&meetWaitingOnMe(m);
+  const mine=m&&st==="proposed"&&m.proposed_by===me.id;
+  const decliner=st==="declined"?[...th].reverse().find(e=>e.kind==="decline"):null;
+  const statusTag=!m||past?"":st==="confirmed"?`<span class="tag accent">Confirmed</span>`:st==="declined"?`<span class="tag">Can't make it</span>`:`<span class="tag">${opts.length?"Times offered":"Proposed"}</span>`;
+  const statusLine=!m||past||st==="confirmed"?"":st==="declined"?`<span class="small muted">${decliner?esc(nameOf(decliner.by).split(" ")[0]):"Someone"} can't make ${opts.length?"these times":"this time"}.</span>`:mine?`<span class="small muted">Waiting for ${esc(otherSide())} to ${opts.length?"pick a time":"confirm"}.</span>`:`<span class="small muted">${esc(nameOf(m.proposed_by).split(" ")[0])} ${opts.length?"offered these times — pick one.":"proposed this time."}</span>`;
+  const editing=ui.meetingEdit;
+  const title=!m?"Next meeting":past?"Last meeting":st==="confirmed"?"Next meeting":"Meeting";
+  const whenHtml=!m?`<p class="when-big">Nothing scheduled.</p>`:opts.length?`<div class="optlist">${opts.map(o=>`<p class="when-mid">${fmtWeek(o)} · ${fmtTime(o)}</p>`).join("")}</div>`:`<p class="when-big">${fmtWeek(m.when)}<br>${fmtTime(m.when)}</p>`;
+  return`<section class="section" id="meeting"><div class="band"><h2>${title}</h2><span class="desc"></span></div>
   <div class="meeting"><div style="display:grid;gap:18px">
-    ${m?`<p class="when-big">${fmtWeek(m.when)}<br>${fmtTime(m.when)}</p><p class="label">${esc(m.where)}</p><p style="max-width:52ch;color:var(--ink-2)">${linkify(m.notes)}</p>`:`<p class="when-big">Nothing scheduled.</p>`}
-    ${cr?`<div class="req"><span class="label">${cr.kind==="cancel"?"Cancel requested":"Change requested"} · ${esc(nameOf(cr.by))} · ${fmtStamp(cr.at)}</span><p>${linkify(cr.message)}</p>${d?`<div class="actions"><button class="textlink" id="clearReq">Clear request</button></div>`:""}</div>`:""}
-    ${d?`<div class="actions"><button class="btn ghost tiny" id="meetEdit">${m?"Edit meeting":"Schedule a meeting"}</button></div>`:""}
-    ${!d&&!showReq&&!ui.meetingEdit?`<div class="actions">${m?`<button class="btn ghost tiny" id="reqOpen">Need a different time?</button>`:`<button class="btn ghost tiny" id="meetEdit">Propose a meeting</button>`}<span class="small muted">Or text ${esc(DESIGNER_NAME)}: <span class="phone" id="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></span></div>`:""}
-    ${ui.meetingEdit?`<form class="editbox" id="meetForm"><div class="field"><label>When</label><input class="input" name="when" type="datetime-local" value="${toLocalInput(m&&m.when)}" required></div><div class="field"><label>Where</label><input class="input" name="where" value="${esc(m?m.where:"")}"></div><div class="field"><label>${d?"Notes for them":"Anything to add"}</label><textarea class="input" name="notes">${esc(m?m.notes:"")}</textarea></div><div class="actions"><button class="btn tiny" type="submit">${d?"Save":"Propose"}</button><button class="textlink" type="button" id="meetCancel">Cancel</button></div></form>`:""}
-  </div>
-  ${showReq?`<form class="editbox" id="reqForm"><p class="label">This emails ${esc(DESIGNER_NAME)}.</p><div class="field"><label>Request</label><select class="input" name="kind"><option value="move">Move it</option><option value="cancel">Cancel it</option></select></div><div class="field"><label>What works</label><textarea class="input" name="message" placeholder="Could we do the following Tuesday instead, any time after 10?" required></textarea></div><div class="actions"><button class="btn" type="submit">Send request</button><button class="textlink" type="button" id="reqCancel">Cancel</button></div></form>`:""}
-  </div></section>`;
+    ${whenHtml}${m&&m.where?`<p class="label">${esc(m.where)}</p>`:""}
+    ${m&&!past?`<div class="mstatus">${statusTag}${statusLine}${st==="confirmed"?`<a class="textlink" href="${calLink(m)}" target="_blank" rel="noopener">Add to calendar</a>`:""}</div>`:""}
+    ${last?`<div class="mthread">
+      ${ui.meetHist&&earlier.length?`<div class="mhist">${earlier.map(e=>meetEntry(e,false)).join("")}</div>`:""}
+      <div class="mlastrow">${meetEntry(last,true)}${earlier.length?`<button class="chev" id="meetHist" aria-label="${ui.meetHist?"Hide history":"Show history"}" title="${ui.meetHist?"Hide history":"Show history"}">${ui.meetHist?"−":"+"}</button>`:""}</div>
+    </div>`:(m&&m.notes?`<p style="max-width:52ch;color:var(--ink-2)">${linkify(m.notes)}</p>`:"")}
+    ${waiting&&!editing?`<form class="editbox" id="meetRespond">${opts.length?`<div class="field"><label>Pick a time</label><div class="picks">${opts.map((o,i)=>`<label class="pick"><input type="radio" name="pick" value="${esc(o)}" ${i?"":"checked"}> ${fmtWeek(o)} · ${fmtTime(o)}</label>`).join("")}</div></div>`:""}<div class="field"><label>Note</label><textarea class="input small" name="message" placeholder="Optional — anything to add, or what would work instead"></textarea></div><div class="actions"><button class="btn tiny" type="submit" value="confirm">Confirm</button><button class="btn ghost tiny" type="submit" value="decline">${opts.length?"None of these work":"Can't make it"}</button></div></form>`:""}
+    ${ui.meetReply&&!editing?`<form class="editbox" id="meetReplyForm"><div class="field"><label>Reply</label><textarea class="input small" name="message" required></textarea></div><div class="actions"><button class="btn tiny" type="submit">Send</button><button class="textlink" type="button" id="meetReplyCancel">Cancel</button></div></form>`:""}
+    ${editing?`<form class="editbox" id="meetForm"><p class="label">${m&&!past?"Suggest another time":d?"Schedule a meeting":"Propose a meeting"}</p>
+      <div class="row two"><div class="field"><label>When</label><input class="input" name="when" type="datetime-local" value="${past?"":toLocalInput(m&&m.when)}" required></div><div class="field"><label>Where</label><input class="input" name="where" value="${esc(m?m.where:"")}" placeholder="At the house, Zoom…"></div></div>
+      <div class="row two"><div class="field"><label>Or (optional)</label><input class="input" name="when2" type="datetime-local"></div><div class="field"><label>Or (optional)</label><input class="input" name="when3" type="datetime-local"></div></div>
+      <div class="field"><label>Note</label><textarea class="input small" name="notes" placeholder="${d?"What the meeting is for":"Anything to add"}"></textarea></div>
+      ${d?`<label class="small checkrow"><input type="checkbox" name="agreed"> Already agreed — mark as confirmed</label>`:""}
+      <div class="actions"><button class="btn tiny" type="submit">${d?"Send":"Propose"}</button><button class="textlink" type="button" id="meetCancel">Cancel</button></div></form>`:""}
+    ${!editing&&!ui.meetReply?`<div class="actions">${m&&!past?`<button class="btn ghost tiny" id="meetEdit">Suggest another time</button>${last?`<button class="textlink" id="meetReply">Reply</button>`:""}`:`<button class="btn ghost tiny" id="meetEdit">${m?(d?"Schedule the next meeting":"Propose the next meeting"):(d?"Schedule a meeting":"Propose a meeting")}</button>`}${d?`<a class="textlink" href="#notes">Meeting notes</a>`:`<span class="small muted">Or text ${esc(DESIGNER_NAME)}: <span class="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></span>`}</div>`:""}
+  </div></div></section>`;
+}
+async function meetPost(kind,extra){
+  const m0=(kind==="propose"||kind==="set")&&meetPast(project.meeting)?{}:(project.meeting||{});
+  const entry={id:uid(),by:me.id,at:new Date().toISOString(),kind,message:(extra.message||"").trim()};
+  const m={...m0,thread:[...meetThread(m0),entry],change_request:null};
+  if(kind==="propose"||kind==="set"){
+    const opts=kind==="set"?[extra.when]:[extra.when,...(extra.more||[])].filter(Boolean);
+    m.when=opts[0];m.where=extra.where;m.notes=entry.message;m.options=opts.length>1?opts:[];
+    entry.when=opts[0];entry.where=extra.where;if(opts.length>1)entry.options=opts;
+    m.status=kind==="set"?"confirmed":"proposed";m.proposed_by=me.id;}
+  if(kind==="confirm"){m.status="confirmed";if(extra.when){m.when=extra.when;}entry.when=m.when;m.options=[];}
+  if(kind==="decline")m.status="declined";
+  try{await store.saveMeeting(m);if(LIVE){const fresh=await store.loadProject(project.id);project.meetings=fresh.meetings;project.meeting=fresh.meeting;}else{project.meeting=store.project.meeting;project.meetings=store.project.meetings;}ui.meetingEdit=false;ui.meetReply=false;render();
+    toast(kind==="confirm"?"Confirmed":kind==="decline"?`Sent — ${otherSide()} will see it`:kind==="note"?"Sent":kind==="set"?"Meeting scheduled":`Sent — ${otherSide()} can ${m.options.length?"pick a time":"confirm"}`);}
+  catch(err){toast("Couldn't save: "+err.message);}
+}
+
+/* ---------- meeting notes: type during the meeting, turn into directives after ---------- */
+function draftsFallback(ids){return ids.map(id=>(project.meetingNotes||[]).find(n=>n.id===id)).filter(Boolean).map(n=>({room:n.room||"",directive:n.body.trim().replace(/^./,c=>c.toUpperCase()).replace(/([^.!?])$/,"$1."),note_ids:[n.id]}));}
+function secForRoom(room){return project.intake.find(s=>s.room===room)||project.intake.find(s=>s.title===room)||project.intake[0];}
+function notesMeeting(){
+  const ms=project.meetings||[];
+  if(ui.notesMeeting){const f=ms.find(x=>x.id===ui.notesMeeting);if(f)return f;}
+  const soon=Date.now()+12*3600e3;
+  return ms.find(x=>new Date(x.when).getTime()<=soon)||ms[ms.length-1]||null;
+}
+function notesFor(mt){return (project.meetingNotes||[]).filter(n=>mt?n.meeting_id===mt.id:!n.meeting_id);}
+function viewMeetingNotes(){
+  const mt=notesMeeting(),ms=project.meetings||[],notes=notesFor(mt);
+  const pending=notes.filter(n=>!n.directive_id&&!n.skipped);
+  const rooms=["",...project.rooms];
+  const head=`<div class="page-head"><p class="label">Meeting notes</p><h1>${mt?`${fmtWeek(mt.when)}`:"Notes"}</h1>
+    ${ms.length>1?`<div class="field" style="max-width:340px"><label for="notesPick">Meeting</label><select class="input" id="notesPick">${ms.map(x=>`<option value="${x.id}" ${mt&&x.id===mt.id?"selected":""}>${fmtWeek(x.when)} · ${fmtTime(x.when)}</option>`).join("")}</select></div>`:""}</div>`;
+  if(ui.notesDrafting)return head+`<section class="section"><p class="lede">Drafting directives from your notes…</p></section>`;
+  if(ui.notesDrafts){
+    const secOpts=sel=>project.intake.map(s=>`<option value="${s.id}" ${s.id===sel?"selected":""}>${esc(s.room||s.title)}</option>`).join("");
+    return head+`<section class="section"><div class="band"><h2>Draft directives</h2><span class="desc"></span></div>
+      ${ui.notesDrafts.length?`<div class="drafts">${ui.notesDrafts.map((dr,i)=>{const sec=secForRoom(dr.room);const src=dr.note_ids.map(id=>notes.find(n=>n.id===id)).filter(Boolean);return`<form class="editbox draft" data-ndraft="${i}">
+        <div class="row two"><div class="field"><label>Room</label><select class="input" name="sec">${secOpts(sec&&sec.id)}</select></div></div>
+        <div class="field"><label>Directive</label><textarea class="input" name="text">${esc(dr.directive)}</textarea></div>
+        ${src.length?`<div class="src"><span class="label">From your notes</span>${src.map(n=>`<p class="small muted">${linkify(n.body)}</p>`).join("")}</div>`:""}
+        <div class="actions"><button class="btn tiny" type="submit">Add directive</button><button class="textlink" type="button" data-nskip="${i}">Skip</button></div></form>`;}).join("")}</div>
+      <div class="actions"><button class="btn" id="draftsAll">Add all</button><button class="textlink" id="draftsBack">Back to notes</button></div>`
+      :`<p class="lede">All done.</p><div class="actions"><a class="btn" href="#directives">See design directives</a><button class="textlink" id="draftsBack">Back to notes</button></div>`}</section>`;
+  }
+  const groups=rooms.map(r=>({r,list:notes.filter(n=>(n.room||"")===r)})).filter(g=>g.list.length);
+  return head+`<section class="section notetake">
+    <div class="chips">${rooms.map(r=>`<button class="chip ${ui.noteRoom===r?"on":""}" data-nroom="${esc(r)}">${r?esc(r):"General"}</button>`).join("")}</div>
+    <form id="noteAdd" class="noteadd"><textarea class="input" id="noteIn" rows="2" placeholder="Type a note, press Enter — it goes under ${esc(ui.noteRoom||"General")}"></textarea><button class="btn tiny" type="submit">Add</button></form>
+  </section>
+  ${groups.map(g=>`<section class="section"><div class="band"><h2>${g.r?esc(g.r):"General"}</h2><span class="desc"></span></div><div class="mnotes">${g.list.map(n=>ui.noteEdit===n.id?`<form class="mnote editing" data-nsave="${n.id}"><textarea class="input small" name="body">${esc(n.body)}</textarea><div class="actions"><select class="input tiny" name="room">${rooms.map(r=>`<option value="${esc(r)}" ${(n.room||"")===r?"selected":""}>${r?esc(r):"General"}</option>`).join("")}</select><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-ncancel="1">Cancel</button><button class="textlink" type="button" data-ndel="${n.id}">Remove</button></div></form>`
+    :`<div class="mnote ${n.directive_id?"done":n.skipped?"skipped":""}"><p>${linkify(n.body)}</p><span class="mmeta">${n.directive_id?`<span class="tag accent">Directive</span>`:n.skipped?`<span class="tag quiet">Skipped</span>`:""}<button class="textlink" data-nedit="${n.id}">Edit</button></span></div>`).join("")}</div></section>`).join("")}
+  ${pending.length?`<section class="section"><div class="actions"><button class="btn" id="notesDraft">Turn into directives</button><span class="small muted">Drafts a directive from your notes, combining notes about the same thing. You edit each before it's added.</span></div></section>`:notes.length?`<section class="section"><p class="small muted">Every note here has been added as a directive or skipped.</p></section>`:""}`;
+}
+async function addDraft(i,form){
+  const dr=ui.notesDrafts[i];const text=form.elements.text.value.trim();const sid=form.elements.sec.value;if(!text)return false;
+  const mt=notesMeeting();
+  const q=await store.addDirective(sid,text,{source_meeting_id:mt?mt.id:null});
+  if(LIVE)project.intake.find(x=>x.id===sid).questions.push(q);
+  for(const id of dr.note_ids){await store.updateMeetingNote(id,{directive_id:q.id});const n=(project.meetingNotes||[]).find(x=>x.id===id);if(n)n.directive_id=q.id;}
+  return true;
 }
 function viewSettings(){
   return`<div class="page-head"><h1>Settings</h1></div>
@@ -705,18 +816,35 @@ function bind(app){
     const st={id:f.dataset.ssave,order:Number(v("order"))||project.stages.length+1,title:v("title").trim(),focus:v("focus").trim(),desc:v("desc").trim(),deliverable:v("deliverable").trim(),due:v("due")?new Date(v("due")+"T12:00").toISOString():null,status:v("status"),standard:num("standard"),fee:num("fee"),hourly:v("hourly")==="1",payment:{status:v("pstatus"),amount:num("pamount"),date:v("pdate")?new Date(v("pdate")+"T12:00").toISOString():null}};
     if(st.status==="current")project.stages.forEach(s=>{if(s.id!==st.id&&s.status==="current"){s.status="done";store.saveStage(s);}});
     try{await store.saveStage(st);if(LIVE)project=await store.loadProject(project.id);ui.stageEdit=null;render();toast("Timeline updated");}catch(err){toast("Couldn't save: "+err.message);}});
-  const me1=$("#meetEdit",app);if(me1)me1.onclick=()=>{ui.meetingEdit=true;render();};
+  const me1=$("#meetEdit",app);if(me1)me1.onclick=()=>{ui.meetingEdit=true;ui.meetReply=false;render();};
   const mc=$("#meetCancel",app);if(mc)mc.onclick=()=>{ui.meetingEdit=false;render();};
-  const mf=$("#meetForm",app);if(mf)mf.onsubmit=async e=>{e.preventDefault();const m={id:project.meeting?project.meeting.id:undefined,when:new Date(mf.elements.when.value).toISOString(),where:mf.elements.where.value.trim(),notes:mf.elements.notes.value.trim(),change_request:null};try{await store.saveMeeting(m);project.meeting=LIVE?(await store.loadProject(project.id)).meeting:m;ui.meetingEdit=false;render();toast("Meeting saved");}catch(err){toast("Couldn't save: "+err.message);}};
-  const cq=$("#clearReq",app);if(cq)cq.onclick=async()=>{const m={...project.meeting,change_request:null};await store.saveMeeting(m);project.meeting=m;render();};
-  const ro=$("#reqOpen",app);if(ro)ro.onclick=()=>{ui.reqOpen=true;render();};
-  const rc=$("#reqCancel",app);if(rc)rc.onclick=()=>{ui.reqOpen=false;render();};
-  const rq=$("#reqForm",app);if(rq)rq.onsubmit=async e=>{e.preventDefault();const m={...project.meeting,change_request:{kind:rq.elements.kind.value,message:rq.elements.message.value.trim(),by:me.id,at:new Date().toISOString()}};await store.saveMeeting(m);project.meeting=m;ui.reqOpen=false;render();toast(`Sent — ${DESIGNER_NAME} will confirm`);};
+  const mh=$("#meetHist",app);if(mh)mh.onclick=()=>{ui.meetHist=!ui.meetHist;render();};
+  const mr=$("#meetReply",app);if(mr)mr.onclick=()=>{ui.meetReply=true;render();const t=$("#meetReplyForm textarea");if(t)t.focus();};
+  const mrc=$("#meetReplyCancel",app);if(mrc)mrc.onclick=()=>{ui.meetReply=false;render();};
+  const mrf=$("#meetReplyForm",app);if(mrf)mrf.onsubmit=e=>{e.preventDefault();meetPost("note",{message:mrf.elements.message.value});};
+  const mrs=$("#meetRespond",app);if(mrs)mrs.onsubmit=e=>{e.preventDefault();const act=(e.submitter&&e.submitter.value)||"confirm";const pk=mrs.querySelector("input[name=pick]:checked");meetPost(act,{message:mrs.elements.message.value,when:act==="confirm"&&pk?pk.value:null});};
+  const mf=$("#meetForm",app);if(mf)mf.onsubmit=e=>{e.preventDefault();const agreed=mf.elements.agreed&&mf.elements.agreed.checked;const iso=v=>v?new Date(v).toISOString():null;meetPost(agreed?"set":"propose",{when:iso(mf.elements.when.value),more:[iso(mf.elements.when2.value),iso(mf.elements.when3.value)].filter(Boolean),where:mf.elements.where.value.trim(),message:mf.elements.notes.value});};
+  // meeting notes
+  app.querySelectorAll("[data-nroom]").forEach(b=>b.onclick=()=>{ui.noteRoom=b.dataset.nroom;ui.focusNote=true;render();});
+  const np=$("#notesPick",app);if(np)np.onchange=()=>{ui.notesMeeting=np.value;render();};
+  const na=$("#noteAdd",app);if(na){const ta=$("#noteIn",app);
+    const add=async()=>{const body=ta.value.trim();if(!body)return;ta.value="";const mt=notesMeeting();try{const n=await store.addMeetingNote({meeting_id:mt?mt.id:null,room:ui.noteRoom,body});if(LIVE){project.meetingNotes=project.meetingNotes||[];project.meetingNotes.push(n);}ui.focusNote=true;render();}catch(err){ta.value=body;toast("Couldn't save: "+err.message);}};
+    na.onsubmit=e=>{e.preventDefault();add();};
+    ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();add();}};}
+  app.querySelectorAll("[data-nedit]").forEach(b=>b.onclick=()=>{ui.noteEdit=b.dataset.nedit;render();});
+  app.querySelectorAll("[data-ncancel]").forEach(b=>b.onclick=()=>{ui.noteEdit=null;render();});
+  app.querySelectorAll("[data-nsave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.nsave;const patch={body:f.elements.body.value.trim(),room:f.elements.room.value};if(!patch.body)return;try{await store.updateMeetingNote(id,patch);const n=project.meetingNotes.find(x=>x.id===id);if(n)Object.assign(n,patch);ui.noteEdit=null;render();}catch(err){toast("Couldn't save: "+err.message);}});
+  app.querySelectorAll("[data-ndel]").forEach(b=>b.onclick=async()=>{const id=b.dataset.ndel;try{await store.deleteMeetingNote(id);project.meetingNotes=project.meetingNotes.filter(x=>x.id!==id);ui.noteEdit=null;render();}catch(err){toast("Couldn't remove: "+err.message);}});
+  const nd=$("#notesDraft",app);if(nd)nd.onclick=async()=>{const ids=notesFor(notesMeeting()).filter(n=>!n.directive_id&&!n.skipped).map(n=>n.id);ui.notesDrafting=true;render();try{ui.notesDrafts=await store.draftFromNotes(ids);}finally{ui.notesDrafting=false;render();}};
+  const db=$("#draftsBack",app);if(db)db.onclick=()=>{ui.notesDrafts=null;render();};
+  app.querySelectorAll("[data-ndraft]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const i=+f.dataset.ndraft;try{if(await addDraft(i,f)){ui.notesDrafts.splice(i,1);render();toast("Directive added");}}catch(err){toast("Couldn't add: "+err.message);}});
+  app.querySelectorAll("[data-nskip]").forEach(b=>b.onclick=async()=>{const i=+b.dataset.nskip;const dr=ui.notesDrafts[i];for(const id of dr.note_ids){await store.updateMeetingNote(id,{skipped:true});const n=project.meetingNotes.find(x=>x.id===id);if(n)n.skipped=true;}ui.notesDrafts.splice(i,1);render();});
+  const da=$("#draftsAll",app);if(da)da.onclick=async()=>{const forms=[...app.querySelectorAll("[data-ndraft]")];let added=0;for(let i=forms.length-1;i>=0;i--){try{if(await addDraft(+forms[i].dataset.ndraft,forms[i])){ui.notesDrafts.splice(+forms[i].dataset.ndraft,1);added++;}}catch(err){toast("Couldn't add one: "+err.message);}}render();toast(added?"Directives added":"Nothing added");};
 }
 
 /* ---------- boot ---------- */
 function syncRoute(){const h=(location.hash||"").slice(1);route=ROUTES.includes(h)?h:(me&&isDesigner()?"projects":"home");window.scrollTo({top:0});}
-window.addEventListener("hashchange",()=>{summaries=null;syncRoute();ui.editing={};ui.open={};ui.roomEdit=null;ui.roomAdd=false;ui.replyOpen={};ui.stageEdit=null;ui.meetingEdit=false;render();});
+window.addEventListener("hashchange",()=>{summaries=null;syncRoute();ui.editing={};ui.open={};ui.roomEdit=null;ui.roomAdd=false;ui.replyOpen={};ui.stageEdit=null;ui.meetingEdit=false;ui.meetReply=false;ui.meetHist=false;ui.noteEdit=null;ui.notesDrafts=null;ui.notesDrafting=false;render();});
 (async function start(){
   try{const p=new URLSearchParams(location.search).get("p");if(p){localStorage.setItem("parla-studio-project",p);history.replaceState(null,"",location.pathname+location.hash);}}catch(e){}
   store=LIVE?new SupabaseStore():new MockStore();
