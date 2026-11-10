@@ -452,7 +452,7 @@ function viewHome(){
       ["documents","Documents",`Process, fees, mood board, drawings`,""]
     ];
   }else{
-    lede=`${cs?`Now in the <b>${esc(cs.title.toLowerCase())}</b> stage${cs.due?`, due ${fmtLong(cs.due)}`:""}.`:""} ${m?(req?(meetOpts(m).length?`${esc(DESIGNER_NAME)} offered a few times for the next meeting — pick one below.`:`${esc(DESIGNER_NAME)} proposed a meeting for ${fmtWeek(m.when)} at ${fmtTime(m.when)} — confirm below.`):meetStatus(m)==="confirmed"?`Next meeting ${fmtWeek(m.when)} at ${fmtTime(m.when)}.`:""):""} ${open?`${open} directive${open>1?"s":""} still open.`:""}`;
+    lede=`${cs?`Now in the <b>${esc(cs.title.toLowerCase())}</b> stage.`:""} ${m?(req?(meetOpts(m).length?`${esc(DESIGNER_NAME)} offered a few times for the next meeting — pick one below.`:`${esc(DESIGNER_NAME)} proposed a meeting for ${fmtWeek(m.when)} at ${fmtTime(m.when)} — confirm below.`):meetStatus(m)==="confirmed"?`Next meeting ${fmtWeek(m.when)} at ${fmtTime(m.when)}.`:""):""} ${open?`${open} directive${open>1?"s":""} still open.`:""}`;
     cards=[
       ["conversation","Messages",`New thoughts, photos and questions, whenever they come${replied?` · ${replied} with replies from ${esc(DESIGNER_NAME)}`:""}`,replied||""],
       ["directives","Design directives",`How you live and what you need from each room — change or add to it any time`,open||""],
