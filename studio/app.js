@@ -94,7 +94,7 @@ const STATUS={noted:"Noted",directive:"Added as a directive",integrated:"Integra
 const noteStatus=n=>n.status||(n.integrated_at?"integrated":"");
 /* ---------- state ---------- */
 let store=null, me=null, project=null, route="home", notifs=[];
-let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false,jumpNote:null,meetHist:false,meetReply:false,noteRoom:"",noteEdit:null,notesMeeting:null,notesDrafts:null,notesDrafting:false,focusNote:false};
+let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false,jumpNote:null,meetHist:false,meetReply:false,noteRoom:"",noteEdit:null,notesMeeting:null,notesDrafts:null,notesDrafting:false,focusNote:false,newSession:false};
 const isDesigner=()=>me&&me.role==="designer";
 const member=id=>(project.members||[]).find(m=>m.id===id)||{name:"—"};
 const nameOf=id=>member(id).name;
@@ -130,7 +130,7 @@ class MockStore{
   async uploadImage(file){return readFile(file);}
   async saveAnswer(qid,text){for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid){q.a=text;q.updated_at=new Date().toISOString();q.updated_by=me.id;q.seen_by_designer=me.role==="designer";}this.persist();}
   async markAnswerSeen(qid){for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid)q.seen_by_designer=true;this.persist();}
-  async addDirective(sid,text,extra){const s=this.project.intake.find(x=>x.id===sid);const q={id:uid(),q:"",a:"",directive:text,directive_reviewed:true,images:(extra&&extra.images)||[],source_note_id:(extra&&extra.source_note_id)||null,source_meeting_id:(extra&&extra.source_meeting_id)||null,updated_at:new Date().toISOString(),updated_by:me.id,added_by:me.id,seen_by_designer:me.role==="designer"};s.questions.push(q);this.persist();return q;}
+  async addDirective(sid,text,extra){const s=this.project.intake.find(x=>x.id===sid);const q={id:uid(),q:"",a:"",directive:text,directive_reviewed:true,images:(extra&&extra.images)||[],source_note_id:(extra&&extra.source_note_id)||null,source_meeting_id:(extra&&extra.source_meeting_id)||null,source_session_id:(extra&&extra.source_session_id)||null,updated_at:new Date().toISOString(),updated_by:me.id,added_by:me.id,seen_by_designer:me.role==="designer"};s.questions.push(q);this.persist();return q;}
   async addQuestion(sid,text){const s=this.project.intake.find(x=>x.id===sid);const q={id:uid(),q:text,a:"",directive:"",directive_reviewed:false,updated_at:null,updated_by:null,seen_by_designer:true};s.questions.push(q);this.persist();return q;}
   async deleteDirective(qid){for(const s of this.project.intake)s.questions=s.questions.filter(q=>q.id!==qid);this.persist();}
   async addComment(qid,body){const c={id:uid(),author_id:me.id,body,created_at:new Date().toISOString()};for(const s of this.project.intake)for(const q of s.questions)if(q.id===qid){q.comments=q.comments||[];q.comments.push(c);if(me.role!=="designer"){q.seen_by_designer=false;q.updated_by=me.id;q.updated_at=c.created_at;}}this.persist();return c;}
@@ -152,6 +152,8 @@ class MockStore{
   async updateMeetingNote(id,patch){const n=(this.project.meetingNotes||[]).find(x=>x.id===id);if(n)Object.assign(n,patch);this.persist();}
   async deleteMeetingNote(id){this.project.meetingNotes=(this.project.meetingNotes||[]).filter(x=>x.id!==id);this.persist();}
   async draftFromNotes(ids){await new Promise(r=>setTimeout(r,500));return draftsFallback(ids);}
+  async addSession(x){const p=this.project;p.noteSessions=p.noteSessions||[];const row={id:uid(),created_at:new Date().toISOString(),...x};p.noteSessions.push(row);this.persist();return row;}
+  async updateSession(id,patch){const x=(this.project.noteSessions||[]).find(r=>r.id===id);if(x)Object.assign(x,patch);this.persist();}
   async addImage(img){this.project.architect_images.push({id:uid(),...img});this.persist();}
   async removeImage(id){this.project.architect_images=this.project.architect_images.filter(x=>x.id!==id);this.persist();}
   async savePinterest(url,note){this.project.pinterest_url=url;this.project.pinterest_note=note;this.persist();}
@@ -202,6 +204,7 @@ class SupabaseStore{
     const {data:invs}=await sb.from("project_invites").select("email,name").eq("project_id",id);
     const {data:cmts}=await sb.from("directive_comments").select("*").eq("project_id",id).order("created_at");
     const {data:mnotes}=await sb.from("meeting_notes").select("*").eq("project_id",id).order("created_at");
+    const {data:nsess}=await sb.from("note_sessions").select("*").eq("project_id",id).order("at",{ascending:false});
     const meets=(meet||[]).map(mapMeeting);
     try{localStorage.setItem("parla-studio-project",id);}catch(e){}
     const members=(mems||[]).map(m=>({id:m.user_id,role:m.role,name:m.profiles?m.profiles.name:"—",email:m.profiles?m.profiles.email:""}));
@@ -210,11 +213,11 @@ class SupabaseStore{
       id:p.id,name:p.name,designer:members.find(m=>m.role==="designer"),members,invites:invs||[],
       rooms:p.rooms||[],pin:p.pin||"",pinterest_url:p.pinterest_url||"",pinterest_note:p.pinterest_note||"",
       architect_images:imgs||[],documents:docs||[],
-      intake:(secs||[]).map(s=>({id:s.id,title:s.title,room:s.room||"",questions:(qs||[]).filter(q=>q.section_id===s.id).map(q=>({id:q.id,q:q.question||"",a:q.answer||"",directive:q.directive||"",directive_reviewed:!!q.directive_reviewed,images:q.images||[],source_note_id:q.source_note_id,source_meeting_id:q.source_meeting_id,comments:(cmts||[]).filter(c=>c.question_id===q.id),updated_at:q.updated_at,updated_by:q.updated_by,added_by:q.added_by,seen_by_designer:q.seen_by_designer}))})),
+      intake:(secs||[]).map(s=>({id:s.id,title:s.title,room:s.room||"",questions:(qs||[]).filter(q=>q.section_id===s.id).map(q=>({id:q.id,q:q.question||"",a:q.answer||"",directive:q.directive||"",directive_reviewed:!!q.directive_reviewed,images:q.images||[],source_note_id:q.source_note_id,source_meeting_id:q.source_meeting_id,source_session_id:q.source_session_id,comments:(cmts||[]).filter(c=>c.question_id===q.id),updated_at:q.updated_at,updated_by:q.updated_by,added_by:q.added_by,seen_by_designer:q.seen_by_designer}))})),
       notes:(notes||[]).map(n=>({...n,images:n.images||[],replies:(reps||[]).filter(r=>r.note_id===n.id)})),
       process:p.process||[],
       stages:(stages||[]).map(s=>({id:s.id,order:s.position,title:s.title,focus:s.focus||"",desc:s.description||"",deliverable:s.deliverable||"",due:s.due,status:s.status,standard:s.standard,fee:s.fee,hourly:s.hourly,payment:{status:s.payment_status||"upcoming",amount:s.payment_amount,date:s.payment_date}})),
-      meetings:meets,meeting:meets[0]||null,meetingNotes:mnotes||[]
+      meetings:meets,meeting:meets[0]||null,meetingNotes:mnotes||[],noteSessions:nsess||[]
     };
   }
   async setMyName(n){await this.sb.from("profiles").update({name:n}).eq("id",me.id);}
@@ -250,7 +253,7 @@ class SupabaseStore{
   }
   async saveAnswer(qid,text){await this.sb.from("intake_questions").update({answer:text,updated_at:new Date().toISOString(),updated_by:me.id,seen_by_designer:me.role==="designer"}).eq("id",qid);}
   async markAnswerSeen(qid){await this.sb.from("intake_questions").update({seen_by_designer:true}).eq("id",qid);}
-  async addDirective(sid,text,extra){const {data,error}=await this.sb.from("intake_questions").insert({project_id:this.pid,section_id:sid,position:Date.now(),question:"",answer:"",directive:text,directive_reviewed:true,images:(extra&&extra.images)||[],source_note_id:(extra&&extra.source_note_id)||null,source_meeting_id:(extra&&extra.source_meeting_id)||null,updated_at:new Date().toISOString(),updated_by:me.id,added_by:me.id,seen_by_designer:me.role==="designer"}).select().single();if(error)throw error;return{id:data.id,q:"",a:"",directive:data.directive,directive_reviewed:true,images:data.images||[],source_note_id:data.source_note_id,source_meeting_id:data.source_meeting_id,comments:[],updated_at:data.updated_at,updated_by:data.updated_by,added_by:data.added_by,seen_by_designer:data.seen_by_designer};}
+  async addDirective(sid,text,extra){const {data,error}=await this.sb.from("intake_questions").insert({project_id:this.pid,section_id:sid,position:Date.now(),question:"",answer:"",directive:text,directive_reviewed:true,images:(extra&&extra.images)||[],source_note_id:(extra&&extra.source_note_id)||null,source_meeting_id:(extra&&extra.source_meeting_id)||null,source_session_id:(extra&&extra.source_session_id)||null,updated_at:new Date().toISOString(),updated_by:me.id,added_by:me.id,seen_by_designer:me.role==="designer"}).select().single();if(error)throw error;return{id:data.id,q:"",a:"",directive:data.directive,directive_reviewed:true,images:data.images||[],source_note_id:data.source_note_id,source_meeting_id:data.source_meeting_id,source_session_id:data.source_session_id,comments:[],updated_at:data.updated_at,updated_by:data.updated_by,added_by:data.added_by,seen_by_designer:data.seen_by_designer};}
   async addQuestion(sid,text){const {data,error}=await this.sb.from("intake_questions").insert({project_id:this.pid,section_id:sid,position:Date.now(),question:text}).select().single();if(error)throw error;return{id:data.id,q:text,a:"",directive:"",directive_reviewed:false,updated_at:null,updated_by:null,seen_by_designer:true};}
   async deleteDirective(qid){await this.sb.from("intake_questions").delete().eq("id",qid);}
   async addComment(qid,body){const {data,error}=await this.sb.from("directive_comments").insert({question_id:qid,project_id:this.pid,author_id:me.id,body}).select().single();if(error)throw error;if(me.role!=="designer")await this.sb.from("intake_questions").update({seen_by_designer:false,updated_by:me.id,updated_at:new Date().toISOString()}).eq("id",qid);return data;}
@@ -268,7 +271,9 @@ class SupabaseStore{
   async addReply(noteId,body){const {data,error}=await this.sb.from("note_replies").insert({note_id:noteId,project_id:this.pid,author_id:me.id,body}).select().single();if(error)throw error;return data;}
   async saveStage(st){const row={project_id:this.pid,position:st.order,title:st.title,focus:st.focus||"",description:st.desc,deliverable:st.deliverable,due:st.due?st.due.slice(0,10):null,status:st.status,standard:st.standard,fee:st.fee,hourly:!!st.hourly,payment_status:st.payment.status,payment_amount:st.payment.amount,payment_date:st.payment.date?st.payment.date.slice(0,10):null};if(st.id&&!st.id.startsWith("new"))row.id=st.id;const {error}=await this.sb.from("stages").upsert(row);if(error)throw error;}
   async deleteStage(id){await this.sb.from("stages").delete().eq("id",id);}
-  async addMeetingNote(n){const {data,error}=await this.sb.from("meeting_notes").insert({project_id:this.pid,meeting_id:n.meeting_id||null,room:n.room||"",body:n.body}).select().single();if(error)throw error;return data;}
+  async addMeetingNote(n){const {data,error}=await this.sb.from("meeting_notes").insert({project_id:this.pid,meeting_id:n.meeting_id||null,session_id:n.session_id||null,room:n.room||"",question:n.question||"",body:n.body||""}).select().single();if(error)throw error;return data;}
+  async addSession(x){const {data,error}=await this.sb.from("note_sessions").insert({project_id:this.pid,kind:x.kind,title:x.title||"",at:x.at}).select().single();if(error)throw error;return data;}
+  async updateSession(id,patch){const {error}=await this.sb.from("note_sessions").update(patch).eq("id",id);if(error)throw error;}
   async updateMeetingNote(id,patch){const {error}=await this.sb.from("meeting_notes").update(patch).eq("id",id);if(error)throw error;}
   async deleteMeetingNote(id){const {error}=await this.sb.from("meeting_notes").delete().eq("id",id);if(error)throw error;}
   async draftFromNotes(ids){try{const {data,error}=await this.sb.functions.invoke("summarize",{body:{meeting_note_ids:ids}});if(error)throw error;if(!data||data.error||!Array.isArray(data.drafts))throw new Error((data&&data.error)||"No drafts");return data.drafts;}catch(e){console.warn("drafts",e);toast("Couldn't reach the summary service — rough drafts below");return draftsFallback(ids);}}
@@ -332,7 +337,7 @@ function render(){
   const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewTimeline,account:viewSettings,notes:isDesigner()?viewMeetingNotes:viewHome};
   app.innerHTML=`<div class="view">${(views[route]||viewHome)()}</div>`;
   bind(app);
-  if(route==="notes"&&ui.focusNote){ui.focusNote=false;const t=$("#noteIn");if(t)t.focus();}
+  if(route==="notes"&&ui.focusNote){const which=ui.focusNote;ui.focusNote=false;const t=$(which==="q"?"#noteQ":"#noteIn");if(t)t.focus();}
   if(ui.jumpNote&&route==="conversation"){const el=$("#note-"+ui.jumpNote);ui.jumpNote=null;if(el){el.scrollIntoView({block:"center"});const nid=el.id.slice(5);const ta=$("#td-"+nid);if(ta){ta.focus();fillSummary(nid);}}}
   renderPreviewBar();
   if(ui.jump){const el=document.getElementById(ui.jump);ui.jump=null;if(el)setTimeout(()=>el.scrollIntoView({block:"start"}),30);}
@@ -349,7 +354,7 @@ function renderNav(){
     let c="";
     if(isDesigner()){if(k==="conversation"&&unreadNotes().length)c=unreadNotes().length;if(k==="directives"&&changedAnswers().length)c=changedAnswers().length;}
     else{const nm=notifs.filter(n=>!n.seen_at&&(n.link||"")==="#conversation").length;if(k==="conversation"&&nm)c=nm;if(k==="directives"&&openAnswers().length)c=openAnswers().length;}
-    return`<a href="#${k}" class="${route===k?"active":""}">${l}${c?`<span class="count">${c}</span>`:""}</a>`;}).join("");
+    return`<a href="#${k}" class="${route===k?"active":""}">${l}${c?`<span class="count">${c}</span>`:""}</a>${k==="conversation"&&isDesigner()?`<a href="#notes" class="${route==="notes"?"active":""}">Notes</a>`:""}`;}).join("");
   $("#menuBtn").onclick=e=>{e.stopPropagation();const p=$("#menuPop");const open=p.hidden;closePops();p.hidden=!open;};
   $(".wordmark").href=isDesigner()?"#projects":"#home";
   const pn=$("#projName");if(pn){pn.textContent=isDesigner()&&project&&route!=="projects"?project.name:"";pn.hidden=!pn.textContent;}
@@ -519,7 +524,8 @@ function viewDirectives(){
             ${(()=>{const sn=q.source_note_id&&project.notes.find(x=>x.id===q.source_note_id);
               if(sn)return`<div class="src conv"><span class="label">The conversation</span><div class="mini"><div class="rtop"><b>${esc(nameOf(sn.author_id))}</b><span>${fmtStamp(sn.created_at)}</span></div><p class="rbody">${linkify(sn.body)}</p>${(sn.images||[]).length?`<div class="imgs">${sn.images.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join("")}</div>`:""}</div>${(sn.replies||[]).map(r=>`<div class="mini"><div class="rtop"><b>${esc(nameOf(r.author_id))}</b><span>${fmtStamp(r.created_at)}</span></div><p class="rbody">${linkify(r.body)}</p></div>`).join("")}<div class="actions"><button class="textlink" data-conv="${esc(sn.room||"unsorted")}">Open in messages →</button></div></div>`;
               return (q.images||[]).length?`<div class="imgs">${q.images.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join("")}</div>`:"";})()}
-            ${q.source_meeting_id?(()=>{const mt=(project.meetings||[]).find(x=>x.id===q.source_meeting_id);const src=(project.meetingNotes||[]).filter(n=>n.directive_id===q.id);return`<div class="src"><span class="label">From the meeting${mt?` on ${fmtLong(mt.when)}`:""}</span>${src.map(n=>`<p class="small muted">${linkify(n.body)}</p>`).join("")}</div>`;})():""}
+            ${q.source_session_id?(()=>{const x=(project.noteSessions||[]).find(r=>r.id===q.source_session_id);const src=(project.meetingNotes||[]).filter(n=>n.directive_id===q.id);return`<div class="src"><span class="label">From ${x?`the ${esc((SESSION_KIND[x.kind]||"notes").toLowerCase())}${x.title?` “${esc(x.title)}”`:""} on ${fmtLong(x.at)}`:"your notes"}</span>${src.map(n=>`<p class="small muted">${n.question?`<b>${esc(n.question)}</b> `:""}${linkify(n.body)}</p>`).join("")}</div>`;})():""}
+            ${q.source_meeting_id?(()=>{const mt=(project.meetings||[]).find(x=>x.id===q.source_meeting_id);const src=(project.meetingNotes||[]).filter(n=>n.directive_id===q.id);return`<div class="src"><span class="label">From the meeting${mt?` on ${fmtLong(mt.when)}`:""}</span>${src.map(n=>`<p class="small muted">${n.question?`<b>${esc(n.question)}</b> `:""}${linkify(n.body)}</p>`).join("")}</div>`;})():""}
             ${q.q?`<div class="src"><span class="label">From the first meeting</span><p class="small">${esc(q.q)}</p>${q.a?`<p class="small muted">${esc(q.a)}</p>`:""}</div>`:""}
             ${(q.comments||[]).length?`<div class="replies">${q.comments.map(c=>`<div class="reply"><div class="rtop"><b>${esc(nameOf(c.author_id))}</b><span>${fmtStamp(c.created_at)}</span></div><p class="rbody">${linkify(c.body)}</p></div>`).join("")}</div>`:""}
             ${ui.commentOpen[q.id]?`<form class="ask" data-csave="${q.id}"><textarea class="input" id="cb-${q.id}" placeholder="${d?"A note back to them…":"A comment or a clarification…"}"></textarea><div class="actions"><button class="btn tiny" type="submit">Comment</button><button class="textlink" type="button" data-ccancel="${q.id}">Cancel</button></div></form>`:""}
@@ -692,29 +698,44 @@ async function meetPost(kind,extra){
 }
 
 /* ---------- meeting notes: type during the meeting, turn into directives after ---------- */
-function draftsFallback(ids){return ids.map(id=>(project.meetingNotes||[]).find(n=>n.id===id)).filter(Boolean).map(n=>({room:n.room||"",directive:n.body.trim().replace(/^./,c=>c.toUpperCase()).replace(/([^.!?])$/,"$1."),note_ids:[n.id]}));}
+function draftsFallback(ids){return ids.map(id=>(project.meetingNotes||[]).find(n=>n.id===id)).filter(n=>n&&(n.body||"").trim()).map(n=>({room:n.room||"",directive:n.body.trim().replace(/^./,c=>c.toUpperCase()).replace(/([^.!?])$/,"$1."),note_ids:[n.id]}));}
 function secForRoom(room){return project.intake.find(s=>s.room===room)||project.intake.find(s=>s.title===room)||project.intake[0];}
-function notesMeeting(){
-  const ms=project.meetings||[];
-  if(ui.notesMeeting){const f=ms.find(x=>x.id===ui.notesMeeting);if(f)return f;}
-  const soon=Date.now()+12*3600e3;
-  return ms.find(x=>new Date(x.when).getTime()<=soon)||ms[ms.length-1]||null;
+/* A notes "session" is a scheduled meeting, or a call/meeting started from the notes page. */
+const SESSION_KIND={call:"Call",meeting:"Meeting",visit:"Site visit"};
+function sessions(){
+  const ms=(project.meetings||[]).map(m=>({key:"m:"+m.id,type:"meeting",id:m.id,at:m.when,label:"Meeting",title:""}));
+  const ns=(project.noteSessions||[]).map(x=>({key:"s:"+x.id,type:"session",id:x.id,at:x.at,label:SESSION_KIND[x.kind]||"Notes",title:x.title||""}));
+  return [...ms,...ns].sort((x,y)=>new Date(y.at)-new Date(x.at));
 }
-function notesFor(mt){return (project.meetingNotes||[]).filter(n=>mt?n.meeting_id===mt.id:!n.meeting_id);}
+function notesMeeting(){
+  const all=sessions();
+  if(ui.notesMeeting){const f=all.find(x=>x.key===ui.notesMeeting);if(f)return f;}
+  const soon=Date.now()+12*3600e3;
+  return all.find(x=>new Date(x.at).getTime()<=soon)||all[all.length-1]||null;
+}
+function notesFor(se){return (project.meetingNotes||[]).filter(n=>!se?(!n.meeting_id&&!n.session_id):se.type==="meeting"?n.meeting_id===se.id:n.session_id===se.id);}
+const sessionName=se=>se?`${se.title||se.label} · ${fmtWeek(se.at)}`:"Notes";
+function noteRow(n,rooms){
+  if(ui.noteEdit===n.id)return`<form class="mnote editing" data-nsave="${n.id}"><input class="input small" name="question" value="${esc(n.question||"")}" placeholder="Question (optional)"><textarea class="input small" name="body" placeholder="Answer or note">${esc(n.body)}</textarea><div class="actions"><select class="input tiny" name="room">${rooms.map(r=>`<option value="${esc(r)}" ${(n.room||"")===r?"selected":""}>${r?esc(r):"General"}</option>`).join("")}</select><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-ncancel="1">Cancel</button><button class="textlink" type="button" data-ndel="${n.id}">Remove</button></div></form>`;
+  const unanswered=n.question&&!n.body;
+  return`<div class="mnote ${n.directive_id?"done":n.skipped?"skipped":""} ${unanswered?"open":""}"><div class="mtext">${n.question?`<p class="mq">${linkify(n.question)}</p>`:""}${unanswered?`<form class="mans" data-nans="${n.id}"><textarea class="input small" name="body" rows="1" placeholder="Their answer — Enter to save"></textarea></form>`:`<p>${linkify(n.body)}</p>`}</div><span class="mmeta">${n.directive_id?`<span class="tag accent">Directive</span>`:n.skipped?`<span class="tag quiet">Skipped</span>`:""}<button class="textlink" data-nedit="${n.id}">Edit</button></span></div>`;
+}
 function viewMeetingNotes(){
-  const mt=notesMeeting(),ms=project.meetings||[],notes=notesFor(mt);
-  const pending=notes.filter(n=>!n.directive_id&&!n.skipped);
+  const se=notesMeeting(),all=sessions(),notes=notesFor(se);
+  const pending=notes.filter(n=>!n.directive_id&&!n.skipped&&(n.body||"").trim());
   const rooms=["",...project.rooms];
-  const head=`<div class="page-head"><p class="label">Meeting notes</p><h1>${mt?`${fmtWeek(mt.when)}`:"Notes"}</h1>
-    ${ms.length>1?`<div class="field" style="max-width:340px"><label for="notesPick">Meeting</label><select class="input" id="notesPick">${ms.map(x=>`<option value="${x.id}" ${mt&&x.id===mt.id?"selected":""}>${fmtWeek(x.when)} · ${fmtTime(x.when)}</option>`).join("")}</select></div>`:""}</div>`;
+  const nowLocal=toLocalInput(new Date().toISOString());
+  const head=`<div class="page-head"><p class="label">Notes${se?` · ${esc(se.label)}`:""}</p><h1>${se?esc(se.title||fmtWeek(se.at)):"Notes"}</h1>${se&&se.title?`<p class="lede">${fmtWeek(se.at)}, ${fmtTime(se.at)}</p>`:""}
+    <div class="actions">${all.length>1?`<select class="input" id="notesPick" aria-label="Choose notes">${all.map(x=>`<option value="${x.key}" ${se&&x.key===se.key?"selected":""}>${esc(sessionName(x))}</option>`).join("")}</select>`:""}${ui.newSession?"":`<button class="btn ghost tiny" id="newSession">New notes</button>`}</div>
+    ${ui.newSession?`<form class="editbox" id="sessionForm" style="max-width:620px"><div class="row three"><div class="field"><label>Type</label><select class="input" name="kind">${Object.entries(SESSION_KIND).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></div><div class="field"><label>When</label><input class="input" type="datetime-local" name="at" value="${nowLocal}"></div><div class="field"><label>Title</label><input class="input" name="title" placeholder="Optional, e.g. Kitchen questions"></div></div><div class="actions"><button class="btn tiny" type="submit">Start</button><button class="textlink" type="button" id="sessionCancel">Cancel</button></div></form>`:""}</div>`;
   if(ui.notesDrafting)return head+`<section class="section"><p class="lede">Drafting directives from your notes…</p></section>`;
   if(ui.notesDrafts){
-    const secOpts=sel=>project.intake.map(s=>`<option value="${s.id}" ${s.id===sel?"selected":""}>${esc(s.room||s.title)}</option>`).join("");
+    const secOpts=sel=>project.intake.map(x=>`<option value="${x.id}" ${x.id===sel?"selected":""}>${esc(x.room||x.title)}</option>`).join("");
     return head+`<section class="section"><div class="band"><h2>Draft directives</h2><span class="desc"></span></div>
       ${ui.notesDrafts.length?`<div class="drafts">${ui.notesDrafts.map((dr,i)=>{const sec=secForRoom(dr.room);const src=dr.note_ids.map(id=>notes.find(n=>n.id===id)).filter(Boolean);return`<form class="editbox draft" data-ndraft="${i}">
         <div class="row two"><div class="field"><label>Room</label><select class="input" name="sec">${secOpts(sec&&sec.id)}</select></div></div>
         <div class="field"><label>Directive</label><textarea class="input" name="text">${esc(dr.directive)}</textarea></div>
-        ${src.length?`<div class="src"><span class="label">From your notes</span>${src.map(n=>`<p class="small muted">${linkify(n.body)}</p>`).join("")}</div>`:""}
+        ${src.length?`<div class="src"><span class="label">From your notes</span>${src.map(n=>`<p class="small muted">${n.question?`<b>${esc(n.question)}</b> `:""}${linkify(n.body)}</p>`).join("")}</div>`:""}
         <div class="actions"><button class="btn tiny" type="submit">Add directive</button><button class="textlink" type="button" data-nskip="${i}">Skip</button></div></form>`;}).join("")}</div>
       <div class="actions"><button class="btn" id="draftsAll">Add all</button><button class="textlink" id="draftsBack">Back to notes</button></div>`
       :`<p class="lede">All done.</p><div class="actions"><a class="btn" href="#directives">See design directives</a><button class="textlink" id="draftsBack">Back to notes</button></div>`}</section>`;
@@ -722,16 +743,18 @@ function viewMeetingNotes(){
   const groups=rooms.map(r=>({r,list:notes.filter(n=>(n.room||"")===r)})).filter(g=>g.list.length);
   return head+`<section class="section notetake">
     <div class="chips">${rooms.map(r=>`<button class="chip ${ui.noteRoom===r?"on":""}" data-nroom="${esc(r)}">${r?esc(r):"General"}</button>`).join("")}</div>
-    <form id="noteAdd" class="noteadd"><textarea class="input" id="noteIn" rows="2" placeholder="Type a note, press Enter — it goes under ${esc(ui.noteRoom||"General")}"></textarea><button class="btn tiny" type="submit">Add</button></form>
+    <form id="noteAdd" class="noteadd">
+      <input class="input" id="noteQ" placeholder="Question (optional) — add a few before the call, answer them during">
+      <div class="noteaddrow"><textarea class="input" id="noteIn" rows="2" placeholder="Answer or note — press Enter, it goes under ${esc(ui.noteRoom||"General")}"></textarea><button class="btn tiny" type="submit">Add</button></div>
+    </form>
   </section>
-  ${groups.map(g=>`<section class="section"><div class="band"><h2>${g.r?esc(g.r):"General"}</h2><span class="desc"></span></div><div class="mnotes">${g.list.map(n=>ui.noteEdit===n.id?`<form class="mnote editing" data-nsave="${n.id}"><textarea class="input small" name="body">${esc(n.body)}</textarea><div class="actions"><select class="input tiny" name="room">${rooms.map(r=>`<option value="${esc(r)}" ${(n.room||"")===r?"selected":""}>${r?esc(r):"General"}</option>`).join("")}</select><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-ncancel="1">Cancel</button><button class="textlink" type="button" data-ndel="${n.id}">Remove</button></div></form>`
-    :`<div class="mnote ${n.directive_id?"done":n.skipped?"skipped":""}"><p>${linkify(n.body)}</p><span class="mmeta">${n.directive_id?`<span class="tag accent">Directive</span>`:n.skipped?`<span class="tag quiet">Skipped</span>`:""}<button class="textlink" data-nedit="${n.id}">Edit</button></span></div>`).join("")}</div></section>`).join("")}
-  ${pending.length?`<section class="section"><div class="actions"><button class="btn" id="notesDraft">Turn into directives</button><span class="small muted">Drafts a directive from your notes, combining notes about the same thing. You edit each before it's added.</span></div></section>`:notes.length?`<section class="section"><p class="small muted">Every note here has been added as a directive or skipped.</p></section>`:""}`;
+  ${groups.map(g=>`<section class="section"><div class="band"><h2>${g.r?esc(g.r):"General"}</h2><span class="desc"></span></div><div class="mnotes">${g.list.map(n=>noteRow(n,rooms)).join("")}</div></section>`).join("")}
+  ${pending.length?`<section class="section"><div class="actions"><button class="btn" id="notesDraft">Turn into directives</button><span class="small muted">Drafts directives from your answers and notes, combining ones about the same thing. You edit each before it's added.</span></div></section>`:notes.some(n=>(n.body||"").trim())?`<section class="section"><p class="small muted">Every answered note here has been added as a directive or skipped.</p></section>`:""}`;
 }
 async function addDraft(i,form){
   const dr=ui.notesDrafts[i];const text=form.elements.text.value.trim();const sid=form.elements.sec.value;if(!text)return false;
-  const mt=notesMeeting();
-  const q=await store.addDirective(sid,text,{source_meeting_id:mt?mt.id:null});
+  const se=notesMeeting();
+  const q=await store.addDirective(sid,text,se?(se.type==="meeting"?{source_meeting_id:se.id}:{source_session_id:se.id}):{});
   if(LIVE)project.intake.find(x=>x.id===sid).questions.push(q);
   for(const id of dr.note_ids){await store.updateMeetingNote(id,{directive_id:q.id});const n=(project.meetingNotes||[]).find(x=>x.id===id);if(n)n.directive_id=q.id;}
   return true;
@@ -826,16 +849,24 @@ function bind(app){
   const mf=$("#meetForm",app);if(mf)mf.onsubmit=e=>{e.preventDefault();const agreed=mf.elements.agreed&&mf.elements.agreed.checked;const iso=v=>v?new Date(v).toISOString():null;meetPost(agreed?"set":"propose",{when:iso(mf.elements.when.value),more:[iso(mf.elements.when2.value),iso(mf.elements.when3.value)].filter(Boolean),where:mf.elements.where.value.trim(),message:mf.elements.notes.value});};
   // meeting notes
   app.querySelectorAll("[data-nroom]").forEach(b=>b.onclick=()=>{ui.noteRoom=b.dataset.nroom;ui.focusNote=true;render();});
-  const np=$("#notesPick",app);if(np)np.onchange=()=>{ui.notesMeeting=np.value;render();};
-  const na=$("#noteAdd",app);if(na){const ta=$("#noteIn",app);
-    const add=async()=>{const body=ta.value.trim();if(!body)return;ta.value="";const mt=notesMeeting();try{const n=await store.addMeetingNote({meeting_id:mt?mt.id:null,room:ui.noteRoom,body});if(LIVE){project.meetingNotes=project.meetingNotes||[];project.meetingNotes.push(n);}ui.focusNote=true;render();}catch(err){ta.value=body;toast("Couldn't save: "+err.message);}};
+  const np=$("#notesPick",app);if(np)np.onchange=()=>{ui.notesMeeting=np.value;ui.notesDrafts=null;render();};
+  const na=$("#noteAdd",app);if(na){const ta=$("#noteIn",app),qi=$("#noteQ",app);
+    const add=async()=>{const body=ta.value.trim(),question=qi.value.trim();if(!body&&!question)return;ta.value="";qi.value="";const se=notesMeeting();
+      try{const n=await store.addMeetingNote({meeting_id:se&&se.type==="meeting"?se.id:null,session_id:se&&se.type==="session"?se.id:null,room:ui.noteRoom,question,body});if(LIVE){project.meetingNotes=project.meetingNotes||[];project.meetingNotes.push(n);}ui.focusNote=question&&!body?"q":true;render();}
+      catch(err){ta.value=body;qi.value=question;toast("Couldn't save: "+err.message);}};
     na.onsubmit=e=>{e.preventDefault();add();};
-    ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();add();}};}
+    ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();add();}};
+    qi.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();if(e.metaKey||e.ctrlKey||e.altKey)add();else ta.focus();}};}
+  app.querySelectorAll("[data-nans]").forEach(f=>{const t=f.elements.body;const save=async()=>{const body=t.value.trim();if(!body)return;const id=f.dataset.nans;try{await store.updateMeetingNote(id,{body});const n=project.meetingNotes.find(x=>x.id===id);if(n)n.body=body;render();}catch(err){toast("Couldn't save: "+err.message);}};
+    f.onsubmit=e=>{e.preventDefault();save();};t.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();save();}};});
+  const nsb=$("#newSession",app);if(nsb)nsb.onclick=()=>{ui.newSession=true;render();};
+  const nsc=$("#sessionCancel",app);if(nsc)nsc.onclick=()=>{ui.newSession=false;render();};
+  const sf=$("#sessionForm",app);if(sf)sf.onsubmit=async e=>{e.preventDefault();const at=sf.elements.at.value?new Date(sf.elements.at.value).toISOString():new Date().toISOString();try{const x=await store.addSession({kind:sf.elements.kind.value,title:sf.elements.title.value.trim(),at});if(LIVE){project.noteSessions=project.noteSessions||[];project.noteSessions.unshift(x);}ui.notesMeeting="s:"+x.id;ui.newSession=false;ui.notesDrafts=null;ui.focusNote="q";render();}catch(err){toast("Couldn't start: "+err.message);}};
   app.querySelectorAll("[data-nedit]").forEach(b=>b.onclick=()=>{ui.noteEdit=b.dataset.nedit;render();});
   app.querySelectorAll("[data-ncancel]").forEach(b=>b.onclick=()=>{ui.noteEdit=null;render();});
-  app.querySelectorAll("[data-nsave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.nsave;const patch={body:f.elements.body.value.trim(),room:f.elements.room.value};if(!patch.body)return;try{await store.updateMeetingNote(id,patch);const n=project.meetingNotes.find(x=>x.id===id);if(n)Object.assign(n,patch);ui.noteEdit=null;render();}catch(err){toast("Couldn't save: "+err.message);}});
+  app.querySelectorAll("[data-nsave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.nsave;const patch={body:f.elements.body.value.trim(),question:f.elements.question.value.trim(),room:f.elements.room.value};if(!patch.body&&!patch.question)return;try{await store.updateMeetingNote(id,patch);const n=project.meetingNotes.find(x=>x.id===id);if(n)Object.assign(n,patch);ui.noteEdit=null;render();}catch(err){toast("Couldn't save: "+err.message);}});
   app.querySelectorAll("[data-ndel]").forEach(b=>b.onclick=async()=>{const id=b.dataset.ndel;try{await store.deleteMeetingNote(id);project.meetingNotes=project.meetingNotes.filter(x=>x.id!==id);ui.noteEdit=null;render();}catch(err){toast("Couldn't remove: "+err.message);}});
-  const nd=$("#notesDraft",app);if(nd)nd.onclick=async()=>{const ids=notesFor(notesMeeting()).filter(n=>!n.directive_id&&!n.skipped).map(n=>n.id);ui.notesDrafting=true;render();try{ui.notesDrafts=await store.draftFromNotes(ids);}finally{ui.notesDrafting=false;render();}};
+  const nd=$("#notesDraft",app);if(nd)nd.onclick=async()=>{const ids=notesFor(notesMeeting()).filter(n=>!n.directive_id&&!n.skipped&&(n.body||"").trim()).map(n=>n.id);ui.notesDrafting=true;render();try{ui.notesDrafts=await store.draftFromNotes(ids);}finally{ui.notesDrafting=false;render();}};
   const db=$("#draftsBack",app);if(db)db.onclick=()=>{ui.notesDrafts=null;render();};
   app.querySelectorAll("[data-ndraft]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const i=+f.dataset.ndraft;try{if(await addDraft(i,f)){ui.notesDrafts.splice(i,1);render();toast("Directive added");}}catch(err){toast("Couldn't add: "+err.message);}});
   app.querySelectorAll("[data-nskip]").forEach(b=>b.onclick=async()=>{const i=+b.dataset.nskip;const dr=ui.notesDrafts[i];for(const id of dr.note_ids){await store.updateMeetingNote(id,{skipped:true});const n=project.meetingNotes.find(x=>x.id===id);if(n)n.skipped=true;}ui.notesDrafts.splice(i,1);render();});

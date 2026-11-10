@@ -315,7 +315,6 @@ footer{max-width:var(--max);margin:0 auto;padding:0 var(--gutter-r) calc(80px + 
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:1px solid var(--line);background:none;border-radius:2px;padding:6px 12px;font:inherit;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);cursor:pointer}
 .chip.on{border-color:var(--accent);color:var(--accent);background:var(--surface)}
-.noteadd{display:flex;gap:10px;align-items:flex-end;max-width:760px}
 .noteadd textarea{flex:1;min-height:56px}
 .mnotes{display:grid;max-width:760px}
 .mnote{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
@@ -326,3 +325,11 @@ footer{max-width:var(--max);margin:0 auto;padding:0 var(--gutter-r) calc(80px + 
 .input.tiny{padding:6px 8px;font-size:13px;width:auto}
 .drafts{display:grid;gap:18px;max-width:760px;margin-bottom:18px}
 .field label.pick{text-transform:none;letter-spacing:0;font-size:15px;color:var(--ink)}
+/* notes: questions and answers */
+.noteadd{display:grid;gap:8px;max-width:760px}
+.noteaddrow{display:flex;gap:10px;align-items:flex-end}
+.noteaddrow textarea{flex:1;min-height:56px}
+.mtext{display:grid;gap:4px;flex:1;min-width:0}
+.mq{margin:0;font-size:13px;letter-spacing:.02em;color:var(--muted)}
+.mnote.open .mq{color:var(--ink);font-size:15px}
+.mans textarea{width:100%;min-height:40px}

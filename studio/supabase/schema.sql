@@ -797,3 +797,19 @@ begin
   return new;
 end $$;
 select 'mig9 ok';
+-- Notes for any call or meeting (not only scheduled ones), with question/answer pairs
+create table if not exists public.note_sessions (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  kind text default 'call',
+  title text default '',
+  at timestamptz default now(),
+  created_at timestamptz default now()
+);
+alter table public.note_sessions enable row level security;
+drop policy if exists note_sessions_designer on public.note_sessions;
+create policy note_sessions_designer on public.note_sessions for all to authenticated using (public.is_designer(project_id)) with check (public.is_designer(project_id));
+alter table public.meeting_notes add column if not exists session_id uuid references public.note_sessions(id) on delete cascade;
+alter table public.meeting_notes add column if not exists question text default '';
+alter table public.intake_questions add column if not exists source_session_id uuid references public.note_sessions(id) on delete set null;
+select 'mig10 ok';

@@ -51,14 +51,14 @@ Never start with "You want", "They want", "The clients" or a name. No questions,
 }
 
 // Meeting notes -> draft directives. Related notes are merged; every note id comes back in exactly one draft.
-type MNote = { id: string; room: string; body: string };
+type MNote = { id: string; room: string; body: string; question?: string };
 async function draftFromNotes(notes: MNote[], rooms: string[]): Promise<{ room: string; directive: string; note_ids: string[] }[]> {
-  const system = `You help an interior designer (${DESIGNER}) turn the notes she typed during a client meeting into design directives: short briefs she will design to.
+  const system = `You help an interior designer (${DESIGNER}) turn the notes she typed during a client meeting or call into design directives. Some notes are a question she asked (Q) and the clients' answer (A); the directive comes from the answer, read in light of the question: short briefs she will design to.
 Combine notes about the same thing into one directive; keep different topics separate. Each directive is one to three short sentences that lead with the thing itself, for example: "Entertainment unit on the northern wall with inlaid storage for books, using the pitched ceiling space. Keep the storage integrated into that un-walkable area."
 Never start with "You want", "They want", "The clients" or a name. No questions, no hedging. Keep the specifics (walls, materials, sizes, what to avoid).
 Room must be one of: ${rooms.map(r => JSON.stringify(r)).join(", ")}. Use the note's room when it has one; otherwise pick the best fit.
 Every note id must appear in exactly one item. Return only a JSON array of {"room": string, "directive": string, "note_ids": string[]}.`;
-  const text = notes.map(n => `[${n.id}] (${n.room || "no room"}) ${n.body}`).join("\n");
+  const text = notes.map(n => `[${n.id}] (${n.room || "no room"}) ${n.question ? `Q: ${n.question} — A: ` : ""}${n.body}`).join("\n");
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
     method: "POST",
     headers: { "x-goog-api-key": KEY!, "Content-Type": "application/json" },
@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
   // Meeting notes -> directive drafts, for the designer (row security only lets her read them).
   if (Array.isArray(body.meeting_note_ids) && body.meeting_note_ids.length) {
     const user = createClient(URL, ANON, { global: { headers: { Authorization: auth } } });
-    const { data: notes, error } = await user.from("meeting_notes").select("id,room,body,project_id").in("id", body.meeting_note_ids.slice(0, 200));
+    const { data: notes, error } = await user.from("meeting_notes").select("id,room,body,question,project_id").in("id", body.meeting_note_ids.slice(0, 200));
     if (error || !notes?.length) return json({ error: "Not allowed" }, 403);
     const { data: proj } = await admin.from("projects").select("rooms").eq("id", notes[0].project_id).single();
     try { return json({ drafts: await draftFromNotes(notes as MNote[], (proj?.rooms ?? []) as string[]) }); }
