@@ -440,7 +440,7 @@ function viewHome(){
       ["documents","Documents",`Process, fees, mood board, drawings`,""]
     ];
   }else{
-    lede=`${cs?`We're in the <b>${esc(cs.title.toLowerCase())}</b> stage${cs.due?`, due ${fmtLong(cs.due)}`:""}.`:""} ${m?`Next we meet ${fmtWeek(m.when)} at ${fmtTime(m.when)}.`:""} ${open?`${open} directive${open>1?"s":""} still open.`:""}`;
+    lede=`${cs?`Now in the <b>${esc(cs.title.toLowerCase())}</b> stage.`:""} ${m?`Next we meet ${fmtWeek(m.when)} at ${fmtTime(m.when)}.`:""} ${open?`${open} directive${open>1?"s":""} still open.`:""}`;
     cards=[
       ["conversation","Messages",`New thoughts, photos and questions, whenever they come${replied?` · ${replied} with replies from ${esc(DESIGNER_NAME)}`:""}`,replied||""],
       ["directives","Design directives",`How you live and what you need from each room — change or add to it any time`,open||""],
