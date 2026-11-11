@@ -101,7 +101,7 @@ const nameOf=id=>member(id).name;
 
 /* ---------- Preview store (sample data in this browser only) ---------- */
 class MockStore{
-  constructor(){this.key="parla-studio-preview-v2-"+(cfg.PREVIEW_AS||"any");}
+  constructor(){this.key="parla-studio-preview-v4-"+(cfg.PREVIEW_AS||"any");}
   load(){
     let saved=null;try{saved=JSON.parse(localStorage.getItem(this.key)||"null");}catch(e){}
     this.all=saved&&saved.all?saved.all:JSON.parse(JSON.stringify(window.SAMPLE_PROJECTS||[window.SAMPLE_PROJECT]));
@@ -158,7 +158,7 @@ class MockStore{
   async removeImage(id){this.project.architect_images=this.project.architect_images.filter(x=>x.id!==id);this.persist();}
   async savePinterest(url,note){this.project.pinterest_url=url;this.project.pinterest_note=note;this.persist();}
   async setRooms(rooms){const p=this.project;const removed=p.rooms.filter(r=>!rooms.includes(r));for(const r of removed){const sec=p.intake.find(x=>x.room===r);if(sec&&sec.questions.length)throw new Error(`"${r}" still has directives; move or delete them first`);}p.intake=p.intake.filter(x=>!removed.includes(x.room));for(const r of rooms)if(!p.intake.some(x=>x.room===r))p.intake.push({id:uid(),title:r,room:r,questions:[]});p.intake.sort((a,b)=>rooms.indexOf(a.room)-rooms.indexOf(b.room));p.rooms=rooms;this.persist();}
-  async renameRoom(old,nw){const p=this.project;p.rooms=p.rooms.map(r=>r===old?nw:r);p.intake.forEach(s=>{if(s.room===old){s.room=nw;s.title=nw;}});p.notes.forEach(n=>{if(n.room===old)n.room=nw;});this.persist();}
+  async renameRoom(old,nw){const p=this.project;p.rooms=p.rooms.map(r=>r===old?nw:r);p.intake.forEach(s=>{if(s.room===old){s.room=nw;s.title=nw;}});p.notes.forEach(n=>{if(n.room===old)n.room=nw;});(p.meetingNotes||[]).forEach(n=>{if(n.room===old)n.room=nw;});this.persist();}
   async setEmailAlerts(on){this.project.members.forEach(m=>{if(m.id===this.meId)m.email_alerts=on;});this.persist();}
   async updateProject(name,clients){const p=this.project;p.name=name;const keep=p.members.filter(m=>m.role!=="client");p.members=[...keep,...clients.map(c=>{const ex=p.members.find(m=>(m.email||"").toLowerCase()===c.email);return ex?{...ex,name:c.name||ex.name}:{id:uid(),name:c.name||c.email.split("@")[0],email:c.email,role:"client"};})];this.persist();}
 }
@@ -416,7 +416,7 @@ async function renderDashboard(app){
     <div class="actions"><button class="btn ghost" id="newProjBtn">Start a project</button></div></section>
     <div id="newProjWrap" hidden></div>
   </div>`;
-  app.querySelectorAll("[data-open]").forEach(a=>a.onclick=async e=>{e.preventDefault();project=await store.loadProject(a.dataset.open);summaries=null;ui.room="all";ui.sort="recent";location.hash="home";if(route==="home")render();});
+  app.querySelectorAll("[data-open]").forEach(a=>a.onclick=async e=>{e.preventDefault();project=await store.loadProject(a.dataset.open);summaries=null;ui.room="all";ui.sort="recent";ui.notesMeeting=null;ui.noteRoom="";ui.notesDrafts=null;ui.toDir={};ui.meetingEdit=false;ui.meetReply=false;ui.meetHist=false;location.hash="home";if(route==="home")render();});
   $("#newProjBtn",app).onclick=()=>{const w=$("#newProjWrap",app);w.hidden=false;renderNewProjectForm(w);w.scrollIntoView({behavior:"smooth",block:"start"});};
   renderPreviewBar();
 }
@@ -724,6 +724,8 @@ function viewMeetingNotes(){
   const se=notesMeeting(),all=sessions(),notes=notesFor(se);
   const pending=notes.filter(n=>!n.directive_id&&!n.skipped&&(n.body||"").trim());
   const rooms=["",...project.rooms];
+  if(!rooms.includes(ui.noteRoom))ui.noteRoom="";
+  const roomOf=n=>rooms.includes(n.room||"")?(n.room||""):"";
   const nowLocal=toLocalInput(new Date().toISOString());
   const head=`<div class="page-head"><p class="label">Notes${se?` · ${esc(se.label)}`:""}</p><h1>${se?esc(se.title||fmtWeek(se.at)):"Notes"}</h1>${se&&se.title?`<p class="lede">${fmtWeek(se.at)}, ${fmtTime(se.at)}</p>`:""}
     <div class="actions">${all.length>1?`<select class="input" id="notesPick" aria-label="Choose notes">${all.map(x=>`<option value="${x.key}" ${se&&x.key===se.key?"selected":""}>${esc(sessionName(x))}</option>`).join("")}</select>`:""}${ui.newSession?"":`<button class="btn ghost tiny" id="newSession">New notes</button>`}</div>
@@ -740,11 +742,11 @@ function viewMeetingNotes(){
       <div class="actions"><button class="btn" id="draftsAll">Add all</button><button class="textlink" id="draftsBack">Back to notes</button></div>`
       :`<p class="lede">All done.</p><div class="actions"><a class="btn" href="#directives">See design directives</a><button class="textlink" id="draftsBack">Back to notes</button></div>`}</section>`;
   }
-  const groups=rooms.map(r=>({r,list:notes.filter(n=>(n.room||"")===r)})).filter(g=>g.list.length);
+  const groups=rooms.map(r=>({r,list:notes.filter(n=>roomOf(n)===r)})).filter(g=>g.list.length);
   return head+`<section class="section notetake">
     <div class="chips">${rooms.map(r=>`<button class="chip ${ui.noteRoom===r?"on":""}" data-nroom="${esc(r)}">${r?esc(r):"General"}</button>`).join("")}</div>
     <form id="noteAdd" class="noteadd">
-      <input class="input" id="noteQ" placeholder="Question (optional) — add a few before the call, answer them during">
+      <input class="input" id="noteQ" placeholder="Question (optional)">
       <div class="noteaddrow"><textarea class="input" id="noteIn" rows="2" placeholder="Answer or note — press Enter, it goes under ${esc(ui.noteRoom||"General")}"></textarea><button class="btn tiny" type="submit">Add</button></div>
     </form>
   </section>
