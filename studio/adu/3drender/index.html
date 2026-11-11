@@ -227,7 +227,15 @@ function fill(axis,a0,thick,u1,u2,v1,v2,type,panels,group,out){
   B(u1,u2,v2-f,v2,d,M.frame); B(u1,u1+f,v1,v2,d,M.frame); B(u2-f,u2,v1,v2,d,M.frame);
   B(u1,u2,v1,v1+(type==='win'?f:.05),d,M.frame);
   if(type==='door'){ B(u1+f,u2-f,v1+.05,v2-f,.16,M.door); return; }
-  if(type==='case'){ var n=panels||1, w=(u2-u1)/n, k=.11;
+  if(type==='awn'){ (function(){
+      var g=new THREE.Group(), H=v2-v1-2*f, k=.11, a=u1+f, b=u2-f;
+      function Q(ua,ub,ya,yb,dd,mat){ var m=new THREE.Mesh(new THREE.BoxGeometry(axis==='x'?ub-ua:dd,yb-ya,axis==='x'?dd:ub-ua),mat);
+        if(axis==='x') m.position.set((ua+ub)/2,(ya+yb)/2,0); else m.position.set(0,(ya+yb)/2,(ua+ub)/2); m.castShadow=mat!==M.glass; g.add(m); }
+      Q(a,a+k,-H,0,.12,M.frame); Q(b-k,b,-H,0,.12,M.frame); Q(a,b,-k,0,.12,M.frame); Q(a,b,-H,-H+k,.12,M.frame); Q(a+k,b-k,-H+k,-k,.04,M.glass);
+      if(axis==='x'){ g.position.set(0,v2-f,mid); g.rotation.x=-(out||1)*.45; } else { g.position.set(mid,v2-f,0); g.rotation.z=(out||1)*.45; }
+      group.add(g);
+    })(); }
+  else if(type==='case'){ var n=panels||1, w=(u2-u1)/n, k=.11;
     for(var j=0;j<n;j++){ (function(j){
       var a=u1+w*j+(j?f/2:f), b=u1+w*(j+1)-(j<n-1?f/2:f), L=b-a, left=j<n/2, hu=left?a:b, sg=left?1:-1, g=new THREE.Group();
       function P(ua,ub,ya,yb,dd,mat){ var m=new THREE.Mesh(new THREE.BoxGeometry(axis==='x'?ub-ua:dd,yb-ya,axis==='x'?dd:ub-ua),mat);
@@ -292,6 +300,7 @@ var SR=9/14, ST=10/12, Z0=BD+3.67, ZT=Z0-13*ST;   /* straight stair: 14 risers, 
   extWall('x',0,R,null,G.shell,true);                                   /* east: no openings */
   extWall('x',BD-T,R,[[4.33,16.33,0,6.67]],G.shell,false);              /* west: 12 ft accordion door */
   fill('x',BD-T,T,4.33,16.33,0,6.67,'glass',4,G.shell);
+  box(3.33,17.33,6.95,7.25,BD,BD+1,M.ext,G.shell);                      /* overhang above the glass doors */
   extWall('n',0,RN,[[3.6,6.6,7,8]],G.shell,true);                       /* north: high bath window */
   fill('n',0,T,3.6,6.6,7,8,'win',1,G.shell);
   extWall('n',BW-T,RN,[[1.76,7.76,3.67,6.17]],G.shell,false);                 /* south: bedroom egress window */
@@ -338,7 +347,7 @@ var SR=9/14, ST=10/12, Z0=BD+3.67, ZT=Z0-13*ST;   /* straight stair: 14 risers, 
   box(T,DK,F2,F2+.05,DKN,BD-T,M.deck,G.upper,true);
   /* east wall: small bath window and the ribbon window */
   extWall('x',0,[[0,F2],[BW,F2],[BW,RF],[0,RF]],[[9.05,16.05,13.5,16]],G.upper,true);
-  fill('x',0,T,9.05,16.05,13.5,16,'case',1,G.upper,-.5);
+  fill('x',0,T,9.05,16.05,13.5,16,'awn',1,G.upper,-1);
   box(10.33,16.7,F2,F2+1.6,4.5,10.83,M.soft,G.upper); box(16.7,17,F2,F2+3.4,4.5,10.83,M.soft,G.upper);   /* king bed, headboard on the closet */
   box(6.05,8.55,F2,CEIL2,T,2.67,M.cab,G.upper); box(6.05,6.72,F2,CEIL2,2.67,9.1,M.built,G.upper); box(8.7,16.9,F2+7.3,F2+7.38,T,T+.12,M.glow,G.upper,true);                               /* wardrobe */
   box(8.55,17,F2+2.88,F2+3,T,2.72,M.top,G.upper); box(8.55,17,F2,F2+2.88,T,2.67,M.built,G.upper);   /* 3 ft high table with cabinets below */
@@ -420,7 +429,7 @@ dim([0,g0,BD+4],[BW,g0,BD+4],20.667,0);                                   /* ove
 dim([BW+3,g0,0],[BW+3,g0,BD],19.667,0);                                   /* overall, east to west */
 dim([BW+1.2,0,BD+1.2],[BW+1.2,RF,BD+1.2],18,0,'Roof ');
 dim([BW+2.6,0,BD+2.6],[BW+2.6,F2,BD+2.6],9,0,'2nd floor ');
-dim([4.33,7.3,BD+.25],[16.33,7.3,BD+.25],12,0,'Door ');
+dim([4.33,6.5,BD+1.1],[16.33,6.5,BD+1.1],12,0,'Door ');
 dim([10,g0,-4.08],[10,g0,0],4.083,0);                                     /* gap to the duplex */
 dim([15,g0,BD],[15,g0,BD+6.67],6.667,0);                                  /* to the alley lot line */
 dim([-10,g0,1.5],[0,g0,1.5],10,0,'To setback line ');
