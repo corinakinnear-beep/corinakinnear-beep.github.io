@@ -1,0 +1,846 @@
+-- Studio — database schema for Supabase.
+-- Run this once in the SQL editor of a fresh project. Safe to re-run (uses IF NOT EXISTS / OR REPLACE).
+
+create extension if not exists pgcrypto;
+
+-- ---------- people ----------
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  name text,
+  name_set boolean default false,   -- true once the person (or the designer inviting them) has given a real name
+  phone text default '',            -- a designer's number, shown to their clients on the Home and Timeline pages
+  reply_to text default '',         -- where replies to a designer's notification emails go; blank = their sign-in email
+  payment_info text default '',     -- how a designer likes to be paid; shown to clients when they open a requested payment
+  timezone text default 'UTC',      -- kept current by the app, so times in emails and reminders read in local time
+  email_alerts boolean default false, -- off until the person turns it on in Settings
+  created_at timestamptz default now()
+);
+alter table public.profiles add column if not exists name_set boolean default false;
+alter table public.profiles add column if not exists phone text default '';
+alter table public.profiles add column if not exists reply_to text default '';
+alter table public.profiles add column if not exists payment_info text default '';
+alter table public.profiles add column if not exists timezone text default 'UTC';
+alter table public.profiles add column if not exists email_alerts boolean default false;
+
+-- Each designer's template for new projects: rooms, phases, first-meeting questions, stages (edited in Settings).
+create table if not exists public.templates (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  data jsonb not null,
+  updated_at timestamptz default now()
+);
+
+-- Each designer's own PIN, asked for once per browser session after they sign in. Stored hashed, readable by no one.
+-- No row means no PIN and no prompt. It is a prompt in the app, not a lock on the data (see the README).
+create table if not exists public.designer_pins (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  pin_hash text not null,
+  failed int not null default 0,
+  locked_until timestamptz
+);
+alter table public.designer_pins enable row level security;
+
+-- Create a profile row the moment someone signs in for the first time.
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, email, name)
+  values (new.id, new.email, split_part(coalesce(new.email,''), '@', 1))
+  on conflict (id) do nothing;
+  return new;
+end $$;
+create or replace function public.handle_user_email_change() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.email is distinct from old.email then update public.profiles set email = new.email where id = new.id; end if;
+  return new;
+end $$;
+drop trigger if exists on_auth_user_email_changed on auth.users;
+create trigger on_auth_user_email_changed after update on auth.users
+  for each row execute function public.handle_user_email_change();
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- ---------- projects ----------
+create table if not exists public.projects (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  designer_id uuid references public.profiles(id),
+  pinterest_url text default '',
+  pinterest_note text default '',
+  rooms text[] default '{}',
+  process jsonb default '[]',
+  created_at timestamptz default now()
+);
+
+create table if not exists public.project_members (
+  project_id uuid references public.projects(id) on delete cascade,
+  user_id uuid references public.profiles(id) on delete cascade,
+  role text not null default 'client' check (role in ('designer','client')),
+  primary key (project_id, user_id)
+);
+
+-- Client emails invited before they've ever signed in.
+create table if not exists public.project_invites (
+  project_id uuid references public.projects(id) on delete cascade,
+  email text not null,
+  role text not null default 'client',
+  name text default '',
+  primary key (project_id, email)
+);
+alter table public.project_invites add column if not exists name text default '';
+
+-- Who may start projects. With open signup (the default here) the table is empty and anyone signed in may start one.
+-- To restrict, insert the allowed emails.
+create table if not exists public.designers (email text primary key);
+alter table public.designers enable row level security;
+
+create table if not exists public.intake_sections (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references public.projects(id) on delete cascade,
+  title text not null,
+  room text default '',
+  position bigint default 0
+);
+
+create table if not exists public.intake_questions (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references public.projects(id) on delete cascade,
+  section_id uuid references public.intake_sections(id) on delete cascade,
+  position bigint default 0,
+  question text default '',
+  answer text default '',
+  updated_at timestamptz,
+  updated_by uuid references public.profiles(id),
+  added_by uuid references public.profiles(id),
+  seen_by_designer boolean default true,
+  directive text default '',
+  directive_reviewed boolean default false,
+  images text[] default '{}',
+  source_note_id uuid
+);
+alter table public.intake_questions add column if not exists images text[] default '{}';
+alter table public.intake_questions add column if not exists source_note_id uuid;
+alter table public.intake_questions add column if not exists directive text default '';
+alter table public.intake_questions add column if not exists directive_reviewed boolean default false;
+
+create table if not exists public.directive_comments (
+  id uuid primary key default gen_random_uuid(),
+  question_id uuid references public.intake_questions(id) on delete cascade,
+  project_id uuid references public.projects(id) on delete cascade,
+  author_id uuid references public.profiles(id),
+  body text not null,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.notes (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references public.projects(id) on delete cascade,
+  author_id uuid references public.profiles(id),
+  room text default '',
+  body text default '',
+  images text[] default '{}',
+  created_at timestamptz default now(),
+  edited_at timestamptz,
+  read_at timestamptz,
+  integrated_at timestamptz,
+  status text default '',
+  status_at timestamptz
+);
+alter table public.notes add column if not exists status text default '';
+alter table public.notes add column if not exists status_at timestamptz;
+
+create table if not exists public.note_replies (
+  id uuid primary key default gen_random_uuid(),
+  note_id uuid references public.notes(id) on delete cascade,
+  project_id uuid references public.projects(id) on delete cascade,
+  author_id uuid references public.profiles(id),
+  body text not null,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.stages (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references public.projects(id) on delete cascade,
+  position bigint default 0,
+  title text not null,
+  focus text default '',
+  description text default '',
+  deliverable text default '',
+  due date,
+  status text default 'upcoming' check (status in ('upcoming','current','done')),
+  standard numeric,
+  fee numeric,
+  hourly boolean default false,
+  payment_status text default 'upcoming' check (payment_status in ('free','upcoming','requested','paid')),
+  payment_amount numeric,
+  payment_date date
+);
+
+create table if not exists public.meetings (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references public.projects(id) on delete cascade,
+  "when" timestamptz not null,
+  "where" text default '',
+  notes text default '',
+  change_request jsonb
+);
+
+create table if not exists public.documents (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references public.projects(id) on delete cascade,
+  title text not null,
+  kind text default '',
+  url text default '',
+  note text default '',
+  position bigint default 0,
+  created_at timestamptz default now(),
+  added_by uuid references public.profiles(id)
+);
+alter table public.documents add column if not exists created_at timestamptz default now();
+alter table public.documents add column if not exists added_by uuid references public.profiles(id);
+
+create table if not exists public.architect_images (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references public.projects(id) on delete cascade,
+  url text not null,
+  caption text default '',
+  position bigint default 0
+);
+
+-- ---------- helpers ----------
+create or replace function public.is_member(pid uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.project_members where project_id = pid and user_id = auth.uid());
+$$;
+
+create or replace function public.is_designer(pid uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.project_members where project_id = pid and user_id = auth.uid() and role = 'designer');
+$$;
+
+-- The time zone of a project's designer, so times in notifications read the way the designer's clock does.
+create or replace function public.project_tz(pid uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select coalesce((select n.name from public.projects p join public.profiles pr on pr.id = p.designer_id
+                   join pg_timezone_names n on n.name = pr.timezone where p.id = pid), 'UTC');
+$$;
+
+-- True when the signed-in person and `other` are in at least one project together.
+create or replace function public.shares_project(other uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.project_members a join public.project_members b on b.project_id = a.project_id
+    where a.user_id = auth.uid() and b.user_id = other);
+$$;
+
+-- Called by the app right after sign-in: turns any invites for this email into memberships.
+create or replace function public.join_invited_projects() returns void
+language plpgsql security definer set search_path = public as $$
+declare my_email text;
+begin
+  select email into my_email from auth.users where id = auth.uid();
+  if my_email is null then return; end if;
+  insert into public.project_members (project_id, user_id, role)
+    select i.project_id, auth.uid(), i.role from public.project_invites i
+    where lower(i.email) = lower(my_email)
+  on conflict do nothing;
+  -- first time in: a note about where the project stands, and one for each message the designer already left
+  insert into public.notifications (project_id, to_user, subject, body, link)
+    select i.project_id, auth.uid(), 'Now in ' || lower(s.title) || ' · ' || p.name, coalesce(s.description,''), '#timeline'
+    from public.project_invites i join public.projects p on p.id = i.project_id join public.stages s on s.project_id = p.id and s.status = 'current'
+    where lower(i.email) = lower(my_email)
+      and not exists (select 1 from public.notifications n where n.to_user = auth.uid() and n.project_id = i.project_id);
+  insert into public.notifications (project_id, to_user, subject, body, link)
+    select n.project_id, auth.uid(), coalesce(pr.name, 'Your designer') || ' left you a message' || case when n.room <> '' then ' · ' || n.room else '' end, left(n.body, 400), '#conversation'
+    from public.project_invites i join public.notes n on n.project_id = i.project_id join public.project_members m on m.project_id = n.project_id and m.user_id = n.author_id and m.role = 'designer'
+    join public.profiles pr on pr.id = n.author_id
+    where lower(i.email) = lower(my_email)
+      and not exists (select 1 from public.notifications x where x.to_user = auth.uid() and x.project_id = n.project_id and x.link = '#conversation');
+  -- take the name the designer gave on the invite, unless the person has already set their own
+  update public.profiles p set name = i.name, name_set = true
+    from public.project_invites i
+    where p.id = auth.uid() and lower(i.email) = lower(my_email) and i.name <> ''
+      and not coalesce(p.name_set, false);
+end $$;
+
+-- Called by the designer from the app to start a project from their template (sent by the app as JSON).
+create or replace function public.create_project(
+  p_name text, p_client_emails text[], p_intake jsonb, p_stages jsonb, p_rooms text[], p_process jsonb default '[]', p_client_names text[] default '{}'
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare pid uuid; sec jsonb; q text; sid uuid; i int := 0; j int; st jsonb; e text; k int := 0; my_email text;
+begin
+  select email into my_email from auth.users where id = auth.uid();
+  if exists (select 1 from public.designers) and not exists (select 1 from public.designers d where lower(d.email) = lower(coalesce(my_email,''))) then
+    raise exception 'Only a listed designer can start a project';
+  end if;
+  insert into public.projects (name, designer_id, rooms, process) values (p_name, auth.uid(), p_rooms, p_process) returning id into pid;
+  insert into public.project_members (project_id, user_id, role) values (pid, auth.uid(), 'designer');
+  foreach e in array p_client_emails loop
+    k := k + 1;
+    insert into public.project_invites (project_id, email, role, name) values (pid, lower(e), 'client', coalesce(p_client_names[k], '')) on conflict do nothing;
+    -- if that person already has an account, add them now
+    insert into public.project_members (project_id, user_id, role)
+      select pid, u.id, 'client' from auth.users u where lower(u.email) = lower(e)
+    on conflict do nothing;
+  end loop;
+  for sec in select * from jsonb_array_elements(p_intake) loop
+    i := i + 1;
+    insert into public.intake_sections (project_id, title, room, position) values (pid, sec->>'title', coalesce(sec->>'room',''), i) returning id into sid;
+    j := 0;
+    for q in select * from jsonb_array_elements_text(sec->'questions') loop
+      j := j + 1;
+      insert into public.intake_questions (project_id, section_id, position, question) values (pid, sid, j, q);
+    end loop;
+  end loop;
+  i := 0;
+  for st in select * from jsonb_array_elements(p_stages) loop
+    i := i + 1;
+    insert into public.stages (project_id, position, title, focus, description, deliverable, standard, fee, hourly, status, payment_status)
+    values (pid, i, st->>'title', coalesce(st->>'focus',''), st->>'description', st->>'deliverable', (st->>'standard')::numeric, (st->>'fee')::numeric,
+            coalesce((st->>'hourly')::boolean,false), case when i = 1 then 'current' else 'upcoming' end,
+            -- fee 0 = free; no fee yet = to be set on the project
+            case when (st->>'fee')::numeric = 0 then 'free' else 'upcoming' end);
+  end loop;
+  return pid;
+end $$;
+
+-- Designer renames a project and edits its client list (invites + existing members). Nothing is emailed.
+create or replace function public.update_project_clients(p_project uuid, p_name text, p_client_emails text[], p_client_names text[] default '{}')
+returns void language plpgsql security definer set search_path = public as $$
+declare e text; k int := 0;
+begin
+  if not public.is_designer(p_project) then raise exception 'Only the designer can edit the project'; end if;
+  update public.projects set name = p_name where id = p_project;
+  delete from public.project_invites where project_id = p_project and role = 'client' and not (lower(email) = any (select lower(x) from unnest(p_client_emails) x));
+  delete from public.project_members m using public.profiles pr where m.project_id = p_project and m.role = 'client' and pr.id = m.user_id and not (lower(pr.email) = any (select lower(x) from unnest(p_client_emails) x));
+  foreach e in array p_client_emails loop
+    k := k + 1;
+    insert into public.project_invites (project_id, email, role, name) values (p_project, lower(e), 'client', coalesce(p_client_names[k], ''))
+      on conflict (project_id, email) do update set name = excluded.name;
+    insert into public.project_members (project_id, user_id, role)
+      select p_project, u.id, 'client' from auth.users u where lower(u.email) = lower(e)
+    on conflict do nothing;
+    update public.profiles p set name = p_client_names[k], name_set = true from auth.users u where u.id = p.id and lower(u.email) = lower(e) and nullif(p_client_names[k],'') is not null and not coalesce(p.name_set, false);
+  end loop;
+end $$;
+
+-- Email-only sign-in: may this email create an account? Yes if it was invited to a project, or if it is a listed
+-- designer, or if signup is open (nobody is listed in `designers`). The app asks before it creates an account.
+create or replace function public.email_ok(p_email text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.project_invites i where lower(i.email) = lower(p_email))
+      or not exists (select 1 from public.designers)
+      or exists (select 1 from public.designers d where lower(d.email) = lower(p_email));
+$$;
+
+-- Designer edits the list of spaces. A space with directives in it can't be removed.
+create or replace function public.set_project_rooms(p_project uuid, p_rooms text[]) returns void
+language plpgsql security definer set search_path = public as $$
+declare r text; i int := 0; busy text;
+begin
+  if not public.is_designer(p_project) then raise exception 'Only the designer can edit the project'; end if;
+  select s.room into busy from public.intake_sections s where s.project_id = p_project and s.room <> '' and not (s.room = any (p_rooms))
+    and exists (select 1 from public.intake_questions q where q.section_id = s.id) limit 1;
+  if busy is not null then raise exception '"%" still has directives; move or delete them first', busy; end if;
+  delete from public.intake_sections s where s.project_id = p_project and s.room <> '' and not (s.room = any (p_rooms));
+  foreach r in array p_rooms loop
+    i := i + 1;
+    if not exists (select 1 from public.intake_sections s where s.project_id = p_project and s.room = r) then
+      insert into public.intake_sections (project_id, title, room, position) values (p_project, r, r, i);
+    else
+      update public.intake_sections set position = i, title = r where project_id = p_project and room = r;
+    end if;
+  end loop;
+  update public.projects set rooms = p_rooms where id = p_project;
+end $$;
+
+-- Rename a space everywhere it appears: the project's list, its directives section, and filed messages.
+create or replace function public.rename_room(p_project uuid, p_old text, p_new text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_designer(p_project) then raise exception 'Only the designer can edit the project'; end if;
+  update public.projects set rooms = array_replace(rooms, p_old, p_new) where id = p_project;
+  update public.intake_sections set room = p_new, title = p_new where project_id = p_project and room = p_old;
+  update public.notes set room = p_new where project_id = p_project and room = p_old;
+end $$;
+
+-- Designer PIN. Each designer sets their own; the hash is never readable. Five wrong tries lock it for 15 minutes.
+create or replace function public.has_designer_pin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.designer_pins where user_id = auth.uid());
+$$;
+create or replace function public.set_designer_pin(p_pin text) returns void
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  if auth.uid() is null then raise exception 'Sign in first'; end if;
+  if coalesce(p_pin, '') = '' then
+    delete from public.designer_pins where user_id = auth.uid();
+  else
+    if length(p_pin) < 4 then raise exception 'Use at least 4 characters'; end if;
+    insert into public.designer_pins (user_id, pin_hash) values (auth.uid(), crypt(p_pin, gen_salt('bf')))
+    on conflict (user_id) do update set pin_hash = excluded.pin_hash, failed = 0, locked_until = null;
+  end if;
+end $$;
+create or replace function public.designer_pin_ok(p_pin text) returns boolean
+language plpgsql security definer set search_path = public, extensions as $$
+declare r public.designer_pins; ok boolean;
+begin
+  select * into r from public.designer_pins where user_id = auth.uid();
+  if r.user_id is null then return true; end if;
+  if r.locked_until is not null and r.locked_until > now() then return false; end if;
+  ok := r.pin_hash = crypt(coalesce(p_pin, ''), r.pin_hash);
+  if ok then
+    update public.designer_pins set failed = 0, locked_until = null where user_id = auth.uid();
+  else
+    update public.designer_pins set failed = case when failed >= 4 then 0 else failed + 1 end,
+      locked_until = case when failed >= 4 then now() + interval '15 minutes' else null end where user_id = auth.uid();
+  end if;
+  return ok;
+end $$;
+
+-- Designer chooses to tell the clients about a directive.
+create or replace function public.notify_directive(p_question uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare q record; pname text;
+begin
+  select * into q from public.intake_questions where id = p_question;
+  if q.id is null or not public.is_designer(q.project_id) then return; end if;
+  select name into pname from public.projects where id = q.project_id;
+  perform public.notify_project(q.project_id, auth.uid(), 'client', 'New directive · ' || pname, left(coalesce(nullif(q.directive,''), q.question), 400), '#directives');
+end $$;
+
+-- Dashboard: one row per project the signed-in designer runs.
+create or replace function public.project_summaries() returns table (
+  id uuid, name text, clients text, unread int, changed int, stage text, stage_due date,
+  meeting timestamptz, meeting_request boolean, payment_requested int, last_activity timestamptz
+) language sql stable security definer set search_path = public as $$
+  select p.id, p.name,
+    (select string_agg(coalesce(pr.name, pr.email), ' & ') from project_members m2 join profiles pr on pr.id=m2.user_id where m2.project_id=p.id and m2.role='client') as clients,
+    (select count(*)::int from notes n where n.project_id=p.id and n.read_at is null and n.author_id <> auth.uid()) as unread,
+    (select count(*)::int from intake_questions q where q.project_id=p.id and q.updated_by is not null and q.updated_by <> auth.uid() and not q.seen_by_designer) as changed,
+    (select s.title from stages s where s.project_id=p.id and s.status='current' order by s.position limit 1) as stage,
+    (select s.due from stages s where s.project_id=p.id and s.status='current' order by s.position limit 1) as stage_due,
+    (select mt."when" from meetings mt where mt.project_id=p.id order by mt."when" desc limit 1) as meeting,
+    (select mt.change_request is not null from meetings mt where mt.project_id=p.id order by mt."when" desc limit 1) as meeting_request,
+    (select count(*)::int from stages s where s.project_id=p.id and s.payment_status='requested') as payment_requested,
+    greatest((select max(created_at) from notes n where n.project_id=p.id),(select max(created_at) from note_replies r where r.project_id=p.id),(select max(updated_at) from intake_questions q where q.project_id=p.id)) as last_activity
+  from projects p join project_members m on m.project_id=p.id
+  where m.user_id = auth.uid() and m.role='designer'
+  order by last_activity desc nulls last, p.created_at desc;
+$$;
+
+-- ---------- row security ----------
+alter table public.profiles enable row level security;
+alter table public.projects enable row level security;
+alter table public.project_members enable row level security;
+alter table public.project_invites enable row level security;
+alter table public.intake_sections enable row level security;
+alter table public.intake_questions enable row level security;
+alter table public.notes enable row level security;
+alter table public.note_replies enable row level security;
+alter table public.stages enable row level security;
+alter table public.meetings enable row level security;
+alter table public.architect_images enable row level security;
+alter table public.documents enable row level security;
+alter table public.templates enable row level security;
+
+-- templates: each designer reads and writes only their own
+drop policy if exists templates_own on public.templates;
+create policy templates_own on public.templates for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+alter table public.directive_comments enable row level security;
+drop policy if exists dcomments_rw on public.directive_comments;
+create policy dcomments_rw on public.directive_comments for all to authenticated using (public.is_member(project_id)) with check (public.is_member(project_id));
+
+-- profiles: you can read your own and those of people you share a project with (names on notes, the designer's phone);
+-- nobody else's. You can edit your own.
+drop policy if exists profiles_read on public.profiles;
+create policy profiles_read on public.profiles for select to authenticated using (id = auth.uid() or public.shares_project(id));
+drop policy if exists profiles_self on public.profiles;
+create policy profiles_self on public.profiles for all to authenticated using (id = auth.uid()) with check (id = auth.uid());
+
+drop policy if exists projects_member on public.projects;
+create policy projects_member on public.projects for select to authenticated using (public.is_member(id));
+drop policy if exists projects_designer on public.projects;
+create policy projects_designer on public.projects for update to authenticated using (public.is_designer(id));
+
+drop policy if exists members_read on public.project_members;
+create policy members_read on public.project_members for select to authenticated using (public.is_member(project_id));
+drop policy if exists members_designer on public.project_members;
+create policy members_designer on public.project_members for all to authenticated using (public.is_designer(project_id)) with check (public.is_designer(project_id));
+
+drop policy if exists invites_designer on public.project_invites;
+create policy invites_designer on public.project_invites for all to authenticated using (public.is_designer(project_id)) with check (public.is_designer(project_id));
+
+-- everything inside a project: members read; members write where the app lets them
+drop policy if exists sections_rw on public.intake_sections;
+create policy sections_rw on public.intake_sections for all to authenticated using (public.is_member(project_id)) with check (public.is_member(project_id));
+drop policy if exists questions_rw on public.intake_questions;
+create policy questions_rw on public.intake_questions for all to authenticated using (public.is_member(project_id)) with check (public.is_member(project_id));
+drop policy if exists notes_rw on public.notes;
+create policy notes_rw on public.notes for all to authenticated using (public.is_member(project_id)) with check (public.is_member(project_id));
+drop policy if exists replies_rw on public.note_replies;
+create policy replies_rw on public.note_replies for all to authenticated using (public.is_member(project_id)) with check (public.is_member(project_id));
+drop policy if exists stages_read on public.stages;
+create policy stages_read on public.stages for select to authenticated using (public.is_member(project_id));
+drop policy if exists stages_designer on public.stages;
+create policy stages_designer on public.stages for all to authenticated using (public.is_designer(project_id)) with check (public.is_designer(project_id));
+drop policy if exists meetings_rw on public.meetings;
+create policy meetings_rw on public.meetings for all to authenticated using (public.is_member(project_id)) with check (public.is_member(project_id));
+drop policy if exists documents_read on public.documents;
+create policy documents_read on public.documents for select to authenticated using (public.is_member(project_id));
+drop policy if exists documents_designer on public.documents;
+create policy documents_designer on public.documents for all to authenticated using (public.is_designer(project_id)) with check (public.is_designer(project_id));
+drop policy if exists documents_client_add on public.documents;
+create policy documents_client_add on public.documents for insert to authenticated with check (public.is_member(project_id) and added_by = auth.uid());
+drop policy if exists documents_client_own on public.documents;
+create policy documents_client_own on public.documents for delete to authenticated using (added_by = auth.uid());
+drop policy if exists images_read on public.architect_images;
+create policy images_read on public.architect_images for select to authenticated using (public.is_member(project_id));
+drop policy if exists images_designer on public.architect_images;
+create policy images_designer on public.architect_images for all to authenticated using (public.is_designer(project_id)) with check (public.is_designer(project_id));
+
+-- ---------- storage ----------
+insert into storage.buckets (id, name, public) values ('studio', 'studio', true) on conflict (id) do nothing;
+drop policy if exists studio_read on storage.objects;
+create policy studio_read on storage.objects for select using (bucket_id = 'studio');
+drop policy if exists studio_upload on storage.objects;
+create policy studio_upload on storage.objects for insert to authenticated with check (bucket_id = 'studio');
+
+-- ---------- email notifications ----------
+-- Every event that should email someone goes into this queue. An Edge Function
+-- (supabase/functions/notify) drains it and sends through Resend.
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references public.projects(id) on delete cascade,
+  to_user uuid references public.profiles(id) on delete cascade,
+  subject text not null,
+  body text not null,
+  link text default '',
+  created_at timestamptz default now(),
+  sent_at timestamptz,
+  seen_at timestamptz
+);
+alter table public.notifications add column if not exists seen_at timestamptz;
+alter table public.notifications enable row level security;
+-- each person sees and marks their own notifications in the app; sending uses the service role
+drop policy if exists notifications_own on public.notifications;
+create policy notifications_own on public.notifications for select to authenticated using (to_user = auth.uid());
+drop policy if exists notifications_seen on public.notifications;
+create policy notifications_seen on public.notifications for update to authenticated using (to_user = auth.uid()) with check (to_user = auth.uid());
+
+create or replace function public.notify_project(pid uuid, except_user uuid, only_role text, subj text, bod text, lnk text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.notifications (project_id, to_user, subject, body, link)
+  select pid, m.user_id, subj, bod, lnk
+  from public.project_members m join public.profiles pr on pr.id = m.user_id
+  where m.project_id = pid and m.user_id is distinct from except_user
+    and (only_role is null or m.role = only_role);
+  -- rows still queue for the in-app bell; the sender skips people whose email_alerts is off
+end $$;
+
+create or replace function public.on_note_insert() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text;
+begin
+  select name into pname from public.projects where id = new.project_id;
+  select coalesce(name, email) into who from public.profiles where id = new.author_id;
+  select role into author_role from public.project_members where project_id = new.project_id and user_id = new.author_id;
+  if author_role = 'designer' then
+    perform public.notify_project(new.project_id, new.author_id, 'client', who || ' added to the conversation · ' || pname, left(new.body, 400), '#conversation');
+  else
+    perform public.notify_project(new.project_id, new.author_id, 'designer', who || ' added to the conversation · ' || pname, left(new.body, 400), '#conversation');
+  end if;
+  return new;
+end $$;
+drop trigger if exists note_insert_notify on public.notes;
+create trigger note_insert_notify after insert on public.notes for each row execute function public.on_note_insert();
+
+create or replace function public.on_note_edit() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text;
+begin
+  if new.body is distinct from old.body then
+    select name into pname from public.projects where id = new.project_id;
+    select coalesce(name, email) into who from public.profiles where id = new.author_id;
+    select role into author_role from public.project_members where project_id = new.project_id and user_id = new.author_id;
+    if author_role <> 'designer' then
+      perform public.notify_project(new.project_id, new.author_id, 'designer', who || ' edited a note · ' || pname, left(new.body, 400), '#conversation');
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists note_edit_notify on public.notes;
+create trigger note_edit_notify after update on public.notes for each row execute function public.on_note_edit();
+
+create or replace function public.on_reply_insert() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text; note_room text; note_author uuid;
+begin
+  select name into pname from public.projects where id = new.project_id;
+  select coalesce(name, email) into who from public.profiles where id = new.author_id;
+  select role into author_role from public.project_members where project_id = new.project_id and user_id = new.author_id;
+  select room, author_id into note_room, note_author from public.notes where id = new.note_id;
+  if author_role = 'designer' then
+    perform public.notify_project(new.project_id, new.author_id, 'client', who || ' replied' || case when note_room <> '' then ' · ' || note_room else '' end || ' · ' || pname, left(new.body, 400), '#conversation');
+  else
+    perform public.notify_project(new.project_id, new.author_id, 'designer', who || ' replied' || case when note_room <> '' then ' · ' || note_room else '' end || ' · ' || pname, left(new.body, 400), '#conversation');
+  end if;
+  return new;
+end $$;
+drop trigger if exists reply_insert_notify on public.note_replies;
+create trigger reply_insert_notify after insert on public.note_replies for each row execute function public.on_reply_insert();
+
+create or replace function public.on_question_update() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text; sec text;
+begin
+  if (new.answer is distinct from old.answer or new.directive is distinct from old.directive) and new.updated_by is not null then
+    select role into author_role from public.project_members where project_id = new.project_id and user_id = new.updated_by;
+    if author_role <> 'designer' then
+      select name into pname from public.projects where id = new.project_id;
+      select coalesce(name, email) into who from public.profiles where id = new.updated_by;
+      select title into sec from public.intake_sections where id = new.section_id;
+      perform public.notify_project(new.project_id, new.updated_by, 'designer', who || ' changed a directive · ' || coalesce(sec,'') || ' · ' || pname, left(coalesce(nullif(new.directive,''), new.answer), 400), '#directives');
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists question_update_notify on public.intake_questions;
+create trigger question_update_notify after update on public.intake_questions for each row execute function public.on_question_update();
+
+create or replace function public.on_question_insert() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text; sec text;
+begin
+  if new.added_by is not null then
+    select role into author_role from public.project_members where project_id = new.project_id and user_id = new.added_by;
+    if author_role <> 'designer' then
+      select name into pname from public.projects where id = new.project_id;
+      select coalesce(name, email) into who from public.profiles where id = new.added_by;
+      select title into sec from public.intake_sections where id = new.section_id;
+      perform public.notify_project(new.project_id, new.added_by, 'designer', who || ' added a directive · ' || coalesce(sec,'') || ' · ' || pname, left(coalesce(nullif(new.directive,''), new.answer), 400), '#directives');
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists question_insert_notify on public.intake_questions;
+create trigger question_insert_notify after insert on public.intake_questions for each row execute function public.on_question_insert();
+
+create or replace function public.on_dcomment_insert() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text; dir text;
+begin
+  select name into pname from public.projects where id = new.project_id;
+  select coalesce(name, email) into who from public.profiles where id = new.author_id;
+  select role into author_role from public.project_members where project_id = new.project_id and user_id = new.author_id;
+  select coalesce(nullif(directive,''), question) into dir from public.intake_questions where id = new.question_id;
+  perform public.notify_project(new.project_id, new.author_id, case when author_role = 'designer' then 'client' else 'designer' end,
+    who || ' commented on a directive · ' || pname, left(coalesce(dir,''), 120) || E'\n— ' || left(new.body, 300), '#directives');
+  return new;
+end $$;
+drop trigger if exists dcomment_insert_notify on public.directive_comments;
+create trigger dcomment_insert_notify after insert on public.directive_comments for each row execute function public.on_dcomment_insert();
+
+create or replace function public.on_document_insert() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text;
+begin
+  select name into pname from public.projects where id = new.project_id;
+  select coalesce(name, email) into who from public.profiles where id = new.added_by;
+  select role into author_role from public.project_members where project_id = new.project_id and user_id = new.added_by;
+  perform public.notify_project(new.project_id, new.added_by, case when author_role = 'designer' then 'client' else 'designer' end,
+    coalesce(who,'Someone') || ' added a document · ' || pname, new.title || coalesce(' — ' || nullif(new.note,''), ''), '#documents');
+  return new;
+end $$;
+drop trigger if exists document_insert_notify on public.documents;
+create trigger document_insert_notify after insert on public.documents for each row execute function public.on_document_insert();
+
+create or replace function public.on_stage_payment() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text;
+begin
+  if new.status = 'current' and old.status is distinct from 'current' then
+    select name into pname from public.projects where id = new.project_id;
+    perform public.notify_project(new.project_id, auth.uid(), 'client', 'Now in ' || lower(new.title) || ' · ' || pname, coalesce(new.description,''), '#timeline');
+  end if;
+  if new.payment_status is distinct from old.payment_status then
+    select name into pname from public.projects where id = new.project_id;
+    perform public.notify_project(new.project_id, auth.uid(), 'client',
+      case new.payment_status when 'requested' then 'Payment requested · ' when 'paid' then 'Payment received · ' else 'Payment updated · ' end || new.title,
+      case when new.payment_amount is not null then '$' || to_char(new.payment_amount, 'FM999,999.00') else '' end || ' · ' || pname, '#timeline');
+  end if;
+  return new;
+end $$;
+drop trigger if exists stage_payment_notify on public.stages;
+create trigger stage_payment_notify after update on public.stages for each row execute function public.on_stage_payment();
+
+
+drop trigger if exists meeting_change_notify on public.meetings;
+-- Summaries kept ready for "Make a directive"
+alter table public.notes add column if not exists summary text default '';
+alter table public.notes add column if not exists summary_at timestamptz;
+alter table public.notes add column if not exists summary_stale boolean default true;
+create or replace function public.flag_note_summary() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if tg_table_name = 'notes' then
+    if tg_op = 'INSERT' or new.body is distinct from old.body then new.summary_stale := true; end if;
+    return new;
+  else
+    update public.notes set summary_stale = true where id = coalesce(new.note_id, old.note_id);
+    return coalesce(new, old);
+  end if;
+end $$;
+drop trigger if exists notes_flag_summary on public.notes;
+create trigger notes_flag_summary before insert or update of body on public.notes for each row execute function public.flag_note_summary();
+drop trigger if exists replies_flag_summary on public.note_replies;
+create trigger replies_flag_summary after insert or update or delete on public.note_replies for each row execute function public.flag_note_summary();
+-- Meetings: proposed / confirmed / declined, with a short message history
+alter table public.meetings add column if not exists status text default 'confirmed';
+alter table public.meetings add column if not exists proposed_by uuid references public.profiles(id);
+alter table public.meetings add column if not exists thread jsonb default '[]'::jsonb;
+update public.meetings mt set
+  status = coalesce(mt.status, 'confirmed'),
+  proposed_by = coalesce(mt.proposed_by, (select m.user_id from public.project_members m where m.project_id = mt.project_id and m.role = 'designer' limit 1)),
+  thread = jsonb_build_array(jsonb_build_object('id', gen_random_uuid(), 'by', (select m.user_id from public.project_members m where m.project_id = mt.project_id and m.role = 'designer' limit 1),
+             'at', now(), 'kind', 'set', 'message', coalesce(mt.notes, ''), 'when', mt."when", 'where', coalesce(mt."where", '')))
+    || case when mt.change_request is not null then jsonb_build_array(jsonb_build_object('id', gen_random_uuid(), 'by', mt.change_request->>'by', 'at', mt.change_request->>'at', 'kind', 'note',
+             'message', case when mt.change_request->>'kind' = 'cancel' then 'Asked to cancel. ' else 'Asked to move it. ' end || coalesce(mt.change_request->>'message', ''))) else '[]'::jsonb end
+where mt.thread is null or mt.thread = '[]'::jsonb;
+
+
+-- dashboard: "meeting request" now means a proposal waiting on you
+create or replace function public.project_summaries() returns table (
+  id uuid, name text, clients text, unread int, changed int, stage text, stage_due date,
+  meeting timestamptz, meeting_request boolean, payment_requested int, last_activity timestamptz
+) language sql stable security definer set search_path = public as $$
+  select p.id, p.name,
+    (select string_agg(coalesce(pr.name, pr.email), ' & ') from project_members m2 join profiles pr on pr.id=m2.user_id where m2.project_id=p.id and m2.role='client') as clients,
+    (select count(*)::int from notes n where n.project_id=p.id and n.read_at is null and n.author_id <> auth.uid()) as unread,
+    (select count(*)::int from intake_questions q where q.project_id=p.id and q.updated_by is not null and q.updated_by <> auth.uid() and not q.seen_by_designer) as changed,
+    (select s.title from stages s where s.project_id=p.id and s.status='current' order by s.position limit 1) as stage,
+    (select s.due from stages s where s.project_id=p.id and s.status='current' order by s.position limit 1) as stage_due,
+    (select mt."when" from meetings mt where mt.project_id=p.id order by mt."when" desc limit 1) as meeting,
+    (select mt.status = 'proposed' and mt.proposed_by is distinct from auth.uid() from meetings mt where mt.project_id=p.id order by mt."when" desc limit 1) as meeting_request,
+    (select count(*)::int from stages s where s.project_id=p.id and s.payment_status='requested') as payment_requested,
+    greatest((select max(created_at) from notes n where n.project_id=p.id),(select max(created_at) from note_replies r where r.project_id=p.id),(select max(updated_at) from intake_questions q where q.project_id=p.id)) as last_activity
+  from projects p join project_members m on m.project_id=p.id
+  where m.user_id = auth.uid() and m.role='designer'
+  order by last_activity desc nulls last, p.created_at desc;
+$$;
+-- Meetings: several time options, a reminder the day before, and notes that become directives
+alter table public.meetings add column if not exists options jsonb default '[]'::jsonb;
+alter table public.meetings add column if not exists reminder_sent_at timestamptz;
+alter table public.intake_questions add column if not exists source_meeting_id uuid references public.meetings(id) on delete set null;
+
+create table if not exists public.meeting_notes (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  meeting_id uuid references public.meetings(id) on delete set null,
+  room text default '',
+  body text not null default '',
+  author_id uuid default auth.uid() references public.profiles(id),
+  created_at timestamptz default now(),
+  directive_id uuid references public.intake_questions(id) on delete set null,
+  skipped boolean default false
+);
+alter table public.meeting_notes enable row level security;
+drop policy if exists meeting_notes_designer on public.meeting_notes;
+create policy meeting_notes_designer on public.meeting_notes for all to authenticated using (public.is_designer(project_id)) with check (public.is_designer(project_id));
+
+-- a new time means a new reminder
+create or replace function public.meeting_reset_reminder() returns trigger
+language plpgsql as $$
+begin
+  if new."when" is distinct from old."when" then new.reminder_sent_at := null; end if;
+  return new;
+end $$;
+drop trigger if exists meeting_reset_reminder on public.meetings;
+create trigger meeting_reset_reminder before update on public.meetings for each row execute function public.meeting_reset_reminder();
+
+create or replace function public.send_meeting_reminders() returns void
+language plpgsql security definer set search_path = public as $$
+declare r record; day text; tz text;
+begin
+  for r in select mt.*, p.name as pname from public.meetings mt join public.projects p on p.id = mt.project_id
+    where coalesce(mt.status, 'confirmed') = 'confirmed' and mt.reminder_sent_at is null
+      and mt."when" > now() and mt."when" <= now() + interval '24 hours'
+  loop
+    tz := public.project_tz(r.project_id);
+    day := case when (r."when" at time zone tz)::date = (now() at time zone tz)::date then 'Today' else 'Tomorrow' end;
+    perform public.notify_project(r.project_id, null, null, day || ': meeting · ' || r.pname,
+      to_char(r."when" at time zone tz, 'FMDay, FMMonth FMDD at FMHH12:MI AM') || coalesce(' · ' || nullif(r."where", ''), ''), '#timeline');
+    update public.meetings set reminder_sent_at = now() where id = r.id;
+  end loop;
+end $$;
+
+-- notifications list every offered time
+create or replace function public.on_meeting_thread() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare pname text; who text; author_role text; e jsonb; n_old int; whenx text; subj text; bod text; tz text;
+begin
+  n_old := case when tg_op = 'INSERT' then 0 else coalesce(jsonb_array_length(old.thread), 0) end;
+  if coalesce(jsonb_array_length(new.thread), 0) <= n_old then return new; end if;
+  e := new.thread -> (jsonb_array_length(new.thread) - 1);
+  tz := public.project_tz(new.project_id);
+  select name into pname from public.projects where id = new.project_id;
+  select coalesce(name, email) into who from public.profiles where id = (e->>'by')::uuid;
+  select role into author_role from public.project_members where project_id = new.project_id and user_id = (e->>'by')::uuid;
+  if e->>'kind' = 'propose' and coalesce(jsonb_array_length(new.options), 0) > 1 then
+    select string_agg(to_char((o #>> '{}')::timestamptz at time zone tz, 'FMDay, FMMonth FMDD at FMHH12:MI AM'), ' or ') into whenx from jsonb_array_elements(new.options) o;
+    whenx := whenx || coalesce(' · ' || nullif(new."where", ''), '');
+  else
+    whenx := to_char(new."when" at time zone tz, 'FMDay, FMMonth FMDD at FMHH12:MI AM') || coalesce(' · ' || nullif(new."where", ''), '');
+  end if;
+  subj := coalesce(who, 'Someone') || case e->>'kind'
+      when 'propose' then case when coalesce(jsonb_array_length(new.options), 0) > 1 then ' offered meeting times · ' else ' proposed a meeting · ' end
+      when 'set' then ' scheduled a meeting · '
+      when 'confirm' then ' confirmed the meeting · '
+      when 'decline' then ' can''t make the meeting · '
+      else ' replied about the meeting · ' end || pname;
+  bod := case when e->>'kind' in ('propose', 'set', 'confirm', 'decline') then whenx else '' end
+      || case when coalesce(e->>'message', '') <> '' then case when e->>'kind' in ('propose', 'set', 'confirm', 'decline') then ' — ' else '' end || (e->>'message') else '' end;
+  perform public.notify_project(new.project_id, (e->>'by')::uuid, case when author_role = 'designer' then 'client' else 'designer' end, subj, left(bod, 600), '#timeline');
+  return new;
+end $$;
+drop trigger if exists meeting_insert_notify on public.meetings;
+drop trigger if exists meeting_change_notify on public.meetings;
+drop trigger if exists meeting_thread_notify on public.meetings;
+create trigger meeting_thread_notify after insert or update on public.meetings for each row execute function public.on_meeting_thread();
+-- Notes for any call or meeting (not only scheduled ones), with question/answer pairs
+create table if not exists public.note_sessions (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  kind text default 'call',
+  title text default '',
+  at timestamptz default now(),
+  created_at timestamptz default now()
+);
+alter table public.note_sessions enable row level security;
+drop policy if exists note_sessions_designer on public.note_sessions;
+create policy note_sessions_designer on public.note_sessions for all to authenticated using (public.is_designer(project_id)) with check (public.is_designer(project_id));
+alter table public.meeting_notes add column if not exists session_id uuid references public.note_sessions(id) on delete cascade;
+alter table public.meeting_notes add column if not exists question text default '';
+alter table public.intake_questions add column if not exists source_session_id uuid references public.note_sessions(id) on delete set null;
+
+-- ---------- schedule the senders (run once, after the functions are deployed; edit the URL and key) ----------
+-- create extension if not exists pg_cron; create extension if not exists pg_net;
+-- Emails, every 5 minutes:
+-- select cron.schedule('studio-notify', '*/5 * * * *', $$
+--   select net.http_post(url := 'https://YOUR-REF.supabase.co/functions/v1/notify',
+--     headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer YOUR_PUBLISHABLE_KEY'),
+--     body := '{}'::jsonb);
+-- $$);
+-- Message summaries, every 5 minutes (a sweep can take longer than pg_net's 5 s default):
+-- select cron.schedule('studio-summarize', '*/5 * * * *', $$
+--   select net.http_post(url := 'https://YOUR-REF.supabase.co/functions/v1/summarize',
+--     headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer YOUR_PUBLISHABLE_KEY'),
+--     body := '{}'::jsonb, timeout_milliseconds := 120000);
+-- $$);
+-- The day-before meeting reminder, every 15 minutes:
+-- select cron.schedule('studio-meeting-reminders', '*/15 * * * *', 'select public.send_meeting_reminders()');
