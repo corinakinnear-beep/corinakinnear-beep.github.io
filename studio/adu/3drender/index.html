@@ -68,10 +68,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .light-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px}
 #fail{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:32px;text-align:center;color:var(--ink-2)}
 @media (max-width:760px){
-  #app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,46%)}
+  #app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,33%)}
   #stage{grid-row:1}
-  #panel{grid-row:2;border-right:0;border-top:1px solid var(--line);padding:18px 16px;gap:18px}
-  h1{font-size:30px}.lede{font-size:18px}
+  #panel{grid-row:2;border-right:0;border-top:1px solid var(--line);padding:12px 16px 16px;gap:14px}
+  .eyebrow,.lede{display:none}
+  h1{font-size:22px}
   #hint{right:16px;bottom:10px}
   #pad{bottom:44px}
 }
@@ -112,7 +113,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 
     <section aria-labelledby="l-meas">
       <p class="label" id="l-meas">Measure</p>
-      <label class="check" for="c-dims"><input type="checkbox" id="c-dims" checked>Dimensions</label>
+      <label class="check" for="c-dims"><input type="checkbox" id="c-dims">Dimensions</label>
       <div class="row">
         <button class="tag" type="button" id="b-tape" aria-pressed="false">Tape measure</button>
         <button class="tag" type="button" id="b-clear" disabled>Clear</button>
@@ -128,7 +129,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <p class="label" id="l-show">Show</p>
       <label class="check" for="c-roof"><input type="checkbox" id="c-roof" checked>Roof</label>
       <label class="check" for="c-upper"><input type="checkbox" id="c-upper" checked>Second floor</label>
-      <label class="check" for="c-labels"><input type="checkbox" id="c-labels" checked>Room labels</label>
+      <label class="check" for="c-labels"><input type="checkbox" id="c-labels">Room labels</label>
     </section>
 
     <section aria-labelledby="l-cut">
@@ -139,7 +140,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       </div>
     </section>
 
-    <p class="note">Based on the beda Architecture plan check set V1, dated 10/17/26, with design changes made on 11/10/26 that are not on those sheets: one foot added on the duplex side, a straight stair with storage beneath it, a one-foot deck overhang, french doors to the deck, narrower storage and bath doors, moved windows, a shower upstairs, casement windows, closets in the bedroom and rec room, a king bed, and kitchen changes. Colours, cabinetry and the wave walls follow your reference photos. Furniture, fixtures, the small window heights and the height of the duplex are scaled or approximate. Tape readings come from this model. Not for construction.</p>
   </aside>
 
   <main id="stage">
@@ -177,6 +177,8 @@ scene.add(new THREE.HemisphereLight(0xffffff,0xb9b1a1,0.6));
 var sun=new THREE.DirectionalLight(0xfff3df,0.6);
 sun.position.set(55,95,70); sun.target.position.set(8,0,6); scene.add(sun); scene.add(sun.target);
 var inLight=new THREE.AmbientLight(0xfff6e8,0); scene.add(inLight);
+var fillA=new THREE.DirectionalLight(0xfff1dc,0); fillA.position.set(60,45,25); scene.add(fillA);
+var fillB=new THREE.DirectionalLight(0xf3ead8,0); fillB.position.set(-25,35,-60); scene.add(fillB);
 sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
 var sc=sun.shadow.camera; sc.left=-70; sc.right=70; sc.top=70; sc.bottom=-70; sc.near=1; sc.far=320;
 sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.06;
@@ -187,9 +189,9 @@ var cut=new THREE.Plane(new THREE.Vector3(0,-1,0),1000);
 function hm(color,o){ var p={color:color,roughness:.92,metalness:0,side:THREE.DoubleSide,clippingPlanes:[cut],clipShadows:true}; if(o){ for(var k in o) p[k]=o[k]; } return new THREE.MeshStandardMaterial(p); }
 function sm(color,o){ var p={color:color,roughness:.95,metalness:0}; if(o){ for(var k in o) p[k]=o[k]; } return new THREE.MeshStandardMaterial(p); }
 var M={
-  ext:hm(0x77836A), int:hm(0xEDE3D3), floor:hm(0xD9CFBF), floor2:hm(0xD9CFBF), deck:hm(0xD8D0C2),
+  ext:hm(0x77836A), int:hm(0xE6DBCA), floor:hm(0xBFAE95), floor2:hm(0xD0C3AE), deck:hm(0xD8D0C2),
   roof:hm(0xE2DDD1), frame:hm(0x3A3B35), door:hm(0xB8946A), glass:hm(0x9DB8BE,{transparent:true,opacity:.3,roughness:.15,depthWrite:false}),
-  cab:hm(0xC8A67A), top:hm(0xEFE8DB), soft:hm(0xF0E8DB), white:hm(0xFFFFFF,{roughness:.5}), tile:hm(0xD3C8B6,{roughness:.6}),
+  cab:hm(0xC8A67A), top:hm(0xEFE8DB), soft:hm(0xF0E8DB), white:hm(0xFFFFFF,{roughness:.5}), tile:hm(0xB5A68E,{roughness:.6}),
   dark:hm(0x2B2B27), glow:hm(0xFFE6B0,{emissive:0xFFD089,emissiveIntensity:1}), brass:hm(0xA98952,{metalness:.55,roughness:.45}), built:hm(0xD4B88F), mark:hm(0xC98A5A), steel:hm(0x3A3B35,{roughness:.6}), tread:hm(0xBFA67F),
   ground:sm(0xCFC8B9), lot:sm(0xDAD3C5), street:sm(0xBDB6A8), mass:sm(0xE6E0D4)
 };
@@ -200,10 +202,12 @@ for(var gk in G) scene.add(G[gk]);
 
 /* ---------- geometry helpers.
    x = feet south of the north wall, n = feet west of the east wall, y = feet above the first floor ---------- */
+var edgeMat=new THREE.LineBasicMaterial({color:0x4A443A,transparent:true,opacity:.8,clippingPlanes:[cut]});
+function edge(m){ var t=m.material; if(!t.clippingPlanes||t===M.glass||t===M.glow) return; var e=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry,30),edgeMat); e.raycast=function(){}; m.add(e); }
 function box(x1,x2,y1,y2,n1,n2,mat,group,noShadow){
   var m=new THREE.Mesh(new THREE.BoxGeometry(x2-x1,y2-y1,n2-n1),mat);
   m.position.set((x1+x2)/2,(y1+y2)/2,(n1+n2)/2);
-  m.castShadow=!noShadow; m.receiveShadow=true; group.add(m); return m;
+  m.castShadow=!noShadow; m.receiveShadow=true; group.add(m); edge(m); return m;
 }
 function shapeWall(axis,a0,thick,outline,holes,mat,group){
   var s=new THREE.Shape();
@@ -211,7 +215,7 @@ function shapeWall(axis,a0,thick,outline,holes,mat,group){
   (holes||[]).forEach(function(h){ var p=new THREE.Path(); p.moveTo(h[0],h[2]); p.lineTo(h[1],h[2]); p.lineTo(h[1],h[3]); p.lineTo(h[0],h[3]); p.lineTo(h[0],h[2]); s.holes.push(p); });
   var m=new THREE.Mesh(new THREE.ExtrudeGeometry(s,{depth:thick,bevelEnabled:false}),mat);
   if(axis==='x'){ m.position.z=a0; } else { m.rotation.y=-Math.PI/2; m.position.x=a0+thick; }
-  m.castShadow=true; m.receiveShadow=true; group.add(m); return m;
+  m.castShadow=true; m.receiveShadow=true; group.add(m); edge(m); return m;
 }
 var T=.67, TO=.37, TI=.3;
 /* exterior wall: coloured outer layer, light inner layer. low = the outside face is on the a0 side */
@@ -446,7 +450,7 @@ dim([17,F2+.1,2.2],[BW-T,F2+.1,2.2],3,2,'Closet ');
 dim([T,F2+.1,BD-T-.6],[DK,F2+.1,BD-T-.6],10.5,2);
 
 /* ---------- state ---------- */
-var state={roof:true,upper:true,labels:true,dims:true,units:'ft',cut:CUTMAX,mode:'orbit',view:'outside',room:null,tape:false};
+var state={roof:true,upper:true,labels:false,dims:false,units:'ft',cut:CUTMAX,mode:'orbit',view:'outside',room:null,tape:false};
 var orbit={t:new THREE.Vector3(7,7,11),r:66,theta:-.85,phi:1.12}, goal=null, look={p:new THREE.Vector3(),yaw:0,pitch:0};
 var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var VIEWS={
@@ -549,7 +553,7 @@ function apply(){
   el.pad.classList.toggle('on',state.mode==='look');
   el.hint.textContent=state.tape ? 'Tap one point, then another. Points snap to corners. Dragging still moves the view.'
     : state.mode==='look' ? 'Drag to look around. Scroll, arrow keys or the pad to walk.' : 'Drag to orbit. Scroll or pinch to zoom. Right-drag or two fingers to move.';
-  inLight.intensity=state.mode==='look'?.36:0;
+  inLight.intensity=state.mode==='look'?.06:0; fillA.intensity=state.mode==='look'?.42:0; fillB.intensity=state.mode==='look'?.16:0;
   var fov=state.mode==='look'?68:40; if(camera.fov!==fov){ camera.fov=fov; camera.updateProjectionMatrix(); }
   refreshText(); readout();
 }
