@@ -17,8 +17,8 @@ Deno.serve(async () => {
   const { data: rows } = await sb.from("notifications").select("id,project_id,to_user,subject,body,link").is("sent_at", null).limit(50);
   let sent = 0;
   for (const n of rows ?? []) {
-    const { data: p } = await sb.from("profiles").select("email,name").eq("id", n.to_user).single();
-    if (!p?.email) { await sb.from("notifications").update({ sent_at: new Date().toISOString() }).eq("id", n.id); continue; }
+    const { data: p } = await sb.from("profiles").select("email,name,email_alerts").eq("id", n.to_user).single();
+    if (!p?.email || !p.email_alerts) { await sb.from("notifications").update({ sent_at: new Date().toISOString() }).eq("id", n.id); continue; }
     const esc = (s: string) => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!));
     const html = `<div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#20211C;background:#EDE8DF">
       <p style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#615F55;margin:0 0 20px">Studio</p>
