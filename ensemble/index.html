@@ -940,6 +940,12 @@ const PIN_SUFFIX = '::ensemble-pin';
 
   /* ---------- grid helpers ---------- */
   const spd = cfg => cfg.g >= 1440 ? 1 : (cfg.e - cfg.s) * 60 / cfg.g;
+  // Only today onward is shown. Past days are hidden, not deleted: slot numbers
+  // (day*n + k) never change, so saved availability stays intact. An event that is
+  // entirely in the past still shows in full so it can be looked at.
+  const todayISO = () => { const t = new Date(); t.setMinutes(t.getMinutes() - t.getTimezoneOffset()); return t.toISOString().slice(0,10); };
+  const dayShown = (cfg, iso) => iso >= todayISO() || cfg.d.at(-1) < todayISO();
+  const firstShown = cfg => cfg.d.find(iso => dayShown(cfg, iso)) || cfg.d[0];
   const slotLabel = (cfg, i) => {
     const n = spd(cfg), day = Math.floor(i / n), k = i % n;
     if (!cfg.d[day]) return 'a removed time';
@@ -949,12 +955,12 @@ const PIN_SUFFIX = '::ensemble-pin';
   function buildGrid(container, cfg, proposed) {
     const n = spd(cfg), cls = cfg.g >= 1440 ? 'dayslot' : cfg.g === 15 ? 'q15' : '';
     let html = '<table class="grid"><thead><tr><th class="corner"><span class="zoomctl"><button type="button" data-z="-1" aria-label="Zoom chart out" title="Zoom out">&minus;</button><button type="button" data-z="1" aria-label="Zoom chart in" title="Zoom in">+</button></span></th>';
-    cfg.d.forEach((iso, day) => { const d = new Date(iso+'T00:00'); html += `<th class="day" data-day="${day}">${DOW[d.getDay()]}<b>${fmtDate(iso)}</b></th>`; });
+    cfg.d.forEach((iso, day) => { if (!dayShown(cfg, iso)) return; const d = new Date(iso+'T00:00'); html += `<th class="day" data-day="${day}">${DOW[d.getDay()]}<b>${fmtDate(iso)}</b></th>`; });
     html += '</tr></thead><tbody>';
     for (let k = 0; k < n; k++) {
       const h = cfg.s + k*cfg.g/60;
       html += `<tr><th class="time">${cfg.g >= 1440 ? 'All day' : (h % 1 === 0 ? fmtHour(h) : '')}</th>`;
-      cfg.d.forEach((_, day) => { const idx = day*n + k; const na = proposed && !proposed.has(idx); html += `<td class="${cls}${na ? ' na' : ''}" data-i="${idx}" data-day="${day}"></td>`; });
+      cfg.d.forEach((iso, day) => { if (!dayShown(cfg, iso)) return; const idx = day*n + k; const na = proposed && !proposed.has(idx); html += `<td class="${cls}${na ? ' na' : ''}" data-i="${idx}" data-day="${day}"></td>`; });
       html += '</tr>';
     }
     if (cfg.g < 1440) html += `<tr><th class="time">${fmtHour(cfg.e)}</th></tr>`;
@@ -1610,7 +1616,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   }
   function renderMeta() {
     const c = plan.config, when = c.g >= 1440 ? 'all day' : `${fmtHour(c.s)} – ${fmtHour(c.e)}`;
-    $('#pDates').textContent = `${fmtDate(c.d[0])} – ${fmtDate(c.d.at(-1))} · ${when}`;
+    $('#pDates').textContent = `${fmtDate(firstShown(c))} – ${fmtDate(c.d.at(-1))} · ${when}`;
     $('#pLocs').textContent = locs().map(l => l.name).join(' · ');
     $('#pClosed').classList.toggle('hidden', !plan.closed);
     $('#closeBtn').textContent = plan.closed ? 'Reopen event' : 'Close event';
@@ -1789,7 +1795,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     const n = spd(plan.config);
     const runs = [];
     per.forEach((pp, li) => {
-      const keys = Object.keys(pp.counts).map(Number).sort((a,b) => a-b);
+      const keys = Object.keys(pp.counts).map(Number).filter(i => dayShown(plan.config, plan.config.d[Math.floor(i / n)])).sort((a,b) => a-b);
       let cur = null;
       keys.forEach(i => {
         const c = pp.counts[i];
@@ -2060,6 +2066,7 @@ const PIN_SUFFIX = '::ensemble-pin';
         if (!loose && prefs.locIndex !== null && li !== prefs.locIndex) return;
         const ok = new Set(l.proposed);
         cfg.d.forEach((iso, day) => {
+          if (!dayShown(cfg, iso)) return;
           const dow = new Date(iso + 'T00:00').getDay();
           if (!loose) {
             if (prefs.include.size && !prefs.include.has(dow)) return;
@@ -2648,7 +2655,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-11-01b';
+  const BUILD = '2026-11-10a';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
