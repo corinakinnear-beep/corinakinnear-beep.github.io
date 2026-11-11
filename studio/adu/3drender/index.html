@@ -66,6 +66,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 #light[hidden]{display:none}
 #light img{max-width:100%;max-height:calc(100% - 64px);object-fit:contain;display:block}
 .light-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px}
+section[hidden]{display:none}
 #fail{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:32px;text-align:center;color:var(--ink-2)}
 @media (max-width:760px){
   #app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,33%)}
@@ -123,6 +124,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
         <button class="tag" type="button" data-u="ft" aria-pressed="true">Feet and inches</button>
         <button class="tag" type="button" data-u="m" aria-pressed="false">Metres</button>
       </div>
+    </section>
+
+    <section aria-labelledby="l-exp" id="s-exp">
+      <p class="label" id="l-exp">Export</p>
+      <div class="row">
+        <button class="tag" type="button" id="b-png">Save this view as an image</button>
+        <button class="tag" type="button" id="b-glb">Download 3D file</button>
+      </div>
+      <p class="small" id="x-status" aria-live="polite"></p>
     </section>
 
     <section aria-labelledby="l-show">
@@ -576,6 +586,35 @@ document.getElementById('units').addEventListener('click',function(e){ var b=e.t
 el.cut.addEventListener('input',function(){ state.cut=parseFloat(el.cut.value); apply(); });
 el.tape.addEventListener('click',function(){ state.tape=!state.tape; if(!state.tape&&tape.a){ G.tape.remove(tape.a.dot); tape.a=null; setPreview(null); } apply(); });
 el.clear.addEventListener('click',clearTape);
+
+/* ---------- export: the current view as a PNG, the building as a GLB in metres ---------- */
+(function(){
+  var sec=document.getElementById('s-exp'), status=document.getElementById('x-status');
+  if(!/(^|\.)parladesigns\.com$/.test(location.hostname)){ sec.hidden=true; }
+  function save(blob,name){ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); },4000); }
+  function exportRoot(){
+    var root=new THREE.Group();
+    [G.shell,G.interior,G.stair,G.upper,G.roof].forEach(function(g){ g.updateMatrixWorld(true);
+      g.traverse(function(o){ if(o.isMesh){ var m=new THREE.Mesh(o.geometry,o.material); m.applyMatrix4(o.matrixWorld); root.add(m); } }); });
+    root.scale.setScalar(.3048); root.updateMatrixWorld(true); return root;
+  }
+  var loading=null;
+  function exporter(){
+    if(THREE.GLTFExporter) return Promise.resolve();
+    if(!loading) loading=new Promise(function(res,rej){ var sc=document.createElement('script'); sc.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js'; sc.onload=res; sc.onerror=rej; document.head.appendChild(sc); });
+    return loading;
+  }
+  window.aduGLB=function(){ return exporter().then(function(){ return new Promise(function(res,rej){ try{ new THREE.GLTFExporter().parse(exportRoot(),res,{binary:true}); }catch(e){ rej(e); } }); }); };
+  document.getElementById('b-png').addEventListener('click',function(){
+    renderer.render(scene,camera);
+    canvas.toBlob(function(b){ if(b){ save(b,'adu-'+(state.room||state.view)+'.png'); status.textContent='Image saved to your downloads.'; } else status.textContent='The image could not be saved.'; },'image/png');
+  });
+  document.getElementById('b-glb').addEventListener('click',function(){
+    status.textContent='Preparing the 3D file.';
+    window.aduGLB().then(function(buf){ save(new Blob([buf],{type:'model/gltf-binary'}),'241-5th-ave-adu.glb'); status.textContent='3D file saved to your downloads.'; },
+      function(){ status.textContent='The 3D file could not be built.'; });
+  });
+})();
 
 /* ---------- camera controls ---------- */
 var pts={}, pinch=null, keys={}, down=null;
