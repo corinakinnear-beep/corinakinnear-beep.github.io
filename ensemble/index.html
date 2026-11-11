@@ -1190,7 +1190,7 @@ const PIN_SUFFIX = '::ensemble-pin';
           ${r.past ? '<span class="tag past">Past</span>' : ''}
           ${r.fresh ? `<span class="tag new">${r.fresh} new</span>` : ''}
           <h4>${esc(r.ev.title)}</h4>
-          <p class="meta">${fmtDate(c.d[0])} – ${fmtDate(c.d.at(-1))} · ${c.locations.map(l => esc(l.name)).join(' or ')}${r.ev.closed ? ' · Closed' : ''}</p>
+          <p class="meta">${fmtDate(firstShown(c))} – ${fmtDate(c.d.at(-1))} · ${c.locations.map(l => esc(l.name)).join(' or ')}${r.ev.closed ? ' · Closed' : ''}</p>
           <ul class="stamps">${stamps}</ul>
         </div>
         <div class="acts">
@@ -2655,7 +2655,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-11-10a';
+  const BUILD = '2026-11-10b';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
