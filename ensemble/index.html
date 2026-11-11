@@ -943,7 +943,9 @@ const PIN_SUFFIX = '::ensemble-pin';
   // Only today onward is shown. Past days are hidden, not deleted: slot numbers
   // (day*n + k) never change, so saved availability stays intact. An event that is
   // entirely in the past still shows in full so it can be looked at.
-  const todayISO = () => { const t = new Date(); t.setMinutes(t.getMinutes() - t.getTimezoneOffset()); return t.toISOString().slice(0,10); };
+  // dates are always local calendar days; toISOString() alone would shift them east of UTC
+  const localISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const todayISO = () => localISO(new Date());
   const dayShown = (cfg, iso) => iso >= todayISO() || cfg.d.at(-1) < todayISO();
   const firstShown = cfg => cfg.d.find(iso => dayShown(cfg, iso)) || cfg.d[0];
   const slotLabel = (cfg, i) => {
@@ -1052,8 +1054,6 @@ const PIN_SUFFIX = '::ensemble-pin';
       const panel = $('#menuPanel'), btn = $('#menuBtn');
       const close = () => { panel.classList.remove('open'); btn.setAttribute('aria-expanded','false'); };
       btn.onclick = e => { e.stopPropagation(); const open = panel.classList.toggle('open'); btn.setAttribute('aria-expanded', open); };
-      document.addEventListener('click', e => { if (!panel.contains(e.target) && e.target !== btn) close(); });
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
       $('#mAccount').onclick = () => {
         close();
         if (dirty && !confirm('Are you sure you want to leave without saving your changes?')) return;
@@ -1061,10 +1061,13 @@ const PIN_SUFFIX = '::ensemble-pin';
       };
       $('#mNew').onclick = () => { close(); if (dirty && !confirm('Are you sure you want to leave without saving your changes?')) return; dirty = false; editing = false; creating = true; location.hash = ''; render(); };
       panel.querySelectorAll('button').forEach(b => b.addEventListener('click', () => setTimeout(close, 0)));
-      $('#mDash').onclick = () => { if (dirty && !confirm('You have unsaved changes. Leave without saving?')) return; dirty = false; editing = false; creating = false; location.hash = ''; render(); };
+      $('#mDash').onclick = () => { if (dirty && !confirm('You have unsaved changes. Leave without saving?')) return; dirty = false; editing = false; creating = false; showAccount = false; location.hash = ''; render(); };
       $('#signout').onclick = async () => { if (dirty && !confirm('You have unsaved changes. Sign out without saving?')) return; dirty = false; await sb.auth.signOut(); };
     }
   }
+  const closeMenu = () => { const p = $('#menuPanel'), b = $('#menuBtn'); if (p && b) { p.classList.remove('open'); b.setAttribute('aria-expanded','false'); } };
+  document.addEventListener('click', e => { const p = $('#menuPanel'), b = $('#menuBtn'); if (p && !p.contains(e.target) && !(b && b.contains(e.target))) closeMenu(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
   $('#sSwitch').onclick = () => {
     signupMode = !signupMode;
     $('#pin2Field').classList.toggle('hidden', !signupMode);
@@ -1107,6 +1110,7 @@ const PIN_SUFFIX = '::ensemble-pin';
 
   async function render() {
     route();
+    if (eventId || creating || editing) showAccount = false;
     const show = id => ['#signin','#dash','#home','#plan'].forEach(s => $(s).classList.toggle('hidden', s !== id));
     if (!eventId || !user) { $('#savebar').classList.remove('on'); document.body.classList.remove('hasbar'); stopPolling(); }
     if (!user) { $('#signinTitle').textContent = cohostToken ? 'Sign in to join as a co-host' : inviteToken ? 'Sign in to add availability for the host' : eventId ? 'Sign in to mark your availability' : 'Sign in to create an event'; show('#signin'); $('#paintbar').classList.remove('avail'); return; }
@@ -1259,14 +1263,23 @@ const PIN_SUFFIX = '::ensemble-pin';
   };
 
   /* ---------- create / edit form ---------- */
-  const today = new Date(); today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
-  $('#start').value = today.toISOString().slice(0,10);
+  $('#start').value = todayISO();
   [3,5,7,10,14,21,30,45,60].forEach(n => $('#ndays').add(new Option(n + ' days', n)));
   $('#ndays').value = 7;
   for (let h = 0; h <= 24; h++) { $('#from').add(new Option(fmtHour(h), h)); $('#to').add(new Option(fmtHour(h), h)); }
   $('#from').value = 9; $('#to').value = 21;
 
   let draft = null, proposed = [], pLoc = 0, locCount = 2;
+  // the day list offers round numbers; an event being edited keeps its exact length
+  function setDayCount(n) {
+    const sel = $('#ndays');
+    [...sel.options].filter(o => o.dataset.exact).forEach(o => o.remove());
+    if (n && ![...sel.options].some(o => +o.value === n)) {
+      const o = new Option(n + ' days', n); o.dataset.exact = '1';
+      sel.add(o, [...sel.options].find(x => +x.value > n) || null);
+    }
+    sel.value = n || 7;
+  }
   const locNames = () => {
     const out = [];
     for (let i = 0; i < locCount; i++) {
@@ -1289,8 +1302,9 @@ const PIN_SUFFIX = '::ensemble-pin';
   $('#addLoc').onclick = () => { if (locCount >= MAXLOC) return; const vals = [...Array(locCount)].map((_, i) => $('#locName'+i).value); locCount++; renderLocFields(vals); renderProposeTabs(); updateCreate(); };
 
   function draftConfig() {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test($('#start').value)) $('#start').value = todayISO();   // a cleared date box
     const start = new Date($('#start').value + 'T00:00'), n = +$('#ndays').value, d = [];
-    for (let i = 0; i < n; i++) { const x = new Date(start); x.setDate(x.getDate()+i); d.push(x.toISOString().slice(0,10)); }
+    for (let i = 0; i < n; i++) { const x = new Date(start); x.setDate(x.getDate()+i); d.push(localISO(x)); }
     return { d, s: +$('#from').value, e: +$('#to').value, g: +$('#step').value };
   }
   function renderProposeTabs() {
@@ -1320,7 +1334,13 @@ const PIN_SUFFIX = '::ensemble-pin';
       ? `${tally}. Every location needs at least 2 proposed slots before you can create the event — still to do: ${short.join(', ')}. Use the tabs above the grid to switch between locations.`
       : tally;
   }
-  ['#start','#ndays','#from','#to','#step'].forEach(s => $(s).addEventListener('change', () => { proposed = proposed.map(() => new Set()); rebuildGridOnly(); }));
+  ['#start','#ndays','#from','#to','#step'].forEach(s => $(s).addEventListener('change', () => {
+    const was = draft, now = draftConfig();
+    const ok = c => c && (c.g >= 1440 || c.e > c.s);
+    // keep what still fits on the new grid, at the same real dates and hours
+    proposed = proposed.map(set => ok(was) && ok(now) ? new Set(remapSlots(was, now, [...(set || [])])) : new Set());
+    rebuildGridOnly();
+  }));
   makePainter($('#proposeGrid'), () => proposed[pLoc] ||= new Set(), () => true);
   $('#proposeGrid').addEventListener('painted', updateCreate);
   $('#proposeQfToggle').onclick = () => {
@@ -1351,6 +1371,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     editing = false;
     $('#createIntro').classList.remove('hidden'); $('#editIntro').classList.add('hidden');
     $('#createBtn').textContent = 'Create event'; $('#cancelEdit').classList.add('hidden'); $('#dangerZone').classList.add('hidden'); $('#addDaysSection').classList.add('hidden');
+    if ([...$('#ndays').options].some(o => o.dataset.exact)) setDayCount(0);
     locCount = 2; renderLocFields(null); proposed = [new Set(), new Set()]; pLoc = 0;
     renderProposeTabs(); rebuildGridOnly();
   }
@@ -1364,7 +1385,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     $('#createBtn').textContent = 'Save changes'; $('#cancelEdit').classList.remove('hidden'); $('#dangerZone').classList.toggle('hidden', !isPrimary); $('#addDaysSection').classList.remove('hidden');
     $('#title').value = plan.title;
     $('#start').value = c.d[0]; $('#step').value = c.g; $('#from').value = c.s; $('#to').value = c.e;
-    const nOpt = [...$('#ndays').options].find(o => +o.value >= c.d.length); $('#ndays').value = nOpt ? nOpt.value : 60;
+    setDayCount(c.d.length);
     locCount = Math.max(2, c.locations.length); renderLocFields(c.locations.map(l => l.name));
     proposed = c.locations.map(l => new Set(l.proposed)); pLoc = 0;
     renderProposeTabs(); rebuildDraftKeepingSlots(c);
@@ -1373,7 +1394,6 @@ const PIN_SUFFIX = '::ensemble-pin';
   }
   function rebuildDraftKeepingSlots(c) {
     draft = draftConfig();
-    if (draft.d.length < c.d.length) { $('#ndays').value = 60; draft = draftConfig(); }
     buildGrid($('#proposeGrid'), draft, null); setPaintMode(paintMode); paintSet($('#proposeGrid'), proposed[pLoc]); updateCreate();
   }
   $('#deleteEvent').onclick = async () => {
@@ -1397,12 +1417,11 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (editing && editBase) {
       const axisMoved = editBase.s !== config.s || editBase.e !== config.e
         || editBase.g !== config.g || editBase.d[0] !== config.d[0];
+      if (!axisMoved && config.d.length < editBase.d.length && !confirm(`This shortens the event from ${editBase.d.length} days to ${config.d.length}. Times on the removed days will no longer show. Continue?`)) { $('#createBtn').disabled = false; return; }
       const answered = responses.filter(r => Object.values(r.availability || {}).some(a => a.length)).length;
       if (axisMoved) {
         // keep the parts we're allowed to rewrite pointing at the same real times
-        config.locations = config.locations.map((l, i) => ({
-          ...l, proposed: remapSlots(editBase, config, [...(proposed[i] || [])])
-        }));
+        // (proposed times are already on the new grid — they were carried over as the form changed)
         if (Array.isArray(config.manual)) config.manual = config.manual.map(m => {
           const av = {};
           Object.keys(m.availability || {}).forEach(k => { av[k] = remapSlots(editBase, config, m.availability[k]); });
@@ -1467,7 +1486,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     logPane('loadEvent:start', { seq });
     const { data: ev, error } = await sb.from('events').select('*').eq('id', eventId).single();
     if (seq !== loadSeq) { logPane('loadEvent:abandoned-stale', { seq, latest: loadSeq }); return; }
-    if (error || !ev) { $('#plan').innerHTML = '<p class="empty">That event link doesn\'t exist any more.</p>'; return; }
+    if (error || !ev) { plan = null; stopPolling(); location.hash = ''; setTimeout(() => toast('That event link doesn’t exist any more'), 300); return; }
     plan = ev; if (loc >= plan.config.locations.length) loc = 0;
     const isOwnerOf = e => e.owner === user.id;
     const { data: rs, error: rsErr } = await sb.from('responses').select('*').eq('event_id', eventId).order('name');
@@ -1643,7 +1662,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     mine[o] = new Set([...mine[loc]].filter(i => locs()[o].proposed.includes(i)));
     markDirty(); toast(`Copied to ${locs()[o].name} (only times offered there) — press Save changes`);
   };
-  $('#clearMine').onclick = () => { mine[loc].clear(); paintSet($('#youGrid'), mine[loc]); markDirty(); };
+  $('#clearMine').onclick = () => { if (locked()) return toast(lockedMsg()); (mine[loc] ||= new Set()).clear(); paintSet($('#youGrid'), mine[loc]); markDirty(); };
   $('#youQfToggle').onclick = () => {
     const open = $('#youQuickfill').classList.toggle('hidden') === false;
     $('#youQfToggle').setAttribute('aria-expanded', String(open));
@@ -1651,7 +1670,8 @@ const PIN_SUFFIX = '::ensemble-pin';
   const youFill = all => {
     if (locked()) return toast(lockedMsg());
     if (!locs()[loc]) return;
-    mine[loc] = all ? new Set(locs()[loc].proposed || []) : new Set();
+    const n = spd(plan.config), onScreen = i => dayShown(plan.config, plan.config.d[Math.floor(i / n)]);
+    mine[loc] = all ? new Set([...(mine[loc] || []), ...(locs()[loc].proposed || []).filter(onScreen)]) : new Set([...(mine[loc] || [])].filter(i => !onScreen(i)));
     paintSet($('#youGrid'), mine[loc]); markDirty();
     const where = locs().length > 1 ? ` at ${locs()[loc].name}` : '';
     toast(all ? `Marked every offered time${where} — press Save changes` : `Cleared your times${where} — press Save changes`);
@@ -1882,7 +1902,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     if (!add) return toast('Enter a number between 1 and 60');
     const c = plan.config, last = new Date(c.d.at(-1) + 'T00:00');
     const extra = [];
-    for (let i = 1; i <= add; i++) { const x = new Date(last); x.setDate(x.getDate() + i); extra.push(x.toISOString().slice(0,10)); }
+    for (let i = 1; i <= add; i++) { const x = new Date(last); x.setDate(x.getDate() + i); extra.push(localISO(x)); }
     if (!confirm(`Add ${add} more days, running through ${fmtDate(extra.at(-1))}? Existing answers are kept exactly as they are.`)) return;
     const config = { ...c, d: [...c.d, ...extra] };
     const { error } = await sb.from('events').update({ config }).eq('id', eventId);
@@ -1957,7 +1977,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     const p = {
       evening: /evening|night|after work|tonight/.test(clean),
       morning: /morning|early/.test(clean),
-      weekend: /weekend|saturday|sunday/.test(clean),
+      weekend: /weekend/.test(clean),
       weekday: /weekday|during the week/.test(clean),
       include: new Set(), exclude: new Set(),
       after: null, before: null,
@@ -1970,7 +1990,7 @@ const PIN_SUFFIX = '::ensemble-pin';
 
     // days of the week, with "not Thursdays" / "except Fridays" handled
     Object.keys(DAYWORDS).forEach(w => {
-      const re = new RegExp('(no|not|never|except|avoid|apart from|other than)?\\s*\\b' + w + 's?\\b');
+      const re = new RegExp('(?:\\b(no|not|never|except|avoid|apart from|other than))?\\s*\\b' + w + 's?\\b');
       const m = clean.match(re);
       if (!m) return;
       (m[1] ? p.exclude : p.include).add(DAYWORDS[w]);
@@ -1989,7 +2009,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     (names || []).forEach(nm => {
       const first = nm.toLowerCase().split(/\s+/)[0].replace(/[^a-z0-9]/g, '');
       if (!first || first.length < 2) return;
-      const re = new RegExp('(without|not|no|minus|except|excluding)?\\s*\\b' + first + '\\b');
+      const re = new RegExp('(?:\\b(without|not|no|minus|except|excluding))?\\s*\\b' + first + '\\b');
       const mm = clean.match(re);
       if (!mm) return;
       (mm[1] ? p.without : p.mustHave).push(nm);
@@ -2535,7 +2555,7 @@ const PIN_SUFFIX = '::ensemble-pin';
     mSel[o] = new Set([...mSel[loc]].filter(i => locs()[o].proposed.includes(i)));
     toast(`Copied to ${locs()[o].name} (only times offered there) — press Save entry`);
   };
-  $('#manualAll').onclick = () => { if (!locs()[loc]) return; mSel[loc] = new Set(locs()[loc].proposed || []); paintSet($('#manualGrid'), mSel[loc]); };
+  $('#manualAll').onclick = () => { if (!locs()[loc]) return; const n = spd(plan.config); mSel[loc] = new Set([...(mSel[loc] || []), ...(locs()[loc].proposed || []).filter(i => dayShown(plan.config, plan.config.d[Math.floor(i / n)]))]); paintSet($('#manualGrid'), mSel[loc]); };
   $('#manualClear').onclick = () => { mSel[loc].clear(); paintSet($('#manualGrid'), mSel[loc]); };
   $('#manualSave').onclick = () => saveManual();
   let savingManual = false;
@@ -2655,7 +2675,7 @@ const PIN_SUFFIX = '::ensemble-pin';
   if (window.visualViewport) visualViewport.addEventListener('resize', syncBarHeight);
 
   /* ---------- stay up to date: an open tab reloads itself when a new version is published ---------- */
-  const BUILD = '2026-11-10b';
+  const BUILD = '2026-11-10c';
   async function checkVersion() {
     try {
       const t = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
@@ -2676,7 +2696,15 @@ const PIN_SUFFIX = '::ensemble-pin';
   /* ---------- boot ---------- */
   setPaintMode(paintMode);
   if (sb) {
-    sb.auth.onAuthStateChange((_, session) => { user = session?.user || null; profileName = user?.user_metadata?.name || ''; renderAuth(); render(); });
+    let booted = false;
+    sb.auth.onAuthStateChange((_, session) => {
+      const next = session?.user || null, same = booted && (next?.id || null) === (user?.id || null);
+      booted = true; user = next; profileName = user?.user_metadata?.name || '';
+      // Supabase re-announces the same sign-in when a tab regains focus and when its token
+      // renews; re-rendering then would reload the event and wipe unsaved marks.
+      if (same) return;
+      renderAuth(); render();
+    });
   } else { render(); }
   window.addEventListener('hashchange', () => { editing = false; creating = false; render(); });
 })();
