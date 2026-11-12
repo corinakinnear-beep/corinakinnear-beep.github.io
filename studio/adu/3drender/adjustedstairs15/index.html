@@ -378,8 +378,8 @@ var SR=9/15, ST=10/12, Z0=BD+2.67, ZT=Z0-14*ST;   /* straight stair: 15 risers a
   box(SJ-T,BW,F2,RF,SJN-T,SJN,M.ext,G.upper);
   extWall('n',SJ-T,[[SJN-T,F2],[BD,F2],[BD,RF],[SJN-T,RF]],null,G.upper,false);
   /* wall behind the deck: tall window and the full-lite door */
-  extWall('x',DKN-T,[[0,F2],[DK,F2],[DK,RF],[0,RF]],[[1.5,7.5,F2,F2+6.67]],G.upper,false);
-  fill('x',DKN-T,T,1.5,7.5,F2,F2+6.67,'glass',2,G.upper);
+  extWall('x',DKN-T,[[0,F2],[DK,F2],[DK,RF],[0,RF]],[[2.5,8.5,F2,F2+6.67]],G.upper,false);
+  fill('x',DKN-T,T,2.5,8.5,F2,F2+6.67,'glass',2,G.upper);
   /* office */
   extWall('n',DK,[[DKN-T,F2],[BD,F2],[BD,RF],[DKN-T,RF]],null,G.upper,true);
   extWall('x',BD-T,[[DK,F2],[SJ,F2],[SJ,RF],[DK,RF]],[[12.85,15.35,F2+3.5,F2+7]],G.upper,false);
@@ -394,8 +394,8 @@ var SR=9/15, ST=10/12, Z0=BD+2.67, ZT=Z0-14*ST;   /* straight stair: 15 risers a
   var fy=F2+.07;
   swing(T,ZT-3,Math.PI/2,0,3,fy);                                         /* entry door, hinged on the bath side */
   swing(18.6,DKN-.4,Math.PI,1.5*Math.PI,2,fy);                             /* office door, 2 ft */
-  swing(1.5,DKN,0,Math.PI/2,3,fy); swing(7.5,DKN,Math.PI,Math.PI/2,3,fy);  /* glass doors onto the patio */
-  box(.75,2.42,F2+.75,F2+1.6,4.37,5.77,M.white,G.upper); box(.69,.76,F2+3,F2+3.5,4.72,5.42,M.brass,G.upper,true);   /* wall-hung toilet, 21 in projection, centreline 15 in from the shower wall */
+  swing(2.5,DKN,0,Math.PI/2,3,fy); swing(8.5,DKN,Math.PI,Math.PI/2,3,fy);  /* glass doors onto the patio */
+  box(.75,2.42,F2+.75,F2+1.6,4.64,6.04,M.white,G.upper); box(.69,.76,F2+3,F2+3.5,4.99,5.69,M.brass,G.upper,true);   /* wall-hung toilet, 21 in projection, centred: 18 in from its centreline to the shower wall and to the end wall */
   box(6.337,8.087,F2,F2+2.8,3.95,6.45,M.built,G.upper); box(6.287,8.087,F2+2.8,F2+2.95,3.9,6.5,M.top,G.upper); box(7.82,7.89,F2+2.95,F2+3.45,5.15,5.25,M.brass,G.upper);   /* 21 in deep vanity opposite the toilet: 47 in clear between */
 })();
 
