@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>241 5th Ave ADU 3D model, adjusted stairs, 15 risers</title>
+<title>241 5th Ave ADU 3D model, setback and rise</title>
 <meta name="robots" content="noindex">
 <meta name="description" content="A measurable 3D model of the two-story ADU at 241 5th Ave, Venice, built from the plan check set.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,7 +85,7 @@ section[hidden]{display:none}
     <header>
       <p class="eyebrow">ADU, Venice</p>
       <h1>241 5th Ave</h1>
-      <p class="lede">Adjusted stairs, 15 risers: 7.2" risers for headroom in the rise, and the bottom step still 4'-0" from the alley line. The door and the upstairs bath move to suit.</p>
+      <p class="lede">Setback and rise: 15 risers at 7.2", the bottom step 4'-0" from the alley line, and the upstairs replanned as a bedroom, office and patio.</p>
     </header>
 
     <section aria-labelledby="l-view">
@@ -105,8 +105,9 @@ section[hidden]{display:none}
       <div class="row" id="rooms">
         <button class="tag" type="button" data-room="living" aria-pressed="false">Living</button>
         <button class="tag" type="button" data-room="bed" aria-pressed="false">Bedroom</button>
-        <button class="tag" type="button" data-room="rec" aria-pressed="false">Rec room</button>
-        <button class="tag" type="button" data-room="deck" aria-pressed="false">Deck</button>
+        <button class="tag" type="button" data-room="rec" aria-pressed="false">Bedroom, 2nd</button>
+        <button class="tag" type="button" data-room="office" aria-pressed="false">Office</button>
+        <button class="tag" type="button" data-room="deck" aria-pressed="false">Patio</button>
         <button class="tag" type="button" data-room="bath1" aria-pressed="false">Bath, 1st</button>
         <button class="tag" type="button" data-room="bath2" aria-pressed="false">Bath, 2nd</button>
       </div>
@@ -294,7 +295,7 @@ function rail(a,b,h){
 
 /* ---------- key dimensions from the sheets ---------- */
 var BW=20.667, BD=19.667, GR=-.33, F2=9, RF=18, CEIL1=8, CEIL2=17;
-var DK=10.55, DKN=14.1;      /* covered deck: runs this far south, starts this far west */
+var DK=7.9, DKN=14;      /* covered deck: runs this far south, starts this far west */
 var SJ=19.7, SJN=9.7;
 var SR=9/15, ST=10/12, Z0=BD+2.67, ZT=Z0-14*ST;   /* straight stair: 15 risers at 7.2in, 14 treads, starts 4 ft from the alley line */        /* second-floor south wall steps in to SJ, west of SJN */
 
@@ -362,10 +363,12 @@ var SR=9/15, ST=10/12, Z0=BD+2.67, ZT=Z0-14*ST;   /* straight stair: 15 risers a
   /* east wall: small bath window and the ribbon window */
   extWall('x',0,[[0,F2],[BW,F2],[BW,RF],[0,RF]],[[9.05,16.05,13.5,16]],G.upper,true);
   fill('x',0,T,9.05,16.05,13.5,16,'awn',1,G.upper,-1);
-  box(10.33,16.7,F2,F2+1.6,4.5,10.83,M.soft,G.upper); box(16.7,17,F2,F2+3.4,4.5,10.83,M.soft,G.upper);   /* king bed, headboard on the closet */
-  box(6.05,8.55,F2,CEIL2,T,2.67,M.cab,G.upper); box(6.05,6.72,F2,CEIL2,2.67,7.267,M.built,G.upper); box(8.7,16.9,F2+7.3,F2+7.38,T,T+.12,M.glow,G.upper,true);                               /* wardrobe */
-  box(8.55,17,F2+2.88,F2+3,T,2.72,M.top,G.upper); box(8.55,17,F2,F2+2.88,T,2.67,M.built,G.upper);   /* 3 ft high table with cabinets below */
-  box(17,BW-T,F2,F2+7.5,T,SJN-T,M.cab,G.upper); box(17,SJ-T,F2,F2+7.5,SJN-T,DKN-.4,M.cab,G.upper);
+  box(8.167,14.5,F2,F2+1.6,.97,7.337,M.soft,G.upper); box(8.167,14.5,F2,F2+3.4,T,.97,M.soft,G.upper);   /* king bed, head on the duplex-side wall, 2 ft 6 in clear each side */
+  box(8.7,16.9,F2+7.3,F2+7.38,T,T+.12,M.glow,G.upper,true);
+  box(17,BW-T,F2,F2+7.5,T,6.67,M.cab,G.upper);                               /* storage: 3 ft deep, 6 ft long, built in with doors */
+  box(18,BW-T,F2,F2+7.5,6.67,SJN-T,M.built,G.upper);                         /* wardrobe: 2 ft deep */
+  box(9,13.65,F2+2.6,F2+5.2,DKN-.5,DKN-.4,M.dark,G.upper);                   /* TV on the wall shared with the patio doors, centred on the bed */
+  box(12,17.6,F2+2.4,F2+2.5,17.4,BD-T,M.top,G.upper); box(12,12.1,F2,F2+2.4,17.4,BD-T,M.built,G.upper); box(17.5,17.6,F2,F2+2.4,17.4,BD-T,M.built,G.upper);   /* office desk under the alley window */
   /* north wall with the entry door at the top of the stair, then the deck guard wall */
   extWall('n',0,[[0,F2],[DKN,F2],[DKN,RF],[0,RF]],[[3.767,6.767,15,16],[ZT-3,ZT,F2,F2+6.67]],G.upper,true);
   fill('n',0,T,3.767,6.767,15,16,'win',1,G.upper);
@@ -376,25 +379,25 @@ var SR=9/15, ST=10/12, Z0=BD+2.67, ZT=Z0-14*ST;   /* straight stair: 15 risers a
   box(SJ-T,BW,F2,RF,SJN-T,SJN,M.ext,G.upper);
   extWall('n',SJ-T,[[SJN-T,F2],[BD,F2],[BD,RF],[SJN-T,RF]],null,G.upper,false);
   /* wall behind the deck: tall window and the full-lite door */
-  extWall('x',DKN-T,[[0,F2],[DK,F2],[DK,RF],[0,RF]],[[3.5,9.5,F2,F2+6.67]],G.upper,false);
-  fill('x',DKN-T,T,3.5,9.5,F2,F2+6.67,'glass',2,G.upper);
-  /* storage */
+  extWall('x',DKN-T,[[0,F2],[DK,F2],[DK,RF],[0,RF]],[[1.5,7.5,F2,F2+6.67]],G.upper,false);
+  fill('x',DKN-T,T,1.5,7.5,F2,F2+6.67,'glass',2,G.upper);
+  /* office */
   extWall('n',DK,[[DKN-T,F2],[BD,F2],[BD,RF],[DKN-T,RF]],null,G.upper,true);
   extWall('x',BD-T,[[DK,F2],[SJ,F2],[SJ,RF],[DK,RF]],[[12.85,15.35,F2+3.5,F2+7]],G.upper,false);
   fill('x',BD-T,T,12.85,15.35,F2+3.5,F2+7,'win',1,G.upper);
-  iwall('x',DKN-.2,DK+T,SJ-T,F2,CEIL2,[[13.1,15.1]],G.upper);
+  iwall('x',DKN-.2,DK+T,SJ-T,F2,CEIL2,[[15.2,17.2]],G.upper);
   /* bath */
-  iwall('n',5.85,T,7.267,F2,CEIL2,null,G.upper);
-  iwall('x',7.067,T,5.65,F2,CEIL2,[[3.2,5.53]],G.upper);
-  box(T,5.65,F2,F2+.03,T,6.867,M.tile,G.upper,true);
-  box(T,5.65,F2+.03,F2+.14,T,3.67,M.tile,G.upper,true); shapeWall('x',3.52,.3,wavy(T,3.3,F2,F2+7.6,.42),null,M.int,G.upper);
+  iwall('n',5.467,T,7.267,F2,CEIL2,null,G.upper);
+  iwall('x',7.067,T,5.267,F2,CEIL2,[[2.9,5.233]],G.upper);
+  box(T,5.267,F2,F2+.03,T,6.867,M.tile,G.upper,true);
+  box(T,5.267,F2+.03,F2+.14,T,3.67,M.tile,G.upper,true); shapeWall('x',3.52,.3,wavy(T,3.3,F2,F2+7.6,.42),null,M.int,G.upper);
+  box(.72,3.05,F2+.05,F2+6.8,7.28,7.36,M.door,G.upper);                      /* bath door: slides along the bedroom side of the wall */
   var fy=F2+.07;
   swing(T,ZT-3,Math.PI/2,0,3,fy);                                         /* entry door, hinged on the bath side */
-  swing(5.53,6.867,Math.PI,1.5*Math.PI,2.33,fy);                             /* bath door, 2 ft 4 in */
-  swing(15.1,DKN-.4,Math.PI,1.5*Math.PI,2,fy);                             /* storage door, 2 ft */
-  swing(3.5,DKN,0,Math.PI/2,3,fy); swing(9.5,DKN,Math.PI,Math.PI/2,3,fy);  /* french doors onto the deck */
-  box(.75,2.5,F2+.75,F2+1.6,4.05,5.45,M.white,G.upper); box(.69,.76,F2+3,F2+3.5,4.4,5.1,M.brass,G.upper,true);
-  box(.85,2.7,F2+1.2,F2+2.8,6,6.8,M.built,G.upper); box(.8,2.75,F2+2.8,F2+2.95,5.95,6.85,M.top,G.upper);   /* slim 9in vanity on the end wall beside the door */
+  swing(17.2,DKN-.4,Math.PI,1.5*Math.PI,2,fy);                             /* office door, 2 ft */
+  swing(1.5,DKN,0,Math.PI/2,3,fy); swing(7.5,DKN,Math.PI,Math.PI/2,3,fy);  /* glass doors onto the patio */
+  box(.75,2.42,F2+.75,F2+1.6,4.37,5.77,M.white,G.upper); box(.69,.76,F2+3,F2+3.5,4.72,5.42,M.brass,G.upper,true);   /* wall-hung toilet, 21 in projection, centreline 15 in from the shower wall */
+  box(4.434,5.267,F2+2.3,F2+2.83,4.07,6.07,M.white,G.upper); box(5.1,5.17,F2+2.83,F2+3.3,5.02,5.12,M.brass,G.upper);   /* 10 in wall-hung basin opposite: 24 in clear between */
 })();
 
 /* ---------- roof ---------- */
@@ -425,8 +428,8 @@ var labelBox=document.getElementById('labels'), labels=[];
 function addLabel(o){ var el=document.createElement('div'); el.className='site-label'+(o.cls?' '+o.cls:''); labelBox.appendChild(el); o.el=el; labels.push(o); return o; }
 function label(text,x,y,n,level,size,plain){ addLabel({kind:'room',text:text,x:x,y:y,n:n,level:level,size:size,cls:plain?'plain':''}); }
 label('Living and kitchen',9.5,2,14,1); label('Bedroom',15.2,3.6,4.3,1); label('Bath',4.3,2,3.6,1,[7.417,6]);
-label('Rec room',11.5,F2+1.5,6,2); label('Storage',15.3,F2+1.5,16.8,2,[8,5]); label('Bath',3.3,F2+3,4.4,2,[5,6.17]); label('Deck',5.3,F2+1,17,2);
-label('Closet',9.9,7.9,5,1); label('Coats and shoes',19.3,6.4,17.6,1); label('Closet',18.4,F2+7.9,6.5,2); label('Tool storage',-3.6,3.2,ZT+2.5,0);
+label('Bedroom',11.3,F2+1.5,10.8,2); label('Office',13.8,F2+1.5,16,2,[10.46,5]); label('Bath',2.97,F2+3,4.4,2,[4.6,6.2]); label('Patio',4.3,F2+1,16.8,2,[7.23,5]);
+label('Closet',9.9,7.9,5,1); label('Coats and shoes',19.3,6.4,17.6,1); label('Storage',18.5,F2+7.9,3.7,2,[3,6]); label('Wardrobe',19,F2+7.9,7.85,2); label('Tool storage',-3.6,3.2,ZT+2.5,0);
 label('Stair lands here',-1.5,F2+1.4,ZT-1.5,0); label('Existing duplex',6,15,-28,0);
 label('Alley',6,GR,BD+17,0,null,true); label('5th Ave',6,GR,-90,0,null,true); label('North',-24,GR,6,0,null,true);
 
@@ -448,16 +451,16 @@ dim([10,g0,-4.08],[10,g0,0],4.083,0);                                     /* gap
 dim([15,g0,BD],[15,g0,BD+6.67],6.667,0);                                  /* to the alley lot line */
 dim([-10,g0,1.5],[0,g0,1.5],10,0,'To setback line ');
 dim([T,.08,BD-T-.7],[BW-T,.08,BD-T-.7],19.333,1,'Inside ');
-dim([11.6,F2+.1,T],[11.6,F2+.1,DKN-.4],13,2);
+dim([15.8,F2+.1,T],[15.8,F2+.1,DKN-.4],DKN-.4-T,2);
 dim([-3.7,g0,Z0],[-3.7,g0,ZT],11.667,0,'Stair run ');
 dim([DK+.4,RF,DKN],[DK+.4,RF,DKN+1],1,0,'Overhang '); labels[labels.length-1].roof=true;
 dim([-3.7,F2,ZT],[-3.7,F2,ZT-3],3,0,'Landing ');
 dim([-1.5,g0,BD+6.67],[-1.5,g0,Z0],4,0);
 dim([-.6,F2+.1,0],[-.6,F2+.1,ZT-3],ZT-3,2,'Door from east corner ');
 dim([-.6,F2+.1,ZT],[-.6,F2+.1,DKN],DKN-ZT,2,'To deck ');
-dim([6.05,F2+.1,1.3],[9.05,F2+.1,1.3],3,2,'To window ');
-dim([17,F2+.1,2.2],[BW-T,F2+.1,2.2],3,2,'Closet ');
-dim([T,F2+.1,BD-T-.6],[DK,F2+.1,BD-T-.6],10.5,2);
+dim([5.667,F2+.1,8],[8.167,F2+.1,8],2.5,2,'Beside bed '); dim([14.5,F2+.1,8],[17,F2+.1,8],2.5,2,'Beside bed ');
+dim([17,F2+7.6,2.2],[BW-T,F2+7.6,2.2],3,2,'Storage ');
+dim([T,F2+.1,BD-T-.6],[DK,F2+.1,BD-T-.6],DK-T,2); dim([DK+T,F2+.1,BD-T-2.2],[SJ-T,F2+.1,BD-T-2.2],SJ-DK-2*T,2,'Office ');
 
 /* ---------- state ---------- */
 var state={roof:true,upper:true,labels:false,dims:false,units:'ft',cut:CUTMAX,mode:'orbit',view:'outside',room:null,tape:false};
@@ -474,10 +477,11 @@ var VIEWS={
 var ROOMS={
   living:{p:[3.2,5.3,17.2],yaw:1.05},
   bed:{p:[14.2,5.5,1.9],yaw:2.72},
-  rec:{p:[15.6,F2+4.2,7.67],yaw:-1.9},
+  rec:{p:[2.2,F2+5.3,11.6],yaw:1.1},
+  office:{p:[9.4,F2+5.3,16.5],yaw:1.5},
   deck:{p:[2,F2+5.3,15.3],yaw:2.2},
   bath1:{p:[5.2,5.3,5.7],yaw:-.73},
-  bath2:{p:[4.9,F2+5.3,6.2],yaw:-.5}
+  bath2:{p:[3.5,F2+5.3,6.35],yaw:-.45}
 };
 var el={roof:document.getElementById('c-roof'),upper:document.getElementById('c-upper'),labels:document.getElementById('c-labels'),dims:document.getElementById('c-dims'),
   cut:document.getElementById('cut'),cutv:document.getElementById('cutv'),hint:document.getElementById('hint'),pad:document.getElementById('pad'),
