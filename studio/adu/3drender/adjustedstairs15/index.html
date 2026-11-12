@@ -362,9 +362,10 @@ var SR=9/15, ST=10/12, Z0=BD+2.67, ZT=Z0-14*ST;   /* straight stair: 15 risers a
   box(T,DK,F2,F2+.05,DKN,BD-T,M.deck,G.upper,true);
   /* duplex-side wall: no openings, the closet runs along it */
   extWall('x',0,[[0,F2],[BW,F2],[BW,RF],[0,RF]],null,G.upper,true);
-  box(8.07,BW-T,F2,F2+7.5,T,3.67,M.cab,G.upper);                             /* closet: 3 ft deep, behind the bed, bath wall to the far wall */
-  box(10.87,17.2,F2,F2+1.6,3.97,10.337,M.soft,G.upper); box(10.87,17.2,F2,F2+3.4,3.67,3.97,M.soft,G.upper);   /* king bed, head on the closet */
-  box(11.83,16.23,F2+2.6,F2+5.2,DKN-.5,DKN-.4,M.dark,G.upper);               /* TV on the wall shared with the patio doors, centred on the bed */
+  box(8.487,BW-T,F2,F2+7.5,T,3.67,M.cab,G.upper);                             /* closet: 3 ft deep, behind the bed, bath wall to the far wall */
+  box(11.077,17.41,F2,F2+1.6,3.97,10.337,M.soft,G.upper); box(11.077,17.41,F2,F2+3.4,3.67,3.97,M.soft,G.upper);   /* king bed, head on the closet */
+  box(12.04,16.44,F2+2.6,F2+5.2,DKN-.5,DKN-.4,M.dark,G.upper);               /* TV on the wall shared with the patio doors, centred on the bed */
+  box(19,BW-T,F2+2.88,F2+3,3.67,SJN-T,M.top,G.upper); box(19.05,BW-T,F2,F2+2.88,3.67,SJN-T,M.built,G.upper);   /* table: 1 ft deep, 3 ft high, from the closet along the wall under the window */
   box(12.6,17.5,F2+2.4,F2+2.5,17.4,BD-T,M.top,G.upper); box(12.6,12.7,F2,F2+2.4,17.4,BD-T,M.built,G.upper); box(17.4,17.5,F2,F2+2.4,17.4,BD-T,M.built,G.upper);   /* office desk under the alley window */
   /* north wall with the entry door at the top of the stair, then the deck guard wall */
   extWall('n',0,[[0,F2],[DKN,F2],[DKN,RF],[0,RF]],[[3.767,6.767,15,16],[ZT-3,ZT,F2,F2+6.67]],G.upper,true);
@@ -385,17 +386,17 @@ var SR=9/15, ST=10/12, Z0=BD+2.67, ZT=Z0-14*ST;   /* straight stair: 15 risers a
   fill('x',BD-T,T,12.85,15.35,F2+3.5,F2+7,'win',1,G.upper);
   iwall('x',DKN-.2,DK+T,SJ-T,F2,CEIL2,[[16.6,18.6]],G.upper);
   /* bath */
-  iwall('n',7.87,T,7.267,F2,CEIL2,null,G.upper);
-  iwall('x',7.067,T,7.67,F2,CEIL2,[[2.9,5.23]],G.upper);
-  box(T,7.67,F2,F2+.03,T,6.867,M.tile,G.upper,true);
-  box(T,7.67,F2+.03,F2+.14,T,3.67,M.tile,G.upper,true); shapeWall('x',3.52,.3,wavy(T,4.8,F2,F2+7.6,.42),null,M.int,G.upper);
+  iwall('n',8.287,T,7.267,F2,CEIL2,null,G.upper);
+  iwall('x',7.067,T,8.087,F2,CEIL2,[[2.9,5.23]],G.upper);
+  box(T,8.087,F2,F2+.03,T,6.867,M.tile,G.upper,true);
+  box(T,8.087,F2+.03,F2+.14,T,3.67,M.tile,G.upper,true); shapeWall('x',3.52,.3,wavy(T,4.8,F2,F2+7.6,.42),null,M.int,G.upper);
   box(5.14,7.47,F2+.05,F2+6.8,7.28,7.36,M.door,G.upper);                     /* bath door: slides along the bedroom side of the wall */
   var fy=F2+.07;
   swing(T,ZT-3,Math.PI/2,0,3,fy);                                         /* entry door, hinged on the bath side */
   swing(18.6,DKN-.4,Math.PI,1.5*Math.PI,2,fy);                             /* office door, 2 ft */
   swing(1.5,DKN,0,Math.PI/2,3,fy); swing(7.5,DKN,Math.PI,Math.PI/2,3,fy);  /* glass doors onto the patio */
   box(.75,2.42,F2+.75,F2+1.6,4.37,5.77,M.white,G.upper); box(.69,.76,F2+3,F2+3.5,4.72,5.42,M.brass,G.upper,true);   /* wall-hung toilet, 21 in projection, centreline 15 in from the shower wall */
-  box(5.92,7.67,F2,F2+2.8,3.95,6.45,M.built,G.upper); box(5.87,7.67,F2+2.8,F2+2.95,3.9,6.5,M.top,G.upper); box(7.4,7.47,F2+2.95,F2+3.45,5.15,5.25,M.brass,G.upper);   /* 21 in deep vanity opposite the toilet: 42 in clear between */
+  box(6.337,8.087,F2,F2+2.8,3.95,6.45,M.built,G.upper); box(6.287,8.087,F2+2.8,F2+2.95,3.9,6.5,M.top,G.upper); box(7.82,7.89,F2+2.95,F2+3.45,5.15,5.25,M.brass,G.upper);   /* 21 in deep vanity opposite the toilet: 47 in clear between */
 })();
 
 /* ---------- roof ---------- */
@@ -426,8 +427,8 @@ var labelBox=document.getElementById('labels'), labels=[];
 function addLabel(o){ var el=document.createElement('div'); el.className='site-label'+(o.cls?' '+o.cls:''); labelBox.appendChild(el); o.el=el; labels.push(o); return o; }
 function label(text,x,y,n,level,size,plain){ addLabel({kind:'room',text:text,x:x,y:y,n:n,level:level,size:size,cls:plain?'plain':''}); }
 label('Living and kitchen',9.5,2,14,1); label('Bedroom',15.2,3.6,4.3,1); label('Bath',4.3,2,3.6,1,[7.417,6]);
-label('Bedroom',14,F2+1.5,11.9,2); label('Office',15.2,F2+1.5,16,2,[7.69,5]); label('Bath',4.17,F2+3,4.4,2,[7,6.2]); label('Patio',5.7,F2+1,16.8,2,[10,5]);
-label('Closet',9.9,7.9,5,1); label('Coats and shoes',19.3,6.4,17.6,1); label('Closet',14,F2+7.9,2.2,2,[11.93,3]); label('Tool storage',-3.6,3.2,ZT+2.5,0);
+label('Bedroom',14.2,F2+1.5,11.9,2); label('Office',15.2,F2+1.5,16,2,[7.69,5]); label('Bath',4.38,F2+3,4.4,2,[7.417,6.2]); label('Patio',5.7,F2+1,16.8,2,[10,5]);
+label('Closet',9.9,7.9,5,1); label('Coats and shoes',19.3,6.4,17.6,1); label('Closet',14.2,F2+7.9,2.2,2,[11.51,3]); label('Tool storage',-3.6,3.2,ZT+2.5,0);
 label('Stair lands here',-1.5,F2+1.4,ZT-1.5,0); label('Existing duplex',6,15,-28,0);
 label('Alley',6,GR,BD+17,0,null,true); label('5th Ave',6,GR,-90,0,null,true); label('North',-24,GR,6,0,null,true);
 
@@ -456,7 +457,7 @@ dim([-3.7,F2,ZT],[-3.7,F2,ZT-3],3,0,'Landing ');
 dim([-1.5,g0,BD+6.67],[-1.5,g0,Z0],4,0);
 dim([-.6,F2+.1,0],[-.6,F2+.1,ZT-3],ZT-3,2,'Door from east corner ');
 dim([-.6,F2+.1,ZT],[-.6,F2+.1,DKN],DKN-ZT,2,'To deck ');
-dim([8.07,F2+.1,5.6],[10.87,F2+.1,5.6],2.8,2,'Beside bed '); dim([17.2,F2+.1,5.6],[BW-T,F2+.1,5.6],BW-T-17.2,2,'Beside bed '); dim([T,F2+.1,6.3],[7.67,F2+.1,6.3],7,2,'Bath ');
+dim([8.487,F2+.1,5.6],[11.077,F2+.1,5.6],2.59,2,'Beside bed '); dim([17.41,F2+.1,5.6],[19,F2+.1,5.6],1.59,2,'Bed to table '); dim([T,F2+.1,6.3],[8.087,F2+.1,6.3],7.417,2,'Bath ');
 dim([9.3,F2+7.6,T],[9.3,F2+7.6,3.67],3,2,'Closet ');
 dim([T,F2+.1,BD-T-.6],[DK,F2+.1,BD-T-.6],DK-T,2); dim([DK+T,F2+.1,BD-T-2.2],[SJ-T,F2+.1,BD-T-2.2],SJ-DK-2*T,2,'Office ');
 
@@ -475,7 +476,7 @@ var VIEWS={
 var ROOMS={
   living:{p:[3.2,5.3,17.2],yaw:1.05},
   bed:{p:[14.2,5.5,1.9],yaw:2.72},
-  rec:{p:[9,F2+5.3,12.6],yaw:.8},
+  rec:{p:[9.4,F2+5.3,12.6],yaw:.8},
   office:{p:[12,F2+5.3,16.5],yaw:1.5},
   deck:{p:[2,F2+5.3,15.3],yaw:2.2},
   bath1:{p:[5.2,5.3,5.7],yaw:-.73},
