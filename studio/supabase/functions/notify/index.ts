@@ -1,6 +1,6 @@
 // Parlā Studio — drains public.notifications and sends each one through Resend.
 // Deploy: supabase functions deploy notify --no-verify-jwt
-// Secrets: RESEND_API_KEY, FROM_EMAIL (e.g. "Parlā Studio <corina@parladesigns.com>"), APP_URL
+// Secrets: RESEND_API_KEY, FROM_EMAIL (e.g. "Parlā Studio <corina@parladesigns.com>"), APP_URL, REPLY_TO (optional: where replies to these emails go)
 // Schedule it every 5 minutes with pg_cron (see schema.sql, bottom) or call it from a cron service.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -8,6 +8,7 @@ Deno.serve(async () => {
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const key = Deno.env.get("RESEND_API_KEY");
   const from = Deno.env.get("FROM_EMAIL") || "Parlā Studio <onboarding@resend.dev>";
+  const replyTo = Deno.env.get("REPLY_TO");
   const app = Deno.env.get("APP_URL") || "https://parladesigns.com/studio/";
   if (!key) return new Response("RESEND_API_KEY not set", { status: 500 });
 
@@ -24,7 +25,7 @@ Deno.serve(async () => {
       <a href="${app}${n.link}" style="font-family:Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5E6B4F">Open in Studio →</a></div>`;
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: [p.email], subject: n.subject, html })
+      body: JSON.stringify({ from, to: [p.email], subject: n.subject, html, ...(replyTo ? { reply_to: replyTo } : {}) })
     });
     if (r.ok) { sent++; await sb.from("notifications").update({ sent_at: new Date().toISOString() }).eq("id", n.id); }
   }
