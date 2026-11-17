@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brook and Evan's Home, Design Proposal 1</title>
+<meta name="description" content="Design proposals for Brook and Evan's home.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Outfit:wght@300;400;500&display=swap">
+<style>
+:root{
+  /* layout: one long proposal document; each proposal is a numbered section with a three-column header band */
+  --ground:#EDE8DF; --surface:#F8F5F0;
+  --ink:#20211C; --ink-2:#43443C; --muted:#615F55;
+  --line:#D9D2C5; --line-2:#E5DFD4;
+  --accent:#5E6B4F; --accent-2:#8C9779;
+  --wood:#8E6A48; --wood-line:#7A5939; --stone:#DDD1BC; --stone-line:#C9BBA2;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--body);font-size:16.5px;font-weight:400;line-height:1.72;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit}
+.wrap{max-width:1320px;margin:0 auto;padding:0 40px}
+.label{font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
+
+/* masthead */
+.mast{position:sticky;top:0;z-index:5;background:rgba(237,232,223,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line-2)}
+.mast .wrap{display:flex;justify-content:space-between;align-items:center;gap:24px;height:62px}
+.wordmark{font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink)}
+.mast nav{display:flex;gap:28px}
+.mast nav a{font-size:12px;letter-spacing:.11em;text-transform:uppercase;text-decoration:none;color:var(--ink-2);padding:6px 0;border-bottom:1px solid transparent}
+.mast nav a:hover,.mast nav a:focus-visible{color:var(--accent);border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* title */
+.title{padding:104px 0 96px}
+.title h1{font-family:var(--display);font-weight:300;font-size:clamp(58px,9vw,116px);line-height:.95;letter-spacing:-.01em;margin:14px 0 0;text-wrap:balance}
+.title .lede{font-family:var(--display);font-weight:300;font-size:clamp(22px,2.2vw,29px);line-height:1.32;color:var(--ink-2);max-width:34ch;margin:34px 0 0}
+
+/* section band */
+section{padding-bottom:108px;scroll-margin-top:62px}
+.band{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) auto;gap:40px;align-items:baseline;border-top:1px solid var(--line);padding-top:26px}
+.band h2{font-family:var(--display);font-weight:300;font-size:clamp(40px,4.6vw,62px);line-height:1;margin:0}
+.band p{margin:0;max-width:56ch;color:var(--ink-2)}
+
+/* the three moves */
+.moves{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px;margin-top:72px}
+.move h3{font-family:var(--display);font-weight:300;font-size:30px;line-height:1.12;margin:10px 0 12px;text-wrap:balance}
+.move p{margin:0;color:var(--ink-2)}
+
+/* plan sketch */
+.sketch{margin:84px 0 0}
+.sketch svg{display:block;width:100%;height:auto}
+.sketch .keys{display:grid;grid-template-columns:33.3% 41.7% 25%;margin-top:14px}
+.sketch .keys span{padding-right:12px}
+.sketch figcaption{margin-top:18px;color:var(--muted);font-size:14.5px}
+
+/* spec table */
+.spec{margin-top:84px}
+.spec h3,.refs h3{font-family:var(--display);font-weight:300;font-size:34px;line-height:1.1;margin:0 0 22px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:560px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;vertical-align:top;padding:16px 24px 16px 0;border-top:1px solid var(--line)}
+thead th{font-weight:400;font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);border-top:0;padding-top:0}
+tbody th{font-weight:400;font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);width:22%;padding-top:20px}
+tbody tr:last-child td,tbody tr:last-child th{border-bottom:1px solid var(--line)}
+td .price{font-family:var(--display);font-weight:300;font-size:30px;line-height:1.1;display:block;color:var(--ink)}
+td small{display:block;font-size:14.5px;color:var(--muted);margin-top:6px;max-width:44ch}
+.note{margin:18px 0 0;font-size:14.5px;color:var(--muted)}
+
+/* references */
+.refs{margin-top:96px}
+.masonry{columns:3;column-gap:34px}
+.masonry figure{margin:0 0 34px;break-inside:avoid}
+.masonry img{width:100%;transition:opacity .25s}
+.masonry figure:hover img{opacity:.88}
+.masonry figcaption{margin-top:10px}
+
+footer{border-top:1px solid var(--line);padding:28px 0 56px}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+
+@media (max-width:900px){
+  .band{grid-template-columns:1fr;gap:16px}
+  .moves{grid-template-columns:1fr;gap:44px;margin-top:56px}
+  .masonry{columns:2}
+}
+@media (max-width:560px){
+  .wrap{padding:0 22px}
+  .title{padding:72px 0 68px}
+  .masonry{columns:1}
+  .sketch .keys{font-size:10.5px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.masonry img{transition:none}}
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap">
+    <span class="wordmark">Parlā Studio</span>
+    <nav aria-label="Proposals">
+      <a href="#floor">Floor</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="title">
+    <div class="label">Brook and Evan's Home</div>
+    <h1>Design Proposal 1</h1>
+    <p class="lede">Ideas for the house, one part at a time. We begin with the floor.</p>
+  </div>
+
+  <section id="floor">
+    <div class="band">
+      <h2>Floor</h2>
+      <p>Warm wood in the living room, pale limestone-look tile in the kitchen, and a soft curved line where the two meet under the archway. The tile carries on outside so the kitchen and the outdoors read as one floor.</p>
+      <span class="label">01</span>
+    </div>
+
+    <div class="moves">
+      <div class="move">
+        <div class="label">Living room</div>
+        <h3>Keep the wood floor and re-stain it</h3>
+        <p>The existing floor stays. It is re-stained to match the exposed rafters in the kitchen, so the wood overhead and the wood underfoot share one tone.</p>
+      </div>
+      <div class="move">
+        <div class="label">Under the archway</div>
+        <h3>A curved line, like a wave</h3>
+        <p>The wood does not stop at a straight threshold. It ends in a circular line under the arch, where the floor turns into tile.</p>
+      </div>
+      <div class="move">
+        <div class="label">Kitchen and outside</div>
+        <h3>Limestone-look tile, inside and out</h3>
+        <p>Large 24 x 48 porcelain tile for the kitchen floor. The same colour continues outside as a thicker paver with more grip.</p>
+      </div>
+    </div>
+
+    <figure class="sketch">
+      <svg viewBox="0 0 1200 330" role="img" aria-label="Plan sketch: re-stained wood in the living room meets limestone-look tile along a wave under the archway; the tile continues through the kitchen and outside.">
+        <defs>
+          <pattern id="tile" width="320" height="160" patternUnits="userSpaceOnUse">
+            <path d="M0 .5H320M0 80.5H320M.5 0V80M160.5 80V160" fill="none" stroke="#C9BBA2" stroke-width="1"/>
+          </pattern>
+          <pattern id="plank" width="240" height="44" patternUnits="userSpaceOnUse">
+            <path d="M0 .5H240M0 22.5H240M70.5 0V22M190.5 22V44" fill="none" stroke="#7A5939" stroke-width="1"/>
+          </pattern>
+          <clipPath id="woodclip"><path d="M0 0H400C478 96 322 234 400 330H0Z"/></clipPath>
+        </defs>
+        <rect width="1200" height="330" fill="#DDD1BC"/>
+        <rect width="1200" height="330" fill="url(#tile)"/>
+        <rect x="900" width="300" height="330" fill="#D3C6AF" opacity=".55"/>
+        <g clip-path="url(#woodclip)">
+          <rect width="520" height="330" fill="#8E6A48"/>
+          <rect width="520" height="330" fill="url(#plank)"/>
+        </g>
+        <path d="M400 0C478 96 322 234 400 330" fill="none" stroke="#20211C" stroke-width="1.5"/>
+        <rect x="386" y="0" width="28" height="34" fill="#20211C"/>
+        <rect x="386" y="296" width="28" height="34" fill="#20211C"/>
+        <path d="M900 0V330" fill="none" stroke="#20211C" stroke-width="1.5" stroke-dasharray="7 6"/>
+      </svg>
+      <div class="keys label">
+        <span>Living room, re-stained wood</span>
+        <span>Kitchen, 24 x 48 tile</span>
+        <span>Outside, 2 cm paver</span>
+      </div>
+      <figcaption>A sketch of the idea, not to scale. The dark marks are the two sides of the archway; the dashed line is the door to outside.</figcaption>
+    </figure>
+
+    <div class="spec">
+      <h3>The tile</h3>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><td></td><th scope="col">Inside, kitchen</th><th scope="col">Outside</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Tile</th>
+              <td>Limestone-look porcelain, 24 x 48</td>
+              <td>Porcelain paver in the same colour</td>
+            </tr>
+            <tr>
+              <th scope="row">Thickness</th>
+              <td>Standard, about 9 to 10 mm</td>
+              <td>2 cm (3/4")</td>
+            </tr>
+            <tr>
+              <th scope="row">Surface</th>
+              <td>Smooth matte</td>
+              <td>Grippier, slip-rated</td>
+            </tr>
+            <tr>
+              <th scope="row">Price per sq ft</th>
+              <td><span class="price">about $4.50 to $10</span>
+                <small>Home Depot lists an MSI limestone-look 24 x 48 at $4.63. TileBar's Italian-made Era Crema Beige runs $8.95.</small></td>
+              <td><span class="price">about $8.50 to $15</span>
+                <small>TileBar's 2 cm paver listings sit mostly between $8.49 and $14.95.</small></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Prices are for material only.</p>
+    </div>
+
+    <div class="refs">
+      <h3>References</h3>
+      <div class="masonry">
+        <figure>
+          <img src="img/tile-inside-outside-2.jpg" alt="Pale limestone-look tile running from a living room through a sliding door onto a terrace." width="1024" height="1536" loading="lazy">
+          <figcaption class="label">One tile, inside to outside</figcaption>
+        </figure>
+        <figure>
+          <img src="img/wave-wood-stone.jpg" alt="A wood floor meeting pale travertine-look tile along an S-shaped curve." width="1080" height="1120" loading="lazy">
+          <figcaption class="label">The wave where wood meets tile</figcaption>
+        </figure>
+        <figure>
+          <img src="img/curve-wood-stone.jpg" alt="A light timber floor ending in a long curve where it meets pale stone, beside sheer linen curtains." width="1200" height="1783" loading="lazy">
+          <figcaption class="label">A curved line instead of a threshold</figcaption>
+        </figure>
+        <figure>
+          <img src="img/tile-inside-outside-1.jpg" alt="Large beige tile continuing from an open living room out to a garden terrace." width="1000" height="1500" loading="lazy">
+          <figcaption class="label">Large format, level with the terrace</figcaption>
+        </figure>
+        <figure>
+          <img src="img/limestone-outdoors.jpg" alt="Pale limestone paving and a stone wall with an outdoor shower and a wooden bench." width="1199" height="1798" loading="lazy">
+          <figcaption class="label">The limestone tone outdoors</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap label">
+    <span>Brook and Evan's Home</span>
+    <span>Design Proposal 1, November 2026</span>
+  </div>
+</footer>
+
+</body>
+</html>
