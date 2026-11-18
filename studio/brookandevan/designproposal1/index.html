@@ -16,7 +16,7 @@
   --ink:#20211C; --ink-2:#43443C; --muted:#615F55;
   --line:#D9D2C5; --line-2:#E5DFD4;
   --accent:#5E6B4F; --accent-2:#8C9779;
-  --wood:#8E6A48; --wood-line:#7A5939; --stone:#DDD1BC; --stone-line:#C9BBA2;
+  --wood:#D3B285; --wood-line:#BC9865; --stone:#DDD1BC; --stone-line:#C9BBA2;
   --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
   --body:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;
   color-scheme:light;
@@ -74,6 +74,16 @@ td .price{font-family:var(--display);font-weight:300;font-size:30px;line-height:
 td small{display:block;font-size:14.5px;color:var(--muted);margin-top:6px;max-width:44ch}
 .note{margin:18px 0 0;font-size:14.5px;color:var(--muted)}
 
+/* structural list */
+.changes{list-style:none;margin:64px 0 0;padding:0}
+.changes li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) 110px;justify-items:start;gap:40px;align-items:start;border-top:1px solid var(--line);padding:30px 0 34px}
+.changes li:last-child{border-bottom:1px solid var(--line)}
+.changes h3{font-family:var(--display);font-weight:300;font-size:30px;line-height:1.12;margin:8px 0 0;text-wrap:balance}
+.changes p{margin:0;color:var(--ink-2);max-width:56ch}
+.changes p+p{margin-top:10px}
+.tag{display:inline-block;justify-self:end;border:1px solid var(--line);border-radius:2px;background:var(--surface);padding:5px 10px;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
+.tag:hover{border-color:var(--accent);color:var(--accent)}
+
 /* references */
 .refs{margin-top:96px}
 .masonry{columns:3;column-gap:34px}
@@ -88,6 +98,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 @media (max-width:900px){
   .band{grid-template-columns:1fr;gap:16px}
   .moves{grid-template-columns:1fr;gap:44px;margin-top:56px}
+  .changes li{grid-template-columns:1fr;gap:14px}
+  .tag{justify-self:start}
   .masonry{columns:2}
 }
 @media (max-width:560px){
@@ -106,6 +118,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
     <span class="wordmark">Parlā Studio</span>
     <nav aria-label="Proposals">
       <a href="#floor">Floor</a>
+      <a href="#structure">Structural changes</a>
     </nav>
   </div>
 </header>
@@ -121,15 +134,15 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
   <section id="floor">
     <div class="band">
       <h2>Floor</h2>
-      <p>Warm wood in the living room, pale limestone-look tile in the kitchen, and a soft curved line where the two meet under the archway. The tile carries on outside so the kitchen and the outdoors read as one floor.</p>
+      <p>Light, sun-bleached wood in the living room, pale limestone-look tile in the kitchen, and a soft curved line where the two meet under the archway. The tile carries on outside so the kitchen and the outdoors read as one floor.</p>
       <span class="label">01</span>
     </div>
 
     <div class="moves">
       <div class="move">
         <div class="label">Living room</div>
-        <h3>Keep the wood floor and re-stain it</h3>
-        <p>The existing floor stays. It is re-stained to match the exposed rafters in the kitchen, so the wood overhead and the wood underfoot share one tone.</p>
+        <h3>Keep the wood floor and refinish it lighter</h3>
+        <p>Keeping the original living room wall means the original wood floor can stay. It is refinished to a much lighter tone, closer to the sun-bleached, boho and Mediterranean feel of the house.</p>
       </div>
       <div class="move">
         <div class="label">Under the archway</div>
@@ -144,13 +157,13 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
     </div>
 
     <figure class="sketch">
-      <svg viewBox="0 0 1200 330" role="img" aria-label="Plan sketch: re-stained wood in the living room meets limestone-look tile along a wave under the archway; the tile continues through the kitchen and outside.">
+      <svg viewBox="0 0 1200 330" role="img" aria-label="Plan sketch: light refinished wood in the living room meets limestone-look tile along a wave under the archway; the tile continues through the kitchen and outside.">
         <defs>
           <pattern id="tile" width="320" height="160" patternUnits="userSpaceOnUse">
             <path d="M0 .5H320M0 80.5H320M.5 0V80M160.5 80V160" fill="none" stroke="#C9BBA2" stroke-width="1"/>
           </pattern>
           <pattern id="plank" width="240" height="44" patternUnits="userSpaceOnUse">
-            <path d="M0 .5H240M0 22.5H240M70.5 0V22M190.5 22V44" fill="none" stroke="#7A5939" stroke-width="1"/>
+            <path d="M0 .5H240M0 22.5H240M70.5 0V22M190.5 22V44" fill="none" stroke="#BC9865" stroke-width="1"/>
           </pattern>
           <clipPath id="woodclip"><path d="M0 0H400C478 96 322 234 400 330H0Z"/></clipPath>
         </defs>
@@ -158,7 +171,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
         <rect width="1200" height="330" fill="url(#tile)"/>
         <rect x="900" width="300" height="330" fill="#D3C6AF" opacity=".55"/>
         <g clip-path="url(#woodclip)">
-          <rect width="520" height="330" fill="#8E6A48"/>
+          <rect width="520" height="330" fill="#D3B285"/>
           <rect width="520" height="330" fill="url(#plank)"/>
         </g>
         <path d="M400 0C478 96 322 234 400 330" fill="none" stroke="#20211C" stroke-width="1.5"/>
@@ -167,7 +180,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
         <path d="M900 0V330" fill="none" stroke="#20211C" stroke-width="1.5" stroke-dasharray="7 6"/>
       </svg>
       <div class="keys label">
-        <span>Living room, re-stained wood</span>
+        <span>Living room, lighter wood</span>
         <span>Kitchen, 24 x 48 tile</span>
         <span>Outside, 2 cm paver</span>
       </div>
@@ -235,6 +248,58 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
         </figure>
       </div>
     </div>
+  </section>
+
+  <section id="structure">
+    <div class="band">
+      <h2>Structural changes</h2>
+      <p>Four places where this proposal differs from the plans the architect has drawn. Each one needs to be noted on the plans and reviewed by the architect and the engineer.</p>
+      <span class="label">02</span>
+    </div>
+
+    <ul class="changes">
+      <li>
+        <div>
+          <div class="label">Living room</div>
+          <h3>Keep the original living room wall</h3>
+        </div>
+        <div>
+          <p>The hall and the washer and dryer are removed, so the living room wall can stay where it is today instead of moving to the position drawn on the plans.</p>
+          <p>Keeping the wall also keeps the original wood floor in the living room. Because this uses the wall that is already there, we expect it to be simple on the engineering side.</p>
+        </div>
+        <span class="tag">Wall</span>
+      </li>
+      <li>
+        <div>
+          <div class="label">Kitchen</div>
+          <h3>Move the kitchen window</h3>
+        </div>
+        <div>
+          <p>The kitchen window changes position from where it is drawn on the plans.</p>
+        </div>
+        <span class="tag">Window</span>
+      </li>
+      <li>
+        <div>
+          <div class="label">Kitchen to outside</div>
+          <h3>Add panoramic doors</h3>
+        </div>
+        <div>
+          <p>Panoramic glass doors open the kitchen to the outside, in place of the single door on the plans. This is where the tile floor carries through.</p>
+        </div>
+        <span class="tag">Opening</span>
+      </li>
+      <li>
+        <div>
+          <div class="label">Loft</div>
+          <h3>Add a balcony off the loft</h3>
+        </div>
+        <div>
+          <p>A balcony is added outside the loft, which is not on the current plans.</p>
+        </div>
+        <span class="tag">Addition</span>
+      </li>
+    </ul>
   </section>
 
 </main>
