@@ -333,3 +333,16 @@ footer{max-width:var(--max);margin:0 auto;padding:0 var(--gutter-r) calc(80px + 
 .mq{margin:0;font-size:13px;letter-spacing:.02em;color:var(--muted)}
 .mnote.open .mq{color:var(--ink);font-size:15px}
 .mans textarea{width:100%;min-height:40px}
+/* notes tabs, prep, products & contacts */
+.ntabs{margin:0 0 28px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.pcheck{flex:none;width:18px;height:18px;margin:4px 0 0;accent-color:var(--accent)}
+.mnote.done p{text-decoration:line-through}
+.mnote:has(.pcheck){justify-content:flex-start}
+.mnote:has(.pcheck) .mmeta{margin-left:auto}
+.srow{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.srow p{margin:0}
+.stitle{font-size:17px;color:var(--ink)}
+.stitle a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
+.stitle a:hover{color:var(--accent)}
+.srcform{max-width:760px}
+.srow .mmeta{display:flex;gap:10px;align-items:center;flex:none}

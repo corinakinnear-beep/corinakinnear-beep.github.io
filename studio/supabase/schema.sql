@@ -824,3 +824,21 @@ begin
   update public.notes set room = p_new where project_id = p_project and room = p_old;
   update public.meeting_notes set room = p_new where project_id = p_project and room = p_old;
 end $$;
+-- Prep for the next meeting, and the designer's private notebook of products and contacts
+alter table public.meeting_notes add column if not exists kind text default 'note';   -- note | prep (a question to ask) | agenda (something to cover)
+alter table public.meeting_notes add column if not exists done boolean default false;
+create table if not exists public.designer_notes (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  project_id uuid references public.projects(id) on delete set null,
+  kind text default 'product',
+  title text not null default '',
+  link text default '',
+  contact text default '',
+  body text default '',
+  created_at timestamptz default now()
+);
+alter table public.designer_notes enable row level security;
+drop policy if exists designer_notes_owner on public.designer_notes;
+create policy designer_notes_owner on public.designer_notes for all to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+select (select count(*) from information_schema.columns where table_name='meeting_notes' and column_name in ('kind','done')) as note_cols, (select count(*) from information_schema.tables where table_name='designer_notes') as notebook_table;

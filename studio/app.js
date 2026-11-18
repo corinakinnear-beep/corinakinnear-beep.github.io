@@ -94,14 +94,14 @@ const STATUS={noted:"Noted",directive:"Added as a directive",integrated:"Integra
 const noteStatus=n=>n.status||(n.integrated_at?"integrated":"");
 /* ---------- state ---------- */
 let store=null, me=null, project=null, route="home", notifs=[];
-let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false,jumpNote:null,meetHist:false,meetReply:false,noteRoom:"",noteEdit:null,notesMeeting:null,notesDrafts:null,notesDrafting:false,focusNote:false,newSession:false};
+let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false,jumpNote:null,meetHist:false,meetReply:false,noteRoom:"",noteEdit:null,notesMeeting:null,notesDrafts:null,notesDrafting:false,focusNote:false,newSession:false,notesTab:"meetings",srcKind:"all",srcEdit:null};
 const isDesigner=()=>me&&me.role==="designer";
 const member=id=>(project.members||[]).find(m=>m.id===id)||{name:"—"};
 const nameOf=id=>member(id).name;
 
 /* ---------- Preview store (sample data in this browser only) ---------- */
 class MockStore{
-  constructor(){this.key="parla-studio-preview-v4-"+(cfg.PREVIEW_AS||"any");}
+  constructor(){this.key="parla-studio-preview-v5-"+(cfg.PREVIEW_AS||"any");}
   load(){
     let saved=null;try{saved=JSON.parse(localStorage.getItem(this.key)||"null");}catch(e){}
     this.all=saved&&saved.all?saved.all:JSON.parse(JSON.stringify(window.SAMPLE_PROJECTS||[window.SAMPLE_PROJECT]));
@@ -152,6 +152,9 @@ class MockStore{
   async updateMeetingNote(id,patch){const n=(this.project.meetingNotes||[]).find(x=>x.id===id);if(n)Object.assign(n,patch);this.persist();}
   async deleteMeetingNote(id){this.project.meetingNotes=(this.project.meetingNotes||[]).filter(x=>x.id!==id);this.persist();}
   async draftFromNotes(ids){await new Promise(r=>setTimeout(r,500));return draftsFallback(ids);}
+  async addSource(x){const p=this.project;p.sourceNotes=p.sourceNotes||[];const row={id:uid(),created_at:new Date().toISOString(),...x};p.sourceNotes.unshift(row);this.persist();return row;}
+  async updateSource(id,patch){const x=(this.project.sourceNotes||[]).find(r=>r.id===id);if(x)Object.assign(x,patch);this.persist();}
+  async deleteSource(id){this.project.sourceNotes=(this.project.sourceNotes||[]).filter(r=>r.id!==id);this.persist();}
   async addSession(x){const p=this.project;p.noteSessions=p.noteSessions||[];const row={id:uid(),created_at:new Date().toISOString(),...x};p.noteSessions.push(row);this.persist();return row;}
   async updateSession(id,patch){const x=(this.project.noteSessions||[]).find(r=>r.id===id);if(x)Object.assign(x,patch);this.persist();}
   async addImage(img){this.project.architect_images.push({id:uid(),...img});this.persist();}
@@ -205,6 +208,7 @@ class SupabaseStore{
     const {data:cmts}=await sb.from("directive_comments").select("*").eq("project_id",id).order("created_at");
     const {data:mnotes}=await sb.from("meeting_notes").select("*").eq("project_id",id).order("created_at");
     const {data:nsess}=await sb.from("note_sessions").select("*").eq("project_id",id).order("at",{ascending:false});
+    const {data:srcs}=await sb.from("designer_notes").select("*").or(`project_id.is.null,project_id.eq.${id}`).order("created_at",{ascending:false});
     const meets=(meet||[]).map(mapMeeting);
     try{localStorage.setItem("parla-studio-project",id);}catch(e){}
     const members=(mems||[]).map(m=>({id:m.user_id,role:m.role,name:m.profiles?m.profiles.name:"—",email:m.profiles?m.profiles.email:""}));
@@ -217,7 +221,7 @@ class SupabaseStore{
       notes:(notes||[]).map(n=>({...n,images:n.images||[],replies:(reps||[]).filter(r=>r.note_id===n.id)})),
       process:p.process||[],
       stages:(stages||[]).map(s=>({id:s.id,order:s.position,title:s.title,focus:s.focus||"",desc:s.description||"",deliverable:s.deliverable||"",due:s.due,status:s.status,standard:s.standard,fee:s.fee,hourly:s.hourly,payment:{status:s.payment_status||"upcoming",amount:s.payment_amount,date:s.payment_date}})),
-      meetings:meets,meeting:meets[0]||null,meetingNotes:mnotes||[],noteSessions:nsess||[]
+      meetings:meets,meeting:meets[0]||null,meetingNotes:mnotes||[],noteSessions:nsess||[],sourceNotes:srcs||[]
     };
   }
   async setMyName(n){await this.sb.from("profiles").update({name:n}).eq("id",me.id);}
@@ -271,7 +275,10 @@ class SupabaseStore{
   async addReply(noteId,body){const {data,error}=await this.sb.from("note_replies").insert({note_id:noteId,project_id:this.pid,author_id:me.id,body}).select().single();if(error)throw error;return data;}
   async saveStage(st){const row={project_id:this.pid,position:st.order,title:st.title,focus:st.focus||"",description:st.desc,deliverable:st.deliverable,due:st.due?st.due.slice(0,10):null,status:st.status,standard:st.standard,fee:st.fee,hourly:!!st.hourly,payment_status:st.payment.status,payment_amount:st.payment.amount,payment_date:st.payment.date?st.payment.date.slice(0,10):null};if(st.id&&!st.id.startsWith("new"))row.id=st.id;const {error}=await this.sb.from("stages").upsert(row);if(error)throw error;}
   async deleteStage(id){await this.sb.from("stages").delete().eq("id",id);}
-  async addMeetingNote(n){const {data,error}=await this.sb.from("meeting_notes").insert({project_id:this.pid,meeting_id:n.meeting_id||null,session_id:n.session_id||null,room:n.room||"",question:n.question||"",body:n.body||""}).select().single();if(error)throw error;return data;}
+  async addMeetingNote(n){const {data,error}=await this.sb.from("meeting_notes").insert({project_id:this.pid,meeting_id:n.meeting_id||null,session_id:n.session_id||null,room:n.room||"",question:n.question||"",body:n.body||"",kind:n.kind||"note"}).select().single();if(error)throw error;return data;}
+  async addSource(x){const {data,error}=await this.sb.from("designer_notes").insert({project_id:x.project_id||null,kind:x.kind,title:x.title,link:x.link||"",contact:x.contact||"",body:x.body||""}).select().single();if(error)throw error;return data;}
+  async updateSource(id,patch){const {error}=await this.sb.from("designer_notes").update(patch).eq("id",id);if(error)throw error;}
+  async deleteSource(id){const {error}=await this.sb.from("designer_notes").delete().eq("id",id);if(error)throw error;}
   async addSession(x){const {data,error}=await this.sb.from("note_sessions").insert({project_id:this.pid,kind:x.kind,title:x.title||"",at:x.at}).select().single();if(error)throw error;return data;}
   async updateSession(id,patch){const {error}=await this.sb.from("note_sessions").update(patch).eq("id",id);if(error)throw error;}
   async updateMeetingNote(id,patch){const {error}=await this.sb.from("meeting_notes").update(patch).eq("id",id);if(error)throw error;}
@@ -337,7 +344,7 @@ function render(){
   const views={home:viewHome,documents:viewDocuments,directives:viewDirectives,conversation:viewConversation,timeline:viewTimeline,meeting:viewTimeline,account:viewSettings,notes:isDesigner()?viewMeetingNotes:viewHome};
   app.innerHTML=`<div class="view">${(views[route]||viewHome)()}</div>`;
   bind(app);
-  if(route==="notes"&&ui.focusNote){const which=ui.focusNote;ui.focusNote=false;const t=$(which==="q"?"#noteQ":"#noteIn");if(t)t.focus();}
+  if(route==="notes"&&ui.focusNote){const which=ui.focusNote;ui.focusNote=false;const t=$(which==="pa"?"#prepA":which==="pq"?"#prepQ":which==="q"?"#noteQ":"#noteIn")||$("#prepQ");if(t)t.focus();}
   if(ui.jumpNote&&route==="conversation"){const el=$("#note-"+ui.jumpNote);ui.jumpNote=null;if(el){el.scrollIntoView({block:"center"});const nid=el.id.slice(5);const ta=$("#td-"+nid);if(ta){ta.focus();fillSummary(nid);}}}
   renderPreviewBar();
   if(ui.jump){const el=document.getElementById(ui.jump);ui.jump=null;if(el)setTimeout(()=>el.scrollIntoView({block:"start"}),30);}
@@ -416,7 +423,7 @@ async function renderDashboard(app){
     <div class="actions"><button class="btn ghost" id="newProjBtn">Start a project</button></div></section>
     <div id="newProjWrap" hidden></div>
   </div>`;
-  app.querySelectorAll("[data-open]").forEach(a=>a.onclick=async e=>{e.preventDefault();project=await store.loadProject(a.dataset.open);summaries=null;ui.room="all";ui.sort="recent";ui.notesMeeting=null;ui.noteRoom="";ui.notesDrafts=null;ui.toDir={};ui.meetingEdit=false;ui.meetReply=false;ui.meetHist=false;location.hash="home";if(route==="home")render();});
+  app.querySelectorAll("[data-open]").forEach(a=>a.onclick=async e=>{e.preventDefault();project=await store.loadProject(a.dataset.open);summaries=null;ui.room="all";ui.sort="recent";ui.notesMeeting=null;ui.noteRoom="";ui.notesDrafts=null;ui.srcEdit=null;ui.toDir={};ui.meetingEdit=false;ui.meetReply=false;ui.meetHist=false;location.hash="home";if(route==="home")render();});
   $("#newProjBtn",app).onclick=()=>{const w=$("#newProjWrap",app);w.hidden=false;renderNewProjectForm(w);w.scrollIntoView({behavior:"smooth",block:"start"});};
   renderPreviewBar();
 }
@@ -678,7 +685,7 @@ function meetingBlock(){
       <div class="field"><label>Note</label><textarea class="input small" name="notes" placeholder="${d?"What the meeting is for":"Anything to add"}"></textarea></div>
       ${d?`<label class="small checkrow"><input type="checkbox" name="agreed"> Already agreed — mark as confirmed</label>`:""}
       <div class="actions"><button class="btn tiny" type="submit">${d?"Send":"Propose"}</button><button class="textlink" type="button" id="meetCancel">Cancel</button></div></form>`:""}
-    ${!editing&&!ui.meetReply?`<div class="actions">${m&&!past?`<button class="btn ghost tiny" id="meetEdit">Suggest another time</button>${last?`<button class="textlink" id="meetReply">Reply</button>`:""}`:`<button class="btn ghost tiny" id="meetEdit">${m?(d?"Schedule the next meeting":"Propose the next meeting"):(d?"Schedule a meeting":"Propose a meeting")}</button>`}${d?`<a class="textlink" href="#notes">Meeting notes</a>`:`<span class="small muted">Or text ${esc(DESIGNER_NAME)}: <span class="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></span>`}</div>`:""}
+    ${!editing&&!ui.meetReply?`<div class="actions">${m&&!past?`<button class="btn ghost tiny" id="meetEdit">Suggest another time</button>${last?`<button class="textlink" id="meetReply">Reply</button>`:""}`:`<button class="btn ghost tiny" id="meetEdit">${m?(d?"Schedule the next meeting":"Propose the next meeting"):(d?"Schedule a meeting":"Propose a meeting")}</button>`}${d?`<a class="textlink" href="#notes" data-ntabgo="prep">Prep</a><a class="textlink" href="#notes" data-ntabgo="meetings">Meeting notes</a>`:`<span class="small muted">Or text ${esc(DESIGNER_NAME)}: <span class="phone">${esc(cfg.DESIGNER_PHONE||"")}</span></span>`}</div>`:""}
   </div></div></section>`;
 }
 async function meetPost(kind,extra){
@@ -713,7 +720,48 @@ function notesMeeting(){
   const soon=Date.now()+12*3600e3;
   return all.find(x=>new Date(x.at).getTime()<=soon)||all[all.length-1]||null;
 }
-function notesFor(se){return (project.meetingNotes||[]).filter(n=>!se?(!n.meeting_id&&!n.session_id):se.type==="meeting"?n.meeting_id===se.id:n.session_id===se.id);}
+const isPrep=n=>(n.kind==="prep"||n.kind==="agenda")&&!n.meeting_id&&!n.session_id;
+function notesFor(se){return (project.meetingNotes||[]).filter(n=>!isPrep(n)&&(!se?(!n.meeting_id&&!n.session_id):se.type==="meeting"?n.meeting_id===se.id:n.session_id===se.id));}
+const prepItems=()=>(project.meetingNotes||[]).filter(isPrep);
+const nextMeeting=()=>[...(project.meetings||[])].filter(m=>new Date(m.when).getTime()>Date.now()-3*3600e3&&meetStatus(m)!=="declined").sort((a,b)=>new Date(a.when)-new Date(b.when))[0]||null;
+const SRC_KIND={product:"Product",vendor:"Vendor",contractor:"Contractor",other:"Other"};
+const SRC_PLURAL={product:"Products",vendor:"Vendors",contractor:"Contractors",other:"Other"};
+function notesTabs(){const t=ui.notesTab;return`<div class="chips ntabs">${[["prep","Next meeting"],["meetings","Meetings & calls"],["source","Products & contacts"]].map(([k,l])=>`<button class="chip ${t===k?"on":""}" data-ntab="${k}">${l}</button>`).join("")}</div>`;}
+function prepRow(n,rooms){
+  const q=n.kind==="prep";
+  if(ui.noteEdit===n.id)return`<form class="mnote editing" data-mnsave="${n.id}">${q?`<input class="input small" name="question" value="${esc(n.question||"")}"><input type="hidden" name="body" value="">`:`<input type="hidden" name="question" value=""><textarea class="input small" name="body">${esc(n.body)}</textarea>`}<div class="actions"><select class="input tiny" name="room">${rooms.map(r=>`<option value="${esc(r)}" ${(n.room||"")===r?"selected":""}>${r?esc(r):"General"}</option>`).join("")}</select><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-mncancel="1">Cancel</button><button class="textlink" type="button" data-mndel="${n.id}">Remove</button></div></form>`;
+  return`<div class="mnote ${n.done?"done":""}">${q?"":`<input type="checkbox" class="pcheck" data-pdone="${n.id}" ${n.done?"checked":""} aria-label="Covered">`}<div class="mtext"><p>${linkify(q?n.question:n.body)}</p></div><span class="mmeta">${n.room&&rooms.includes(n.room)?`<span class="tag quiet">${esc(n.room)}</span>`:""}<button class="textlink" data-mnedit="${n.id}">Edit</button></span></div>`;
+}
+function viewPrep(){
+  const rooms=["",...project.rooms];if(!rooms.includes(ui.noteRoom))ui.noteRoom="";
+  const nm=nextMeeting(),items=prepItems(),qs=items.filter(n=>n.kind==="prep"),ag=items.filter(n=>n.kind==="agenda");
+  return notesTabs()+`<div class="page-head"><p class="label">Notes · Next meeting</p><h1>${nm?fmtWeek(nm.when):"Next meeting"}</h1><p class="lede">${nm?`${fmtTime(nm.when)}${nm.where?` · ${esc(nm.where)}`:""}${meetStatus(nm)==="proposed"?" · not confirmed yet":""}`:"Nothing scheduled yet. What you prepare here waits for the next meeting or call."}</p></div>
+  <section class="section"><div class="band"><h2>Questions to ask</h2><span class="desc"></span></div>
+    <div class="notetake"><div class="chips">${rooms.map(r=>`<button class="chip ${ui.noteRoom===r?"on":""}" data-nroom="${esc(r)}">${r?esc(r):"General"}</button>`).join("")}</div>
+    <form id="prepQForm" class="noteadd"><div class="noteaddrow"><input class="input" id="prepQ" placeholder="A question — press Enter"><button class="btn tiny" type="submit">Add</button></div></form></div>
+    ${qs.length?`<div class="mnotes">${qs.map(n=>prepRow(n,rooms)).join("")}</div>`:""}</section>
+  <section class="section"><div class="band"><h2>To cover or bring</h2><span class="desc"></span></div>
+    <form id="prepAForm" class="noteadd"><div class="noteaddrow"><input class="input" id="prepA" placeholder="Samples to bring, a decision to get, something to show — press Enter"><button class="btn tiny" type="submit">Add</button></div></form>
+    ${ag.length?`<div class="mnotes">${ag.map(n=>prepRow(n,rooms)).join("")}</div>`:""}</section>
+  ${items.length?`<section class="section"><p class="small muted">During the meeting these show at the top of Meetings & calls, with a box under each question for the answer.</p></section>`:""}`;
+}
+function srcForm(x){
+  const k=x?x.kind:(ui.srcKind!=="all"?ui.srcKind:"product");const only=x?!!x.project_id:k==="product";
+  return`<form class="editbox srcform" ${x?`data-srcsave="${x.id}"`:`id="srcAdd"`}><div class="row two"><div class="field"><label>Type</label><select class="input" name="kind">${Object.entries(SRC_KIND).map(([v,l])=>`<option value="${v}" ${v===k?"selected":""}>${l}</option>`).join("")}</select></div><div class="field"><label>Name</label><input class="input" name="title" value="${esc(x?x.title:"")}" required></div></div>
+    <div class="row two"><div class="field"><label>Link</label><input class="input" name="link" value="${esc(x?x.link:"")}" placeholder="https://"></div><div class="field"><label>Contact</label><input class="input" name="contact" value="${esc(x?x.contact:"")}" placeholder="Phone, email or person"></div></div>
+    <div class="field"><label>Note</label><textarea class="input small" name="body">${esc(x?x.body:"")}</textarea></div>
+    <label class="small checkrow"><input type="checkbox" name="only" ${only?"checked":""}> Only for ${esc(project.name)}</label>
+    <div class="actions"><button class="btn tiny" type="submit">${x?"Save":"Add"}</button>${x?`<button class="textlink" type="button" data-srccancel="1">Cancel</button><button class="textlink" type="button" data-srcdel="${x.id}">Remove</button>`:""}</div></form>`;
+}
+function viewSource(){
+  const all=project.sourceNotes||[],f=ui.srcKind,list=all.filter(x=>f==="all"||x.kind===f);
+  const href=l=>/^https?:\/\//i.test(l)?l:"https://"+l;
+  const row=x=>ui.srcEdit===x.id?srcForm(x):`<div class="srow"><div class="mtext"><p class="stitle">${x.link?`<a href="${esc(href(x.link))}" target="_blank" rel="noopener">${esc(x.title)}</a>`:esc(x.title)}</p>${x.contact?`<p class="small">${linkify(x.contact)}</p>`:""}${x.body?`<p class="small muted">${linkify(x.body)}</p>`:""}</div><span class="mmeta">${x.project_id?"":`<span class="tag quiet">All projects</span>`}<button class="textlink" data-srcedit="${x.id}">Edit</button></span></div>`;
+  return notesTabs()+`<div class="page-head"><p class="label">Notes · Only you see these</p><h1>Products & contacts</h1></div>
+  <section class="section">${srcForm(null)}</section>
+  <section class="section"><div class="chips">${[["all","All"],...Object.entries(SRC_PLURAL)].map(([k,l])=>`<button class="chip ${f===k?"on":""}" data-srckind="${k}">${l}</button>`).join("")}</div></section>
+  ${Object.keys(SRC_KIND).filter(k=>list.some(x=>x.kind===k)).map(k=>`<section class="section"><div class="band"><h2>${SRC_PLURAL[k]}</h2><span class="desc"></span></div><div class="mnotes">${list.filter(x=>x.kind===k).map(row).join("")}</div></section>`).join("")}`;
+}
 const sessionName=se=>se?`${se.title||se.label} · ${fmtWeek(se.at)}`:"Notes";
 function noteRow(n,rooms){
   if(ui.noteEdit===n.id)return`<form class="mnote editing" data-mnsave="${n.id}"><input class="input small" name="question" value="${esc(n.question||"")}" placeholder="Question (optional)"><textarea class="input small" name="body" placeholder="Answer or note">${esc(n.body)}</textarea><div class="actions"><select class="input tiny" name="room">${rooms.map(r=>`<option value="${esc(r)}" ${(n.room||"")===r?"selected":""}>${r?esc(r):"General"}</option>`).join("")}</select><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-mncancel="1">Cancel</button><button class="textlink" type="button" data-mndel="${n.id}">Remove</button></div></form>`;
@@ -721,13 +769,16 @@ function noteRow(n,rooms){
   return`<div class="mnote ${n.directive_id?"done":n.skipped?"skipped":""} ${unanswered?"open":""}"><div class="mtext">${n.question?`<p class="mq">${linkify(n.question)}</p>`:""}${unanswered?`<form class="mans" data-nans="${n.id}"><textarea class="input small" name="body" rows="1" placeholder="Their answer — Enter to save"></textarea></form>`:`<p>${linkify(n.body)}</p>`}</div><span class="mmeta">${n.directive_id?`<span class="tag accent">Directive</span>`:n.skipped?`<span class="tag quiet">Skipped</span>`:""}<button class="textlink" data-mnedit="${n.id}">Edit</button></span></div>`;
 }
 function viewMeetingNotes(){
+  if(ui.notesTab==="prep")return viewPrep();
+  if(ui.notesTab==="source")return viewSource();
   const se=notesMeeting(),all=sessions(),notes=notesFor(se);
+  const prep=prepItems().filter(n=>!n.done);
   const pending=notes.filter(n=>!n.directive_id&&!n.skipped&&(n.body||"").trim());
   const rooms=["",...project.rooms];
   if(!rooms.includes(ui.noteRoom))ui.noteRoom="";
   const roomOf=n=>rooms.includes(n.room||"")?(n.room||""):"";
   const nowLocal=toLocalInput(new Date().toISOString());
-  const head=`<div class="page-head"><p class="label">Notes${se?` · ${esc(se.label)}`:""}</p><h1>${se?esc(se.title||fmtWeek(se.at)):"Notes"}</h1>${se&&se.title?`<p class="lede">${fmtWeek(se.at)}, ${fmtTime(se.at)}</p>`:""}
+  const head=notesTabs()+`<div class="page-head"><p class="label">Notes${se?` · ${esc(se.label)}`:""}</p><h1>${se?esc(se.title||fmtWeek(se.at)):"Notes"}</h1>${se&&se.title?`<p class="lede">${fmtWeek(se.at)}, ${fmtTime(se.at)}</p>`:""}
     <div class="actions">${all.length>1?`<select class="input" id="notesPick" aria-label="Choose notes">${all.map(x=>`<option value="${x.key}" ${se&&x.key===se.key?"selected":""}>${esc(sessionName(x))}</option>`).join("")}</select>`:""}${ui.newSession?"":`<button class="btn ghost tiny" id="newSession">New notes</button>`}</div>
     ${ui.newSession?`<form class="editbox" id="sessionForm" style="max-width:620px"><div class="row three"><div class="field"><label>Type</label><select class="input" name="kind">${Object.entries(SESSION_KIND).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></div><div class="field"><label>When</label><input class="input" type="datetime-local" name="at" value="${nowLocal}"></div><div class="field"><label>Title</label><input class="input" name="title" placeholder="Optional, e.g. Kitchen questions"></div></div><div class="actions"><button class="btn tiny" type="submit">Start</button><button class="textlink" type="button" id="sessionCancel">Cancel</button></div></form>`:""}</div>`;
   if(ui.notesDrafting)return head+`<section class="section"><p class="lede">Drafting directives from your notes…</p></section>`;
@@ -743,7 +794,7 @@ function viewMeetingNotes(){
       :`<p class="lede">All done.</p><div class="actions"><a class="btn" href="#directives">See design directives</a><button class="textlink" id="draftsBack">Back to notes</button></div>`}</section>`;
   }
   const groups=rooms.map(r=>({r,list:notes.filter(n=>roomOf(n)===r)})).filter(g=>g.list.length);
-  return head+`<section class="section notetake">
+  return head+(prep.length?`<section class="section"><div class="band"><h2>Prepared</h2><span class="desc"></span></div><div class="mnotes">${prep.map(n=>n.kind==="prep"?`<div class="mnote open"><div class="mtext"><p class="mq">${linkify(n.question)}</p><form class="mans" data-pans="${n.id}"><textarea class="input small" name="body" rows="1" placeholder="Their answer — Enter to save"></textarea></form></div><span class="mmeta">${n.room&&rooms.includes(n.room)?`<span class="tag quiet">${esc(n.room)}</span>`:""}</span></div>`:`<div class="mnote"><input type="checkbox" class="pcheck" data-pdone="${n.id}" aria-label="Covered"><div class="mtext"><p>${linkify(n.body)}</p></div></div>`).join("")}</div></section>`:"")+`<section class="section notetake">
     <div class="chips">${rooms.map(r=>`<button class="chip ${ui.noteRoom===r?"on":""}" data-nroom="${esc(r)}">${r?esc(r):"General"}</button>`).join("")}</div>
     <form id="noteAdd" class="noteadd">
       <input class="input" id="noteQ" placeholder="Question (optional)">
@@ -861,6 +912,23 @@ function bind(app){
     qi.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();if(e.metaKey||e.ctrlKey||e.altKey)add();else ta.focus();}};}
   app.querySelectorAll("[data-nans]").forEach(f=>{const t=f.elements.body;const save=async()=>{const body=t.value.trim();if(!body)return;const id=f.dataset.nans;try{await store.updateMeetingNote(id,{body});const n=project.meetingNotes.find(x=>x.id===id);if(n)n.body=body;render();}catch(err){toast("Couldn't save: "+err.message);}};
     f.onsubmit=e=>{e.preventDefault();save();};t.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();save();}};});
+  app.querySelectorAll("[data-ntab]").forEach(b=>b.onclick=()=>{ui.notesTab=b.dataset.ntab;ui.noteEdit=null;ui.srcEdit=null;ui.notesDrafts=null;render();});
+  app.querySelectorAll("[data-ntabgo]").forEach(b=>b.onclick=()=>{ui.notesTab=b.dataset.ntabgo;});
+  const addPrep=async(kind,input)=>{const v=input.value.trim();if(!v)return;input.value="";try{const n=await store.addMeetingNote({kind,room:kind==="prep"?ui.noteRoom:"",question:kind==="prep"?v:"",body:kind==="agenda"?v:""});if(LIVE){project.meetingNotes=project.meetingNotes||[];project.meetingNotes.push(n);}ui.focusNote=kind==="prep"?"pq":"pa";render();}catch(err){input.value=v;toast("Couldn't save: "+err.message);}};
+  const pqf=$("#prepQForm",app);if(pqf)pqf.onsubmit=e=>{e.preventDefault();addPrep("prep",$("#prepQ",app));};
+  const paf=$("#prepAForm",app);if(paf)paf.onsubmit=e=>{e.preventDefault();addPrep("agenda",$("#prepA",app));};
+  app.querySelectorAll("[data-pdone]").forEach(c=>c.onchange=async()=>{const id=c.dataset.pdone;try{await store.updateMeetingNote(id,{done:c.checked});const n=project.meetingNotes.find(x=>x.id===id);if(n)n.done=c.checked;render();}catch(err){toast("Couldn't save: "+err.message);}});
+  app.querySelectorAll("[data-pans]").forEach(f=>{const t=f.elements.body;const save=async()=>{const body=t.value.trim();if(!body)return;const id=f.dataset.pans;const se=notesMeeting();const patch={body,kind:"note",meeting_id:se&&se.type==="meeting"?se.id:null,session_id:se&&se.type==="session"?se.id:null};try{await store.updateMeetingNote(id,patch);const n=project.meetingNotes.find(x=>x.id===id);if(n)Object.assign(n,patch);render();}catch(err){toast("Couldn't save: "+err.message);}};
+    f.onsubmit=e=>{e.preventDefault();save();};t.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();save();}};});
+  // products & contacts
+  const srcVals=f=>({kind:f.elements.kind.value,title:f.elements.title.value.trim(),link:f.elements.link.value.trim(),contact:f.elements.contact.value.trim(),body:f.elements.body.value.trim(),project_id:f.elements.only.checked?project.id:null});
+  app.querySelectorAll(".srcform select[name=kind]").forEach(sel=>sel.onchange=()=>{if(sel.form.id==="srcAdd")sel.form.elements.only.checked=sel.value==="product";});
+  const sa=$("#srcAdd",app);if(sa)sa.onsubmit=async e=>{e.preventDefault();const v=srcVals(sa);if(!v.title)return;try{const x=await store.addSource(v);if(LIVE){project.sourceNotes=project.sourceNotes||[];project.sourceNotes.unshift(x);}if(ui.srcKind!=="all")ui.srcKind=v.kind;render();toast("Saved");}catch(err){toast("Couldn't save: "+err.message);}};
+  app.querySelectorAll("[data-srckind]").forEach(b=>b.onclick=()=>{ui.srcKind=b.dataset.srckind;ui.srcEdit=null;render();});
+  app.querySelectorAll("[data-srcedit]").forEach(b=>b.onclick=()=>{ui.srcEdit=b.dataset.srcedit;render();});
+  app.querySelectorAll("[data-srccancel]").forEach(b=>b.onclick=()=>{ui.srcEdit=null;render();});
+  app.querySelectorAll("[data-srcsave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.srcsave,v=srcVals(f);if(!v.title)return;try{await store.updateSource(id,v);const x=project.sourceNotes.find(r=>r.id===id);if(x)Object.assign(x,v);ui.srcEdit=null;render();}catch(err){toast("Couldn't save: "+err.message);}});
+  app.querySelectorAll("[data-srcdel]").forEach(b=>b.onclick=async()=>{const id=b.dataset.srcdel;try{await store.deleteSource(id);project.sourceNotes=project.sourceNotes.filter(r=>r.id!==id);ui.srcEdit=null;render();}catch(err){toast("Couldn't remove: "+err.message);}});
   const nsb=$("#newSession",app);if(nsb)nsb.onclick=()=>{ui.newSession=true;render();};
   const nsc=$("#sessionCancel",app);if(nsc)nsc.onclick=()=>{ui.newSession=false;render();};
   const sf=$("#sessionForm",app);if(sf)sf.onsubmit=async e=>{e.preventDefault();const at=sf.elements.at.value?new Date(sf.elements.at.value).toISOString():new Date().toISOString();try{const x=await store.addSession({kind:sf.elements.kind.value,title:sf.elements.title.value.trim(),at});if(LIVE){project.noteSessions=project.noteSessions||[];project.noteSessions.unshift(x);}ui.notesMeeting="s:"+x.id;ui.newSession=false;ui.notesDrafts=null;ui.focusNote="q";render();}catch(err){toast("Couldn't start: "+err.message);}};
