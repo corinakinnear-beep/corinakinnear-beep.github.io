@@ -842,3 +842,10 @@ alter table public.designer_notes enable row level security;
 drop policy if exists designer_notes_owner on public.designer_notes;
 create policy designer_notes_owner on public.designer_notes for all to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 select (select count(*) from information_schema.columns where table_name='meeting_notes' and column_name in ('kind','done')) as note_cols, (select count(*) from information_schema.tables where table_name='designer_notes') as notebook_table;
+
+-- Studio notes: one free-text note with a category, across all projects
+alter table public.designer_notes alter column kind set default '';
+update public.designer_notes set
+  body = concat_ws(E'\n', nullif(title,''), nullif(contact,''), nullif(link,''), nullif(body,'')), title = '', contact = '', link = ''
+  where title <> '' or contact <> '' or link <> '';
+update public.designer_notes set kind = case kind when 'product' then 'Products' when 'vendor' then 'Vendors' when 'contractor' then 'Contractors' when 'other' then '' else kind end;

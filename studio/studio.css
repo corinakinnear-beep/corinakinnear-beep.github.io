@@ -346,3 +346,16 @@ footer{max-width:var(--max);margin:0 auto;padding:0 var(--gutter-r) calc(80px + 
 .stitle a:hover{color:var(--accent)}
 .srcform{max-width:760px}
 .srow .mmeta{display:flex;gap:10px;align-items:center;flex:none}
+/* notes: sort, categories, studio notes */
+.ntabs{align-items:center}
+.tabout{margin-left:auto}
+.chiplabel{align-self:center;margin-right:4px}
+.sortchips{margin-left:auto}
+.grouph{font-family:var(--serif);font-weight:300;font-size:22px;margin:28px 0 4px}
+.catsel{max-width:170px;color:var(--ink-2);background-color:transparent}
+.catsel.none{color:var(--muted)}
+.newcat{display:inline-flex;gap:8px;align-items:center}
+.newcat input{width:150px}
+.snbody{white-space:pre-wrap}
+.snote .mq{margin-top:2px}
+@media (max-width:640px){.mnote{flex-wrap:wrap}.mnote .mmeta{margin-left:auto}.tabout{margin-left:0}}

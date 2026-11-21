@@ -94,21 +94,22 @@ const STATUS={noted:"Noted",directive:"Added as a directive",integrated:"Integra
 const noteStatus=n=>n.status||(n.integrated_at?"integrated":"");
 /* ---------- state ---------- */
 let store=null, me=null, project=null, route="home", notifs=[];
-let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false,jumpNote:null,meetHist:false,meetReply:false,noteRoom:"",noteEdit:null,notesMeeting:null,notesDrafts:null,notesDrafting:false,focusNote:false,newSession:false,notesTab:"meetings",srcKind:"all",srcEdit:null};
+let ui={room:"all",sort:"recent",open:{},review:false,payOpen:null,projEdit:false,toDir:{},commentOpen:{},reqOpen:false,roomEdit:null,roomAdd:false,editing:{},composeImgs:[],replyOpen:{},stageEdit:null,meetingEdit:false,askOpen:false,jumpNote:null,meetHist:false,meetReply:false,noteRoom:"",noteEdit:null,notesMeeting:null,notesDrafts:null,notesDrafting:false,focusNote:false,newSession:false,notesTab:"meetings",notesSort:"date",snCat:"",snSort:"date",snEdit:null,snNewFor:null,snExtra:[]};
 const isDesigner=()=>me&&me.role==="designer";
 const member=id=>(project.members||[]).find(m=>m.id===id)||{name:"—"};
 const nameOf=id=>member(id).name;
 
 /* ---------- Preview store (sample data in this browser only) ---------- */
 class MockStore{
-  constructor(){this.key="parla-studio-preview-v5-"+(cfg.PREVIEW_AS||"any");}
+  constructor(){this.key="parla-studio-preview-v6-"+(cfg.PREVIEW_AS||"any");}
   load(){
     let saved=null;try{saved=JSON.parse(localStorage.getItem(this.key)||"null");}catch(e){}
     this.all=saved&&saved.all?saved.all:JSON.parse(JSON.stringify(window.SAMPLE_PROJECTS||[window.SAMPLE_PROJECT]));
+    this.studio=saved&&saved.studio?saved.studio:JSON.parse(JSON.stringify(window.SAMPLE_STUDIO_NOTES||[]));
     this.project=this.all.find(p=>p.id===(saved&&saved.pid))||this.all[0];
     this.meId=cfg.PREVIEW_AS||(saved&&saved.meId)||"u-cori";
   }
-  persist(){try{localStorage.setItem(this.key,JSON.stringify({all:this.all,pid:this.project.id,meId:this.meId}));}catch(e){}}
+  persist(){try{localStorage.setItem(this.key,JSON.stringify({all:this.all,studio:this.studio,pid:this.project.id,meId:this.meId}));}catch(e){}}
   async init(){this.load();const mine=this.all.filter(p=>p.members.some(m=>m.id===this.meId));if(!mine.includes(this.project))this.project=mine[0];return{me:this.project.members.find(m=>m.id===this.meId),project:this.project};}
   async loadProject(id){this.project=this.all.find(p=>p.id===id)||this.project;this.persist();return this.project;}
   async listProjects(){const did=this.meId;return this.all.filter(p=>p.members.some(m=>m.id===did)).map(p=>{const dz=(p.designer||{}).id;const cs=p.stages.find(s=>s.status==="current");return{id:p.id,name:p.name,clients:p.members.filter(m=>m.role==="client").map(m=>m.name).join(" & "),unread:p.notes.filter(n=>!n.read_at&&n.author_id!==dz).length,changed:p.intake.flatMap(x=>x.questions).filter(q=>q.updated_by&&q.updated_by!==dz&&!q.seen_by_designer).length,stage:cs?cs.title:"",stage_due:cs?cs.due:null,meeting:p.meeting?p.meeting.when:null,meeting_request:!!(p.meeting&&p.meeting.change_request),payment_requested:p.stages.filter(x=>x.payment.status==="requested").length,last_activity:[...p.notes.map(n=>n.created_at),...p.notes.flatMap(n=>n.replies.map(r=>r.created_at))].sort().pop()||null};});}
@@ -152,9 +153,10 @@ class MockStore{
   async updateMeetingNote(id,patch){const n=(this.project.meetingNotes||[]).find(x=>x.id===id);if(n)Object.assign(n,patch);this.persist();}
   async deleteMeetingNote(id){this.project.meetingNotes=(this.project.meetingNotes||[]).filter(x=>x.id!==id);this.persist();}
   async draftFromNotes(ids){await new Promise(r=>setTimeout(r,500));return draftsFallback(ids);}
-  async addSource(x){const p=this.project;p.sourceNotes=p.sourceNotes||[];const row={id:uid(),created_at:new Date().toISOString(),...x};p.sourceNotes.unshift(row);this.persist();return row;}
-  async updateSource(id,patch){const x=(this.project.sourceNotes||[]).find(r=>r.id===id);if(x)Object.assign(x,patch);this.persist();}
-  async deleteSource(id){this.project.sourceNotes=(this.project.sourceNotes||[]).filter(r=>r.id!==id);this.persist();}
+  async listStudioNotes(){return this.studio;}
+  async addSource(x){const row={id:uid(),created_at:new Date().toISOString(),...x};this.studio.unshift(row);this.persist();return row;}
+  async updateSource(id,patch){const x=this.studio.find(r=>r.id===id);if(x)Object.assign(x,patch);this.persist();}
+  async deleteSource(id){this.studio=this.studio.filter(r=>r.id!==id);this.persist();}
   async addSession(x){const p=this.project;p.noteSessions=p.noteSessions||[];const row={id:uid(),created_at:new Date().toISOString(),...x};p.noteSessions.push(row);this.persist();return row;}
   async updateSession(id,patch){const x=(this.project.noteSessions||[]).find(r=>r.id===id);if(x)Object.assign(x,patch);this.persist();}
   async addImage(img){this.project.architect_images.push({id:uid(),...img});this.persist();}
@@ -221,7 +223,7 @@ class SupabaseStore{
       notes:(notes||[]).map(n=>({...n,images:n.images||[],replies:(reps||[]).filter(r=>r.note_id===n.id)})),
       process:p.process||[],
       stages:(stages||[]).map(s=>({id:s.id,order:s.position,title:s.title,focus:s.focus||"",desc:s.description||"",deliverable:s.deliverable||"",due:s.due,status:s.status,standard:s.standard,fee:s.fee,hourly:s.hourly,payment:{status:s.payment_status||"upcoming",amount:s.payment_amount,date:s.payment_date}})),
-      meetings:meets,meeting:meets[0]||null,meetingNotes:mnotes||[],noteSessions:nsess||[],sourceNotes:srcs||[]
+      meetings:meets,meeting:meets[0]||null,meetingNotes:mnotes||[],noteSessions:nsess||[]
     };
   }
   async setMyName(n){await this.sb.from("profiles").update({name:n}).eq("id",me.id);}
@@ -276,7 +278,8 @@ class SupabaseStore{
   async saveStage(st){const row={project_id:this.pid,position:st.order,title:st.title,focus:st.focus||"",description:st.desc,deliverable:st.deliverable,due:st.due?st.due.slice(0,10):null,status:st.status,standard:st.standard,fee:st.fee,hourly:!!st.hourly,payment_status:st.payment.status,payment_amount:st.payment.amount,payment_date:st.payment.date?st.payment.date.slice(0,10):null};if(st.id&&!st.id.startsWith("new"))row.id=st.id;const {error}=await this.sb.from("stages").upsert(row);if(error)throw error;}
   async deleteStage(id){await this.sb.from("stages").delete().eq("id",id);}
   async addMeetingNote(n){const {data,error}=await this.sb.from("meeting_notes").insert({project_id:this.pid,meeting_id:n.meeting_id||null,session_id:n.session_id||null,room:n.room||"",question:n.question||"",body:n.body||"",kind:n.kind||"note"}).select().single();if(error)throw error;return data;}
-  async addSource(x){const {data,error}=await this.sb.from("designer_notes").insert({project_id:x.project_id||null,kind:x.kind,title:x.title,link:x.link||"",contact:x.contact||"",body:x.body||""}).select().single();if(error)throw error;return data;}
+  async listStudioNotes(){const {data,error}=await this.sb.from("designer_notes").select("*").order("created_at",{ascending:false});if(error)throw error;return data||[];}
+  async addSource(x){const {data,error}=await this.sb.from("designer_notes").insert({kind:x.kind||"",body:x.body||"",title:""}).select().single();if(error)throw error;return data;}
   async updateSource(id,patch){const {error}=await this.sb.from("designer_notes").update(patch).eq("id",id);if(error)throw error;}
   async deleteSource(id){const {error}=await this.sb.from("designer_notes").delete().eq("id",id);if(error)throw error;}
   async addSession(x){const {data,error}=await this.sb.from("note_sessions").insert({project_id:this.pid,kind:x.kind,title:x.title||"",at:x.at}).select().single();if(error)throw error;return data;}
@@ -314,7 +317,7 @@ function activity(){
 
 /* ---------- rendering ---------- */
 const NAV=[["home","Home"],["directives","Design directives"],["conversation","Messages"],["documents","Documents"],["timeline","Timeline"],["account","Settings"]];
-const ROUTES=["projects","notes",...NAV.map(([k])=>k)];
+const ROUTES=["projects","studio","notes",...NAV.map(([k])=>k)];
 let summaries=null;
 function needsName(){return me&&(!me.name||(LIVE&&me.name===(me.email||"").split("@")[0]));}
 function pinOk(){try{return sessionStorage.getItem("parla-studio-pin")==="ok";}catch(e){return false;}}
@@ -337,6 +340,7 @@ function render(){
   if(!me){renderSignIn(app);return;}
   if(needsName()){renderAskName(app);return;}
   if(isDesigner()&&LIVE&&!pinOk()){renderAskPin(app);return;}
+  if(isDesigner()&&route==="studio"){renderStudioNotes(app);return;}
   if(isDesigner()&&(route==="projects"||!project)){renderDashboard(app);return;}
   if(!project){renderNoProject(app);return;}
   renderNav();
@@ -357,14 +361,14 @@ function closePops(){$("#menuPop").hidden=true;$("#bellPop").hidden=true;}
 document.addEventListener("click",e=>{if(!e.target.closest(".pop,#menuBtn,#bellBtn"))closePops();});
 function renderNav(){
   const nav=$("#nav");$("#menuBtn").hidden=false;
-  nav.innerHTML=(isDesigner()?`<a href="#projects" class="${route==="projects"?"active":""}">All projects</a>`:"")+NAV.map(([k,l])=>{
+  nav.innerHTML=(isDesigner()?`<a href="#projects" class="${route==="projects"?"active":""}">All projects</a><a href="#studio" class="${route==="studio"?"active":""}">Studio notes</a>`:"")+NAV.map(([k,l])=>{
     let c="";
     if(isDesigner()){if(k==="conversation"&&unreadNotes().length)c=unreadNotes().length;if(k==="directives"&&changedAnswers().length)c=changedAnswers().length;}
     else{const nm=notifs.filter(n=>!n.seen_at&&(n.link||"")==="#conversation").length;if(k==="conversation"&&nm)c=nm;if(k==="directives"&&openAnswers().length)c=openAnswers().length;}
     return`<a href="#${k}" class="${route===k?"active":""}">${l}${c?`<span class="count">${c}</span>`:""}</a>${k==="conversation"&&isDesigner()?`<a href="#notes" class="${route==="notes"?"active":""}">Notes</a>`:""}`;}).join("");
   $("#menuBtn").onclick=e=>{e.stopPropagation();const p=$("#menuPop");const open=p.hidden;closePops();p.hidden=!open;};
   $(".wordmark").href=isDesigner()?"#projects":"#home";
-  const pn=$("#projName");if(pn){pn.textContent=isDesigner()&&project&&route!=="projects"?project.name:"";pn.hidden=!pn.textContent;}
+  const pn=$("#projName");if(pn){pn.textContent=isDesigner()&&project&&route!=="projects"&&route!=="studio"?project.name:"";pn.hidden=!pn.textContent;}
   nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",closePops));
   const r=$("#mastRight");
   const convCount=isDesigner()?unreadNotes().length:notifs.filter(n=>!n.seen_at&&(n.link||"")==="#conversation").length;
@@ -400,6 +404,49 @@ function renderSignIn(app){
     <p class="small muted" id="signinMsg"></p></div></div>`;
   $("#signinForm",app).onsubmit=async e=>{e.preventDefault();const email=$("#email",app).value.trim().toLowerCase();$("#signinMsg",app).textContent="";const r=await store.signInEmail(email);if(!r.ok)$("#signinMsg",app).textContent=r.error;};
 }
+/* ---------- studio notes: the designer's own notebook, across all projects ---------- */
+let studioNotes=null;
+const CAT_DEFAULT=["Products","Vendors","Contractors"];
+const CAT_OLD={product:"Products",vendor:"Vendors",contractor:"Contractors",other:""};
+const catOf=x=>x.kind in CAT_OLD?CAT_OLD[x.kind]:(x.kind||"");
+const textOf=x=>[x.title,x.contact,x.link,x.body].filter(t=>t&&t.trim()).join("\n");
+function studioCats(){const set=[...CAT_DEFAULT];for(const c of [...(studioNotes||[]).map(catOf),...ui.snExtra])if(c&&!set.includes(c))set.push(c);return set;}
+function catSelect(attr,cur,cats){return`<select class="input tiny catsel ${cur?"":"none"}" ${attr} aria-label="Category"><option value="">No category</option>${cats.map(c=>`<option value="${esc(c)}" ${c===cur?"selected":""}>${esc(c)}</option>`).join("")}<option value="__new">New category…</option></select>`;}
+async function renderStudioNotes(app){
+  renderNav();$("#foot").hidden=false;$("#footProject").textContent="Studio notes";
+  if(!studioNotes){app.innerHTML=`<div class="view"><div class="page-head"><p class="label">Studio · Only you see these</p><h1>Notes</h1></div></div>`;try{studioNotes=await store.listStudioNotes();}catch(e){studioNotes=[];toast("Couldn't load notes: "+e.message);}if(route!=="studio")return;}
+  const cats=studioCats(),list=[...studioNotes].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  const newCat=id=>`<span class="newcat" data-sncatnew="${id}"><input class="input tiny" placeholder="Category name"><button class="btn tiny" type="button" data-sncatok="${id}">Add</button><button class="textlink" type="button" data-sncatcancel="1">Cancel</button></span>`;
+  const row=x=>ui.snEdit===x.id?`<form class="mnote editing" data-snsave="${x.id}"><textarea class="input" name="body" rows="4">${esc(textOf(x))}</textarea><div class="actions">${catSelect(`name="cat"`,catOf(x),cats).replace('<option value="__new">New category…</option>',"")}<button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-sncancel="1">Cancel</button><button class="textlink" type="button" data-sndel="${x.id}">Remove</button></div></form>`
+    :`<div class="mnote snote"><div class="mtext"><p class="snbody">${linkify(textOf(x))}</p><p class="mq">${fmtDate(x.created_at)}</p></div><span class="mmeta">${ui.snNewFor===x.id?newCat(x.id):catSelect(`data-sncat="${x.id}"`,catOf(x),cats)}<button class="textlink" data-snedit="${x.id}">Edit</button></span></div>`;
+  const groups=[...cats,""].map(c=>({c,list:list.filter(x=>catOf(x)===c)})).filter(g=>g.list.length);
+  app.innerHTML=`<div class="view">
+    <div class="page-head"><p class="label">Studio · Only you see these</p><h1>Notes</h1></div>
+    <section class="section notetake">
+      <form id="snAdd" class="noteadd"><div class="noteaddrow"><textarea class="input" id="snIn" rows="3" placeholder="A number, a product, something to remember — press Enter to save"></textarea><button class="btn tiny" type="submit">Add</button></div></form>
+      <div class="chips"><span class="label chiplabel">Category</span><button class="chip ${ui.snCat===""?"on":""}" data-sncatnext="">None</button>${cats.map(c=>`<button class="chip ${ui.snCat===c?"on":""}" data-sncatnext="${esc(c)}">${esc(c)}</button>`).join("")}${ui.snNewFor==="next"?newCat("next"):`<button class="chip" data-sncatadd="1">+ New</button>`}</div>
+    </section>
+    ${list.length?`<section class="section"><div class="band"><h2>Saved</h2><span class="desc"></span><div class="chips sortchips"><button class="chip ${ui.snSort==="date"?"on":""}" data-snsort="date">By date</button><button class="chip ${ui.snSort==="cat"?"on":""}" data-snsort="cat">By category</button></div></div>
+      ${ui.snSort==="cat"?groups.map(g=>`<h3 class="grouph">${g.c?esc(g.c):"No category"}</h3><div class="mnotes">${g.list.map(row).join("")}</div>`).join(""):`<div class="mnotes">${list.map(row).join("")}</div>`}</section>`:""}
+  </div>`;
+  const rerender=(focus)=>{const keep=($("#snIn")||{}).value||"";renderStudioNotes(app).then(()=>{const t=$("#snIn");if(t){t.value=keep;if(focus)t.focus();}});};
+  const setCat=async(id,cat)=>{try{await store.updateSource(id,{kind:cat});const x=studioNotes.find(r=>r.id===id);if(x)x.kind=cat;}catch(err){toast("Couldn't save: "+err.message);}};
+  const ta=$("#snIn",app);const add=async()=>{const body=ta.value.trim();if(!body)return;ta.value="";try{const x=await store.addSource({kind:ui.snCat,body});if(LIVE)studioNotes.unshift(x);rerender(true);}catch(err){ta.value=body;toast("Couldn't save: "+err.message);}};
+  $("#snAdd",app).onsubmit=e=>{e.preventDefault();add();};
+  ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();add();}};
+  app.querySelectorAll("[data-sncatnext]").forEach(b=>b.onclick=()=>{ui.snCat=b.dataset.sncatnext;rerender(true);});
+  app.querySelectorAll("[data-sncatadd]").forEach(b=>b.onclick=()=>{ui.snNewFor="next";const keep=ta.value;renderStudioNotes(app).then(()=>{$("#snIn").value=keep;const i=$(".newcat input");if(i)i.focus();});});
+  app.querySelectorAll("[data-sncatcancel]").forEach(b=>b.onclick=()=>{ui.snNewFor=null;rerender();});
+  const okCat=async wrap=>{const name=wrap.querySelector("input").value.trim();if(!name)return;const id=wrap.dataset.sncatnew;if(!ui.snExtra.includes(name))ui.snExtra.push(name);ui.snNewFor=null;if(id==="next"){ui.snCat=name;rerender(true);}else{await setCat(id,name);rerender();}};
+  app.querySelectorAll("[data-sncatnew]").forEach(w=>{w.querySelector("[data-sncatok]").onclick=()=>okCat(w);w.querySelector("input").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();okCat(w);}};});
+  app.querySelectorAll("[data-sncat]").forEach(sel=>sel.onchange=async()=>{const id=sel.dataset.sncat;if(sel.value==="__new"){ui.snNewFor=id;const keep=ta.value;renderStudioNotes(app).then(()=>{$("#snIn").value=keep;const i=$(".newcat input");if(i)i.focus();});return;}await setCat(id,sel.value);rerender();});
+  app.querySelectorAll("[data-snsort]").forEach(b=>b.onclick=()=>{ui.snSort=b.dataset.snsort;rerender();});
+  app.querySelectorAll("[data-snedit]").forEach(b=>b.onclick=()=>{ui.snEdit=b.dataset.snedit;ui.snNewFor=null;rerender();});
+  app.querySelectorAll("[data-sncancel]").forEach(b=>b.onclick=()=>{ui.snEdit=null;rerender();});
+  app.querySelectorAll("[data-snsave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.snsave;const body=f.elements.body.value.trim();if(!body)return;const x=studioNotes.find(r=>r.id===id);const patch={body,title:"",contact:"",link:"",kind:f.elements.cat.value};try{await store.updateSource(id,patch);Object.assign(x,patch);ui.snEdit=null;rerender();}catch(err){toast("Couldn't save: "+err.message);}});
+  app.querySelectorAll("[data-sndel]").forEach(b=>b.onclick=async()=>{const id=b.dataset.sndel;try{await store.deleteSource(id);studioNotes=studioNotes.filter(r=>r.id!==id);ui.snEdit=null;rerender();}catch(err){toast("Couldn't remove: "+err.message);}});
+  renderPreviewBar();
+}
 async function renderDashboard(app){
   renderNav();
   $("#foot").hidden=false;$("#footProject").textContent="All projects";
@@ -409,7 +456,7 @@ async function renderDashboard(app){
   const needs=list.filter(p=>attn(p).length).length;
   app.innerHTML=`<div class="view">
     <div class="page-head"><p class="label">Studio</p><h1 class="big">Hello, ${esc(me.name.split(" ")[0])}.</h1><p class="lede">${list.length?(needs?`${needs===1?"One project needs":needs+" projects need"} you.`:"Nothing waiting on you."):"No projects yet."}</p></div>
-    <section class="section"><div class="band"><h2>Projects</h2><span class="desc"></span></div>
+    <section class="section"><div class="band"><h2>Projects</h2><span class="desc"></span><a class="btn ghost tiny" href="#studio">Studio notes</a></div>
     <div class="dash">${list.map(p=>{const a=attn(p);return`<a class="proj ${a.length?"needs":""}" href="#home" data-open="${p.id}">
       <div class="ptop"><h3>${esc(p.name)}</h3>${a.length?`<span class="tag accent">${a.length===1?a[0]:a.length+" things"}</span>`:""}</div>
       ${p.clients?`<p class="small muted">${esc(p.clients)}</p>`:""}
@@ -423,7 +470,7 @@ async function renderDashboard(app){
     <div class="actions"><button class="btn ghost" id="newProjBtn">Start a project</button></div></section>
     <div id="newProjWrap" hidden></div>
   </div>`;
-  app.querySelectorAll("[data-open]").forEach(a=>a.onclick=async e=>{e.preventDefault();project=await store.loadProject(a.dataset.open);summaries=null;ui.room="all";ui.sort="recent";ui.notesMeeting=null;ui.noteRoom="";ui.notesDrafts=null;ui.srcEdit=null;ui.toDir={};ui.meetingEdit=false;ui.meetReply=false;ui.meetHist=false;location.hash="home";if(route==="home")render();});
+  app.querySelectorAll("[data-open]").forEach(a=>a.onclick=async e=>{e.preventDefault();project=await store.loadProject(a.dataset.open);summaries=null;ui.room="all";ui.sort="recent";ui.notesMeeting=null;ui.noteRoom="";ui.notesDrafts=null;ui.toDir={};ui.meetingEdit=false;ui.meetReply=false;ui.meetHist=false;location.hash="home";if(route==="home")render();});
   $("#newProjBtn",app).onclick=()=>{const w=$("#newProjWrap",app);w.hidden=false;renderNewProjectForm(w);w.scrollIntoView({behavior:"smooth",block:"start"});};
   renderPreviewBar();
 }
@@ -724,9 +771,7 @@ const isPrep=n=>(n.kind==="prep"||n.kind==="agenda")&&!n.meeting_id&&!n.session_
 function notesFor(se){return (project.meetingNotes||[]).filter(n=>!isPrep(n)&&(!se?(!n.meeting_id&&!n.session_id):se.type==="meeting"?n.meeting_id===se.id:n.session_id===se.id));}
 const prepItems=()=>(project.meetingNotes||[]).filter(isPrep);
 const nextMeeting=()=>[...(project.meetings||[])].filter(m=>new Date(m.when).getTime()>Date.now()-3*3600e3&&meetStatus(m)!=="declined").sort((a,b)=>new Date(a.when)-new Date(b.when))[0]||null;
-const SRC_KIND={product:"Product",vendor:"Vendor",contractor:"Contractor",other:"Other"};
-const SRC_PLURAL={product:"Products",vendor:"Vendors",contractor:"Contractors",other:"Other"};
-function notesTabs(){const t=ui.notesTab;return`<div class="chips ntabs">${[["prep","Next meeting"],["meetings","Meetings & calls"],["source","Products & contacts"]].map(([k,l])=>`<button class="chip ${t===k?"on":""}" data-ntab="${k}">${l}</button>`).join("")}</div>`;}
+function notesTabs(){const t=ui.notesTab;return`<div class="chips ntabs">${[["prep","Next meeting"],["meetings","Meetings & calls"]].map(([k,l])=>`<button class="chip ${t===k?"on":""}" data-ntab="${k}">${l}</button>`).join("")}<a class="textlink tabout" href="#studio">Studio notes →</a></div>`;}
 function prepRow(n,rooms){
   const q=n.kind==="prep";
   if(ui.noteEdit===n.id)return`<form class="mnote editing" data-mnsave="${n.id}">${q?`<input class="input small" name="question" value="${esc(n.question||"")}"><input type="hidden" name="body" value="">`:`<input type="hidden" name="question" value=""><textarea class="input small" name="body">${esc(n.body)}</textarea>`}<div class="actions"><select class="input tiny" name="room">${rooms.map(r=>`<option value="${esc(r)}" ${(n.room||"")===r?"selected":""}>${r?esc(r):"General"}</option>`).join("")}</select><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-mncancel="1">Cancel</button><button class="textlink" type="button" data-mndel="${n.id}">Remove</button></div></form>`;
@@ -745,32 +790,14 @@ function viewPrep(){
     ${ag.length?`<div class="mnotes">${ag.map(n=>prepRow(n,rooms)).join("")}</div>`:""}</section>
   ${items.length?`<section class="section"><p class="small muted">During the meeting these show at the top of Meetings & calls, with a box under each question for the answer.</p></section>`:""}`;
 }
-function srcForm(x){
-  const k=x?x.kind:(ui.srcKind!=="all"?ui.srcKind:"product");const only=x?!!x.project_id:k==="product";
-  return`<form class="editbox srcform" ${x?`data-srcsave="${x.id}"`:`id="srcAdd"`}><div class="row two"><div class="field"><label>Type</label><select class="input" name="kind">${Object.entries(SRC_KIND).map(([v,l])=>`<option value="${v}" ${v===k?"selected":""}>${l}</option>`).join("")}</select></div><div class="field"><label>Name</label><input class="input" name="title" value="${esc(x?x.title:"")}" required></div></div>
-    <div class="row two"><div class="field"><label>Link</label><input class="input" name="link" value="${esc(x?x.link:"")}" placeholder="https://"></div><div class="field"><label>Contact</label><input class="input" name="contact" value="${esc(x?x.contact:"")}" placeholder="Phone, email or person"></div></div>
-    <div class="field"><label>Note</label><textarea class="input small" name="body">${esc(x?x.body:"")}</textarea></div>
-    <label class="small checkrow"><input type="checkbox" name="only" ${only?"checked":""}> Only for ${esc(project.name)}</label>
-    <div class="actions"><button class="btn tiny" type="submit">${x?"Save":"Add"}</button>${x?`<button class="textlink" type="button" data-srccancel="1">Cancel</button><button class="textlink" type="button" data-srcdel="${x.id}">Remove</button>`:""}</div></form>`;
-}
-function viewSource(){
-  const all=project.sourceNotes||[],f=ui.srcKind,list=all.filter(x=>f==="all"||x.kind===f);
-  const href=l=>/^https?:\/\//i.test(l)?l:"https://"+l;
-  const row=x=>ui.srcEdit===x.id?srcForm(x):`<div class="srow"><div class="mtext"><p class="stitle">${x.link?`<a href="${esc(href(x.link))}" target="_blank" rel="noopener">${esc(x.title)}</a>`:esc(x.title)}</p>${x.contact?`<p class="small">${linkify(x.contact)}</p>`:""}${x.body?`<p class="small muted">${linkify(x.body)}</p>`:""}</div><span class="mmeta">${x.project_id?"":`<span class="tag quiet">All projects</span>`}<button class="textlink" data-srcedit="${x.id}">Edit</button></span></div>`;
-  return notesTabs()+`<div class="page-head"><p class="label">Notes · Only you see these</p><h1>Products & contacts</h1></div>
-  <section class="section">${srcForm(null)}</section>
-  <section class="section"><div class="chips">${[["all","All"],...Object.entries(SRC_PLURAL)].map(([k,l])=>`<button class="chip ${f===k?"on":""}" data-srckind="${k}">${l}</button>`).join("")}</div></section>
-  ${Object.keys(SRC_KIND).filter(k=>list.some(x=>x.kind===k)).map(k=>`<section class="section"><div class="band"><h2>${SRC_PLURAL[k]}</h2><span class="desc"></span></div><div class="mnotes">${list.filter(x=>x.kind===k).map(row).join("")}</div></section>`).join("")}`;
-}
 const sessionName=se=>se?`${se.title||se.label} · ${fmtWeek(se.at)}`:"Notes";
 function noteRow(n,rooms){
   if(ui.noteEdit===n.id)return`<form class="mnote editing" data-mnsave="${n.id}"><input class="input small" name="question" value="${esc(n.question||"")}" placeholder="Question (optional)"><textarea class="input small" name="body" placeholder="Answer or note">${esc(n.body)}</textarea><div class="actions"><select class="input tiny" name="room">${rooms.map(r=>`<option value="${esc(r)}" ${(n.room||"")===r?"selected":""}>${r?esc(r):"General"}</option>`).join("")}</select><button class="btn tiny" type="submit">Save</button><button class="textlink" type="button" data-mncancel="1">Cancel</button><button class="textlink" type="button" data-mndel="${n.id}">Remove</button></div></form>`;
   const unanswered=n.question&&!n.body;
-  return`<div class="mnote ${n.directive_id?"done":n.skipped?"skipped":""} ${unanswered?"open":""}"><div class="mtext">${n.question?`<p class="mq">${linkify(n.question)}</p>`:""}${unanswered?`<form class="mans" data-nans="${n.id}"><textarea class="input small" name="body" rows="1" placeholder="Their answer — Enter to save"></textarea></form>`:`<p>${linkify(n.body)}</p>`}</div><span class="mmeta">${n.directive_id?`<span class="tag accent">Directive</span>`:n.skipped?`<span class="tag quiet">Skipped</span>`:""}<button class="textlink" data-mnedit="${n.id}">Edit</button></span></div>`;
+  return`<div class="mnote ${n.directive_id?"done":n.skipped?"skipped":""} ${unanswered?"open":""}"><div class="mtext">${n.question?`<p class="mq">${linkify(n.question)}</p>`:""}${unanswered?`<form class="mans" data-nans="${n.id}"><textarea class="input small" name="body" rows="1" placeholder="Their answer — Enter to save"></textarea></form>`:`<p>${linkify(n.body)}</p>`}</div><span class="mmeta">${n.directive_id?`<span class="tag accent">Directive</span>`:n.skipped?`<span class="tag quiet">Skipped</span>`:""}<select class="input tiny catsel ${n.room&&rooms.includes(n.room)?"":"none"}" data-nroomset="${n.id}" aria-label="Room">${rooms.map(r=>`<option value="${esc(r)}" ${(rooms.includes(n.room||"")?(n.room||""):"")===r?"selected":""}>${r?esc(r):"No room"}</option>`).join("")}</select><button class="textlink" data-mnedit="${n.id}">Edit</button></span></div>`;
 }
 function viewMeetingNotes(){
   if(ui.notesTab==="prep")return viewPrep();
-  if(ui.notesTab==="source")return viewSource();
   const se=notesMeeting(),all=sessions(),notes=notesFor(se);
   const prep=prepItems().filter(n=>!n.done);
   const pending=notes.filter(n=>!n.directive_id&&!n.skipped&&(n.body||"").trim());
@@ -795,13 +822,14 @@ function viewMeetingNotes(){
   }
   const groups=rooms.map(r=>({r,list:notes.filter(n=>roomOf(n)===r)})).filter(g=>g.list.length);
   return head+(prep.length?`<section class="section"><div class="band"><h2>Prepared</h2><span class="desc"></span></div><div class="mnotes">${prep.map(n=>n.kind==="prep"?`<div class="mnote open"><div class="mtext"><p class="mq">${linkify(n.question)}</p><form class="mans" data-pans="${n.id}"><textarea class="input small" name="body" rows="1" placeholder="Their answer — Enter to save"></textarea></form></div><span class="mmeta">${n.room&&rooms.includes(n.room)?`<span class="tag quiet">${esc(n.room)}</span>`:""}</span></div>`:`<div class="mnote"><input type="checkbox" class="pcheck" data-pdone="${n.id}" aria-label="Covered"><div class="mtext"><p>${linkify(n.body)}</p></div></div>`).join("")}</div></section>`:"")+`<section class="section notetake">
-    <div class="chips">${rooms.map(r=>`<button class="chip ${ui.noteRoom===r?"on":""}" data-nroom="${esc(r)}">${r?esc(r):"General"}</button>`).join("")}</div>
     <form id="noteAdd" class="noteadd">
       <input class="input" id="noteQ" placeholder="Question (optional)">
-      <div class="noteaddrow"><textarea class="input" id="noteIn" rows="2" placeholder="Answer or note — press Enter, it goes under ${esc(ui.noteRoom||"General")}"></textarea><button class="btn tiny" type="submit">Add</button></div>
+      <div class="noteaddrow"><textarea class="input" id="noteIn" rows="2" placeholder="Answer or note — press Enter"></textarea><button class="btn tiny" type="submit">Add</button></div>
     </form>
+    <div class="chips"><span class="label chiplabel">Room</span>${rooms.map(r=>`<button class="chip ${ui.noteRoom===r?"on":""}" data-nroom="${esc(r)}">${r?esc(r):"None"}</button>`).join("")}</div>
   </section>
-  ${groups.map(g=>`<section class="section"><div class="band"><h2>${g.r?esc(g.r):"General"}</h2><span class="desc"></span></div><div class="mnotes">${g.list.map(n=>noteRow(n,rooms)).join("")}</div></section>`).join("")}
+  ${notes.length?`<section class="section"><div class="band"><h2>Notes</h2><span class="desc"></span><div class="chips sortchips"><button class="chip ${ui.notesSort==="date"?"on":""}" data-nsort="date">By date</button><button class="chip ${ui.notesSort==="room"?"on":""}" data-nsort="room">By room</button></div></div>
+    ${ui.notesSort==="room"?groups.map(g=>`<h3 class="grouph">${g.r?esc(g.r):"No room"}</h3><div class="mnotes">${g.list.map(n=>noteRow(n,rooms)).join("")}</div>`).join(""):`<div class="mnotes">${[...notes].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(n=>noteRow(n,rooms)).join("")}</div>`}</section>`:""}
   ${pending.length?`<section class="section"><div class="actions"><button class="btn" id="notesDraft">Turn into directives</button><span class="small muted">Drafts directives from your answers and notes, combining ones about the same thing. You edit each before it's added.</span></div></section>`:notes.some(n=>(n.body||"").trim())?`<section class="section"><p class="small muted">Every answered note here has been added as a directive or skipped.</p></section>`:""}`;
 }
 async function addDraft(i,form){
@@ -912,7 +940,7 @@ function bind(app){
     qi.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();if(e.metaKey||e.ctrlKey||e.altKey)add();else ta.focus();}};}
   app.querySelectorAll("[data-nans]").forEach(f=>{const t=f.elements.body;const save=async()=>{const body=t.value.trim();if(!body)return;const id=f.dataset.nans;try{await store.updateMeetingNote(id,{body});const n=project.meetingNotes.find(x=>x.id===id);if(n)n.body=body;render();}catch(err){toast("Couldn't save: "+err.message);}};
     f.onsubmit=e=>{e.preventDefault();save();};t.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();save();}};});
-  app.querySelectorAll("[data-ntab]").forEach(b=>b.onclick=()=>{ui.notesTab=b.dataset.ntab;ui.noteEdit=null;ui.srcEdit=null;ui.notesDrafts=null;render();});
+  app.querySelectorAll("[data-ntab]").forEach(b=>b.onclick=()=>{ui.notesTab=b.dataset.ntab;ui.noteEdit=null;ui.notesDrafts=null;render();});
   app.querySelectorAll("[data-ntabgo]").forEach(b=>b.onclick=()=>{ui.notesTab=b.dataset.ntabgo;});
   const addPrep=async(kind,input)=>{const v=input.value.trim();if(!v)return;input.value="";try{const n=await store.addMeetingNote({kind,room:kind==="prep"?ui.noteRoom:"",question:kind==="prep"?v:"",body:kind==="agenda"?v:""});if(LIVE){project.meetingNotes=project.meetingNotes||[];project.meetingNotes.push(n);}ui.focusNote=kind==="prep"?"pq":"pa";render();}catch(err){input.value=v;toast("Couldn't save: "+err.message);}};
   const pqf=$("#prepQForm",app);if(pqf)pqf.onsubmit=e=>{e.preventDefault();addPrep("prep",$("#prepQ",app));};
@@ -920,15 +948,8 @@ function bind(app){
   app.querySelectorAll("[data-pdone]").forEach(c=>c.onchange=async()=>{const id=c.dataset.pdone;try{await store.updateMeetingNote(id,{done:c.checked});const n=project.meetingNotes.find(x=>x.id===id);if(n)n.done=c.checked;render();}catch(err){toast("Couldn't save: "+err.message);}});
   app.querySelectorAll("[data-pans]").forEach(f=>{const t=f.elements.body;const save=async()=>{const body=t.value.trim();if(!body)return;const id=f.dataset.pans;const se=notesMeeting();const patch={body,kind:"note",meeting_id:se&&se.type==="meeting"?se.id:null,session_id:se&&se.type==="session"?se.id:null};try{await store.updateMeetingNote(id,patch);const n=project.meetingNotes.find(x=>x.id===id);if(n)Object.assign(n,patch);render();}catch(err){toast("Couldn't save: "+err.message);}};
     f.onsubmit=e=>{e.preventDefault();save();};t.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();save();}};});
-  // products & contacts
-  const srcVals=f=>({kind:f.elements.kind.value,title:f.elements.title.value.trim(),link:f.elements.link.value.trim(),contact:f.elements.contact.value.trim(),body:f.elements.body.value.trim(),project_id:f.elements.only.checked?project.id:null});
-  app.querySelectorAll(".srcform select[name=kind]").forEach(sel=>sel.onchange=()=>{if(sel.form.id==="srcAdd")sel.form.elements.only.checked=sel.value==="product";});
-  const sa=$("#srcAdd",app);if(sa)sa.onsubmit=async e=>{e.preventDefault();const v=srcVals(sa);if(!v.title)return;try{const x=await store.addSource(v);if(LIVE){project.sourceNotes=project.sourceNotes||[];project.sourceNotes.unshift(x);}if(ui.srcKind!=="all")ui.srcKind=v.kind;render();toast("Saved");}catch(err){toast("Couldn't save: "+err.message);}};
-  app.querySelectorAll("[data-srckind]").forEach(b=>b.onclick=()=>{ui.srcKind=b.dataset.srckind;ui.srcEdit=null;render();});
-  app.querySelectorAll("[data-srcedit]").forEach(b=>b.onclick=()=>{ui.srcEdit=b.dataset.srcedit;render();});
-  app.querySelectorAll("[data-srccancel]").forEach(b=>b.onclick=()=>{ui.srcEdit=null;render();});
-  app.querySelectorAll("[data-srcsave]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const id=f.dataset.srcsave,v=srcVals(f);if(!v.title)return;try{await store.updateSource(id,v);const x=project.sourceNotes.find(r=>r.id===id);if(x)Object.assign(x,v);ui.srcEdit=null;render();}catch(err){toast("Couldn't save: "+err.message);}});
-  app.querySelectorAll("[data-srcdel]").forEach(b=>b.onclick=async()=>{const id=b.dataset.srcdel;try{await store.deleteSource(id);project.sourceNotes=project.sourceNotes.filter(r=>r.id!==id);ui.srcEdit=null;render();}catch(err){toast("Couldn't remove: "+err.message);}});
+  app.querySelectorAll("[data-nsort]").forEach(b=>b.onclick=()=>{ui.notesSort=b.dataset.nsort;render();});
+  app.querySelectorAll("[data-nroomset]").forEach(sel=>sel.onchange=async()=>{const id=sel.dataset.nroomset;try{await store.updateMeetingNote(id,{room:sel.value});const n=project.meetingNotes.find(x=>x.id===id);if(n)n.room=sel.value;render();}catch(err){toast("Couldn't save: "+err.message);}});
   const nsb=$("#newSession",app);if(nsb)nsb.onclick=()=>{ui.newSession=true;render();};
   const nsc=$("#sessionCancel",app);if(nsc)nsc.onclick=()=>{ui.newSession=false;render();};
   const sf=$("#sessionForm",app);if(sf)sf.onsubmit=async e=>{e.preventDefault();const at=sf.elements.at.value?new Date(sf.elements.at.value).toISOString():new Date().toISOString();try{const x=await store.addSession({kind:sf.elements.kind.value,title:sf.elements.title.value.trim(),at});if(LIVE){project.noteSessions=project.noteSessions||[];project.noteSessions.unshift(x);}ui.notesMeeting="s:"+x.id;ui.newSession=false;ui.notesDrafts=null;ui.focusNote="q";render();}catch(err){toast("Couldn't start: "+err.message);}};

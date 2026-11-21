@@ -118,10 +118,11 @@
     {id:"pp1",meeting_id:null,session_id:null,kind:"prep",room:"Kitchen",question:"Induction or gas, now that the hood can't go over the island?",body:"",created_at:d(-1,9),author_id:"u-cori",directive_id:null,skipped:false,done:false},
     {id:"pp2",meeting_id:null,session_id:null,kind:"prep",room:"Bathrooms",question:"Is a tub anywhere in the house a must?",body:"",created_at:d(-1,9),author_id:"u-cori",directive_id:null,skipped:false,done:false},
     {id:"pp3",meeting_id:null,session_id:null,kind:"agenda",room:"",question:"",body:"Bring the three plaster samples and the oak flooring board",created_at:d(-1,9),author_id:"u-cori",directive_id:null,skipped:false,done:false});
-  S.sourceNotes=[
-    {id:"sn1",kind:"product",title:"Limewash plaster, warm white",link:"example.com/plaster",contact:"",body:"For the living room walls. Sample ordered.",project_id:"p-brook-evan",created_at:d(-3,9)},
-    {id:"sn2",kind:"vendor",title:"Westside Stone & Tile",link:"",contact:"Marta · 310 555 0142",body:"Good remnant yard, fast quotes.",project_id:null,created_at:d(-8,9)},
-    {id:"sn3",kind:"contractor",title:"Ruiz Finish Carpentry",link:"",contact:"dan@example.com",body:"Built-ins and inlaid shelving. Booked about six weeks out.",project_id:null,created_at:d(-10,9)}];
+  window.SAMPLE_STUDIO_NOTES=[
+    {id:"sn1",kind:"Products",body:"Limewash plaster, warm white — example.com/plaster\nSample ordered for Brook and Evan's living room.",created_at:d(-3,9)},
+    {id:"sn2",kind:"Vendors",body:"Westside Stone & Tile\nMarta · 310 555 0142\nGood remnant yard, fast quotes.",created_at:d(-8,9)},
+    {id:"sn3",kind:"Contractors",body:"Ruiz Finish Carpentry — dan@example.com\nBuilt-ins and inlaid shelving. Booked about six weeks out.",created_at:d(-10,9)},
+    {id:"sn4",kind:"",body:"Ask the city about the over-the-counter permit for interior-only work.",created_at:d(-1,15)}];
 
   // A second project so the dashboard has something to show.
   const P2=JSON.parse(JSON.stringify(window.SAMPLE_PROJECT));
