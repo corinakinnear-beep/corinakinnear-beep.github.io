@@ -31,9 +31,9 @@ a{color:inherit}
 
 /* masthead */
 .mast{position:sticky;top:0;z-index:5;background:rgba(237,232,223,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line-2)}
-.mast .wrap{display:flex;justify-content:space-between;align-items:center;gap:24px;height:62px}
+.mast .wrap{display:flex;justify-content:space-between;align-items:center;gap:24px;min-height:62px;padding-top:8px;padding-bottom:8px}
 .wordmark{font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink)}
-.mast nav{display:flex;gap:28px}
+.mast nav{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px 28px}
 .mast nav a{font-size:12px;letter-spacing:.11em;text-transform:uppercase;text-decoration:none;color:var(--ink-2);padding:6px 0;border-bottom:1px solid transparent}
 .mast nav a:hover,.mast nav a:focus-visible{color:var(--accent);border-bottom-color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
@@ -120,6 +120,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
       <a href="#floor">Floor</a>
       <a href="#structure">Structural changes</a>
       <a href="#kitchen">Kitchen</a>
+      <a href="#climate">Heating and cooling</a>
     </nav>
   </div>
 </header>
@@ -311,6 +312,47 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
           <p>This is not fixed. The gap can come in toward 3' if we want more room elsewhere in the kitchen.</p>
         </div>
         <span class="tag">Can change</span>
+      </li>
+    </ul>
+  </section>
+
+  <section id="climate">
+    <div class="band">
+      <h2>Heating and cooling</h2>
+      <p>A mini split heats and cools without ducts. Each room it serves gets its own indoor unit and its own control, so it can be added one room at a time or across the house. Three versions, from smallest to largest.</p>
+      <span class="label">04</span>
+    </div>
+
+    <ul class="changes">
+      <li>
+        <div>
+          <div class="label">Version 1</div>
+          <h3>The loft</h3>
+        </div>
+        <div>
+          <p>A mini split unit for the loft space.</p>
+        </div>
+        <span class="tag">Proposed</span>
+      </li>
+      <li>
+        <div>
+          <div class="label">Version 2</div>
+          <h3>Loft, kitchen and living room, master bedroom</h3>
+        </div>
+        <div>
+          <p>The loft, plus the kitchen and living room and the master bedroom.</p>
+        </div>
+        <span class="tag">Potential</span>
+      </li>
+      <li>
+        <div>
+          <div class="label">Version 3</div>
+          <h3>The whole house</h3>
+        </div>
+        <div>
+          <p>Both bedrooms, the kitchen, the living room and the loft.</p>
+        </div>
+        <span class="tag">Potential</span>
       </li>
     </ul>
   </section>
