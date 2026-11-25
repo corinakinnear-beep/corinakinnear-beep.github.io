@@ -359,3 +359,6 @@ footer{max-width:var(--max);margin:0 auto;padding:0 var(--gutter-r) calc(80px + 
 .snbody{white-space:pre-wrap}
 .snote .mq{margin-top:2px}
 @media (max-width:640px){.mnote{flex-wrap:wrap}.mnote .mmeta{margin-left:auto}.tabout{margin-left:0}}
+.catmanage{display:grid;gap:8px;max-width:520px;margin-top:6px}
+.catrow{display:flex;gap:10px;align-items:center}
+.catrow input{flex:1}
