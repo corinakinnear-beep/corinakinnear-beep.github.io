@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choreographic Proposal — Corina Kinnear</title>
+<meta name="description" content="Choreographic proposal by Corina Kinnear (Parlā): a new ensemble work, with biography, choreographic CV and samples of recent productions.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Outfit:wght@300;400;500&display=swap">
+<style>
+:root{
+  --ground:#EDE8DF; --surface:#F8F5F0;
+  --ink:#20211C; --ink-2:#43443C; --muted:#615F55;
+  --line:#D9D2C5; --line-2:#E5DFD4;
+  --accent:#5E6B4F; --accent-2:#8C9779;
+  --serif:"Cormorant Garamond", Georgia, serif;
+  --sans:"Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; -webkit-text-size-adjust:100%}
+body{margin:0; background:var(--ground); color:var(--ink-2); font-family:var(--sans); font-weight:400; font-size:16.5px; line-height:1.72}
+a{color:inherit; text-decoration:none}
+img,video{display:block; max-width:100%; height:auto}
+.wrap{max-width:1320px; margin:0 auto; padding:0 40px}
+
+/* masthead */
+.mast{position:sticky; top:0; z-index:10; background:rgba(237,232,223,.9); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--line-2)}
+.mast .wrap{display:flex; align-items:center; justify-content:space-between; gap:24px; height:62px}
+.mark{font-size:13px; letter-spacing:.13em; text-transform:uppercase; color:var(--ink); white-space:nowrap}
+.mast nav{display:flex; gap:26px; overflow-x:auto; scrollbar-width:none}
+.mast nav::-webkit-scrollbar{display:none}
+.mast nav a{font-size:11.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); white-space:nowrap; padding:4px 0; border-bottom:1px solid transparent; transition:color .2s, border-color .2s}
+.mast nav a:hover{color:var(--accent); border-bottom-color:var(--accent)}
+
+/* hero */
+.hero{padding-top:104px}
+.label{font-size:11.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+h1{font-family:var(--serif); font-weight:300; font-size:clamp(58px,9vw,116px); line-height:.95; letter-spacing:-.01em; color:var(--ink); margin:22px 0 0}
+.lede{font-family:var(--serif); font-weight:300; font-size:clamp(24px,2.5vw,33px); line-height:1.36; color:var(--ink); max-width:34ch; margin:44px 0 0}
+.lede + .lede{margin-top:20px}
+
+/* sections */
+section{padding:108px 0 0; scroll-margin-top:40px}
+.band{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto; gap:40px; align-items:baseline; border-top:1px solid var(--line); padding-top:22px}
+.band h2{font-family:var(--serif); font-weight:300; font-size:clamp(30px,3.6vw,46px); line-height:1.04; color:var(--ink); margin:0}
+.band p{margin:0; max-width:56ch; color:var(--muted)}
+.count{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); white-space:nowrap}
+
+.cols{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:52px; margin-top:54px}
+.cols h3{font-family:var(--serif); font-weight:400; font-size:26px; line-height:1.18; color:var(--ink); margin:0 0 12px}
+.cols p{margin:0}
+.note{margin:56px 0 0; max-width:62ch}
+.note p{margin:0 0 16px}
+.note p:first-child{font-family:var(--serif); font-weight:300; font-size:clamp(22px,2.2vw,28px); line-height:1.4; color:var(--ink)}
+
+.prose{margin-top:54px; max-width:68ch}
+.prose p{margin:0 0 20px}
+.prose p:first-child{font-family:var(--serif); font-weight:300; font-size:clamp(22px,2.2vw,28px); line-height:1.42; color:var(--ink)}
+
+/* CV */
+.cv{margin-top:54px; display:grid; gap:62px}
+.cv h3{font-size:11.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:500; margin:0 0 12px}
+.row{display:grid; grid-template-columns:110px minmax(0,1fr) minmax(0,1.5fr); gap:24px; align-items:baseline; border-top:1px solid var(--line-2); padding:13px 0}
+.row .y{font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.row .t{font-family:var(--serif); font-size:23px; line-height:1.22; color:var(--ink)}
+.row .d{color:var(--ink-2)}
+
+/* work samples */
+.works{margin-top:62px; display:grid; gap:96px}
+.work{display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:56px; align-items:start}
+.work.flip .media{order:2}
+.work .media img, .work .media video{width:100%; transition:opacity .25s}
+.work .media a:hover img{opacity:.88}
+.work .when{font-size:11.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.work h3{font-family:var(--serif); font-weight:300; font-size:clamp(32px,3.4vw,44px); line-height:1.05; color:var(--ink); margin:10px 0 18px}
+.work p{margin:0 0 14px}
+.credit{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:10px}
+.tags{display:flex; flex-wrap:wrap; gap:8px; margin:22px 0 0}
+.tag{display:inline-block; border:1px solid var(--line); border-radius:2px; background:var(--surface); padding:7px 12px; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); transition:color .2s, border-color .2s}
+a.tag:hover{color:var(--accent); border-color:var(--accent)}
+.textonly{border-top:1px solid var(--line-2); padding-top:26px}
+
+/* contact */
+.contact{margin-top:54px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:52px}
+.contact h3{font-size:11.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:500; margin:0 0 10px}
+.contact a{font-family:var(--serif); font-weight:300; font-size:clamp(24px,2.4vw,31px); line-height:1.2; color:var(--ink); border-bottom:1px solid var(--line); transition:color .2s, border-color .2s; overflow-wrap:anywhere}
+.contact a:hover{color:var(--accent); border-bottom-color:var(--accent)}
+
+footer{margin-top:120px; border-top:1px solid var(--line); padding:26px 0 46px}
+footer .wrap{display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; font-size:11px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted)}
+
+@media(max-width:900px){
+  .work, .work.flip{grid-template-columns:1fr; gap:26px}
+  .work.flip .media{order:0}
+  .band{grid-template-columns:1fr; gap:12px}
+  .cols, .contact{grid-template-columns:1fr; gap:36px}
+  .row{grid-template-columns:84px minmax(0,1fr); gap:6px 18px}
+  .row .d{grid-column:2}
+}
+@media(max-width:700px){
+  .wrap{padding:0 22px}
+  .hero{padding-top:60px}
+  section{padding-top:72px}
+  .works{gap:72px}
+  .mast nav{gap:18px}
+}
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap">
+    <a class="mark" href="#top">Parlā · Corina Kinnear</a>
+    <nav aria-label="On this page">
+      <a href="#proposal">Proposal</a>
+      <a href="#biography">Biography</a>
+      <a href="#cv">CV</a>
+      <a href="#work">Work</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <div class="wrap hero">
+    <div class="label">Corina Kinnear · Parlā · November 2026</div>
+    <h1>Choreographic Proposal</h1>
+    <p class="lede">I’m interested in creating an ensemble piece with a lot of circular physicality, technical precision and detail.</p>
+    <p class="lede">I also anticipate theatrical interludes, weaving it together and creating a sense of humanity.</p>
+  </div>
+
+  <section id="proposal">
+    <div class="wrap">
+      <div class="band">
+        <h2>The proposal</h2>
+        <p>A new ensemble work, shaped to the dancers and the rehearsal time available.</p>
+        <span class="count">New work</span>
+      </div>
+      <div class="cols">
+        <div>
+          <h3>Circular physicality</h3>
+          <p>Ensemble phrase work built on rounded, circling movement that travels through the whole group.</p>
+        </div>
+        <div>
+          <h3>Precision and detail</h3>
+          <p>Technically exact material, set closely on the dancers in the room.</p>
+        </div>
+        <div>
+          <h3>Theatrical interludes</h3>
+          <p>Short theatrical scenes that weave the dance together and bring a sense of humanity.</p>
+        </div>
+      </div>
+      <div class="note">
+        <p>I am developing several concepts for this piece. Some are more contained and some are more ambitious.</p>
+        <p>I would like to settle on one once I know which dancers are available and how much rehearsal time there will be, so that the work fits the cast and the calendar.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="biography">
+    <div class="wrap">
+      <div class="band">
+        <h2>Biography</h2>
+        <p>Choreographer and director. Founder of Parlā.</p>
+        <span class="count">Corina Kinnear</span>
+      </div>
+      <div class="prose">
+        <p>Corina Kinnear is a choreographer and director, and the founder of Parlā, the company under which she makes work between Los Angeles, Berlin and Paris. Her dances, films and happenings take the details of ordinary life — time, nakedness, a crowded room, the sea — and give an audience a way to look at them again.</p>
+        <p>Her Los Angeles choreographic debut, MOVMT (2014), was an immersive evening for ten dancers between the ages of 22 and 74, joined by theatrical interludes. NAKED: An Art Happening (2018) was built around a nude company of five and a nightly conversation with the audience. Ocean12 (2020) was a happening on the beach at Santa Monica, followed by the dance film Lost Time (2023). Forgotten Time, made in residency at the Centre national de la danse in Paris, was shown as a work in progress at the Odyssey Theatre in 2025, and Objects in Mirror Are Closer Than They Appear premiered at the Los Angeles Dance Festival in 2026. She has also made commissioned work for events in Berlin, Venice and Amsterdam.</p>
+        <p>She holds a BFA from Dominican University of California with Alonzo King’s LINES Ballet, and has danced with the Deutsche Oper Berlin, Los Angeles Opera, Invertigo Dance Theatre and Alonzo King LINES Ballet, with creative residencies at PARTS in Brussels, CND in Paris and TanzFabrik in Berlin.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="cv">
+    <div class="wrap">
+      <div class="band">
+        <h2>Choreographic CV</h2>
+        <p>Productions, commissions and residencies, most recent first.</p>
+        <span class="count">2014–2026</span>
+      </div>
+      <div class="cv">
+        <div>
+          <h3>Productions and films</h3>
+          <div class="row"><span class="y">2026</span><span class="t">Objects in Mirror Are Closer Than They Appear</span><span class="d">Group work · Los Angeles Dance Festival, 18 April 2026</span></div>
+          <div class="row"><span class="y">2025–26</span><span class="t">Entanglement</span><span class="d">New work in development · research at LA Dance Project, PRAX and in Berlin</span></div>
+          <div class="row"><span class="y">2025</span><span class="t">Forgotten Time</span><span class="d">Work in progress for nine dancers, original music by M. Bronx · made at the Centre national de la danse, shown at the Odyssey Theatre, Los Angeles (Dance at the Odyssey)</span></div>
+          <div class="row"><span class="y">2023</span><span class="t">Lost Time</span><span class="d">Dance film · shown at The Odyssey Theatre, Los Angeles</span></div>
+          <div class="row"><span class="y">2020</span><span class="t">Ocean12</span><span class="d">A happening for twelve artists · Santa Monica Beach</span></div>
+          <div class="row"><span class="y">2018</span><span class="t">NAKED: An Art Happening</span><span class="d">Evening-length production with original score by SILENTSHOUT · Odyssey Theatre Dance Festival and Pico Union Project, Los Angeles</span></div>
+          <div class="row"><span class="y">2014</span><span class="t">MOVMT</span><span class="d">Immersive evening for ten dancers, with Foxfly Productions · MiMoDa Studio, Los Angeles</span></div>
+          <div class="row"><span class="y">c. 2014</span><span class="t">arrêt</span><span class="d">Dance film with John Lambremont</span></div>
+        </div>
+        <div>
+          <h3>Commissions and collaborations</h3>
+          <div class="row"><span class="y">2020</span><span class="t">I am here</span><span class="d">Commissioned work in five scenes · Amsterdam</span></div>
+          <div class="row"><span class="y">2019</span><span class="t">Fall Soirée</span><span class="d">Associate choreographer · Invertigo Dance Theatre</span></div>
+          <div class="row"><span class="y">2017</span><span class="t">Nell’ombra</span><span class="d">Four-hour dance opera for a gala evening · Palazzo Pisani Moretta, Venice</span></div>
+          <div class="row"><span class="y">2016</span><span class="t">Welcome to Berlin</span><span class="d">Four commissioned pieces for an international gathering · Berlin</span></div>
+          <div class="row"><span class="y">2016</span><span class="t">Spectral Schematics</span><span class="d">Dancer and co-choreographer · PARTS, Brussels and CND, Paris</span></div>
+          <div class="row"><span class="y">2014</span><span class="t">Face Off</span><span class="d">Assistant choreographer · Syfy Channel</span></div>
+        </div>
+        <div>
+          <h3>Residencies</h3>
+          <div class="row"><span class="y">2025</span><span class="t">Centre national de la danse</span><span class="d">Creation residency for Forgotten Time · Pantin, Paris</span></div>
+          <div class="row"><span class="y">2017–19</span><span class="t">The Post House</span><span class="d">Bella Lewitzky Residency · Los Angeles</span></div>
+          <div class="row"><span class="y">2018</span><span class="t">MAD Art</span><span class="d">Interface Seattle · Seattle</span></div>
+          <div class="row"><span class="y">2017</span><span class="t">TanzFabrik Berlin</span><span class="d">Experimental residency, Leath · Berlin</span></div>
+          <div class="row"><span class="y">2016–17</span><span class="t">PARTS and CND</span><span class="d">Spectral Schematics · Brussels and Paris</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="wrap">
+      <div class="band">
+        <h2>Recent work</h2>
+        <p>Samples of recent productions, with video where it exists.</p>
+        <span class="count">5 works</span>
+      </div>
+
+      <div class="works">
+
+        <article class="work">
+          <div class="media">
+            <a href="https://parladesigns.com/moves/works/objects-in-mirror/"><img src="/moves/img/objects-in-mirror/corina-concert-34.jpg" width="1800" height="1186" alt="The ensemble mid-movement, shadows doubled on the wall behind them"></a>
+            <div class="credit">Photograph by George Simian</div>
+          </div>
+          <div>
+            <div class="when">2026 · Los Angeles Dance Festival</div>
+            <h3>Objects in Mirror Are Closer Than They Appear</h3>
+            <p>A six-minute group work made for the Los Angeles Dance Festival and performed there on 18 April 2026.</p>
+            <div class="tags">
+              <a class="tag" href="https://www.dropbox.com/scl/fi/mj6hhq0ey512bty3fc1x7/Video-Objects-in-Mirror-are-Closer-than-they-appear.mov?rlkey=zm4j6juphc1dvs08enltnlarc&amp;dl=0" target="_blank" rel="noopener">Watch the full work</a>
+              <a class="tag" href="https://parladesigns.com/moves/works/objects-in-mirror/">Photographs and credits</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="work textonly" id="forgotten-time">
+          <div>
+            <div class="when">2025 · Centre national de la danse · Odyssey Theatre</div>
+            <h3>Forgotten Time</h3>
+          </div>
+          <div>
+            <p>A work in progress about time and how we remember it. Made in Paris during a creation residency at the Centre national de la danse, then shown at the Odyssey Theatre in Los Angeles on 6 July 2025, closing the summer edition of Dance at the Odyssey.</p>
+            <p>Nine dancers. Original music by M. Bronx. Filmed by Josh Rose.</p>
+            <div class="tags">
+              <a class="tag" href="https://parladesigns.com/moves/works/forgotten-time/">About the work and credits</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="work flip">
+          <div class="media">
+            <video controls preload="none" playsinline poster="/moves/img/video/lost-time-trailer.jpg">
+              <source src="/moves/video/lost-time-trailer.mp4" type="video/mp4">
+            </video>
+            <div class="credit">Lost Time — trailer</div>
+          </div>
+          <div>
+            <div class="when">2023 · The Odyssey Theatre</div>
+            <h3>Lost Time</h3>
+            <p>A short dance film made in Los Angeles in the summer of 2023, shown at The Odyssey Theatre.</p>
+            <div class="tags">
+              <a class="tag" href="https://parladesigns.com/moves/video/lost-time-trailer.mp4" target="_blank" rel="noopener">Trailer</a>
+              <a class="tag" href="https://parladesigns.com/moves/works/lost-time/">Stills and credits</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="work">
+          <div class="media">
+            <a href="https://parladesigns.com/moves/works/naked/"><img src="/moves/img/naked/saskia-keeley-stage.jpg" width="748" height="501" alt="The company bent forward on a dark wooden floor, stained-glass windows behind"></a>
+            <div class="credit">Photograph by Saskia Keeley</div>
+          </div>
+          <div>
+            <div class="when">2018 · Odyssey Theatre Dance Festival · Pico Union Project</div>
+            <h3>NAKED: An Art Happening</h3>
+            <p>An evening of art about nakedness. At its centre is a thirty-minute contemporary dance for five dancers of different sexes, races and ages, from 23 to 73, performed entirely nude, with an original score by SILENTSHOUT.</p>
+            <div class="tags">
+              <a class="tag" href="https://vimeo.com/250096790" target="_blank" rel="noopener">Promotional film</a>
+              <a class="tag" href="http://www.ladancechronicle.com/corina-kinnear-presents-naked-at-pico-union-project-a-review/" target="_blank" rel="noopener">Review · LA Dance Chronicle</a>
+              <a class="tag" href="https://youtu.be/cby9EfUDFEo" target="_blank" rel="noopener">Fox 11 feature</a>
+              <a class="tag" href="https://parladesigns.com/moves/works/naked/">Photographs and credits</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="work flip">
+          <div class="media">
+            <a href="https://parladesigns.com/moves/works/ocean-12/"><img src="/moves/img/ocean-12/ocean-12-c016-131s.jpg" width="1800" height="1012" alt="A dancer in white, low in a wide stance on the beach at night"></a>
+          </div>
+          <div>
+            <div class="when">2020 · Santa Monica Beach</div>
+            <h3>Ocean12</h3>
+            <p>In the autumn of 2020, when theatres were dark, a dance for the sand: “a happening that you may happen to be at while it is taking place.”</p>
+            <div class="tags">
+              <a class="tag" href="https://www.danceplug.com/article/sharing-time-in-2020-a-retrospective-in-dance" target="_blank" rel="noopener">DancePlug retrospective</a>
+              <a class="tag" href="https://parladesigns.com/moves/works/ocean-12/">Stills and credits</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="work textonly">
+          <div>
+            <div class="when">2014–2020</div>
+            <h3>Earlier work</h3>
+          </div>
+          <div>
+            <p>Commissions, immersive evenings and film, each with its own page.</p>
+            <div class="tags">
+              <a class="tag" href="https://parladesigns.com/moves/works/i-am-here/">I am here · 2020</a>
+              <a class="tag" href="https://parladesigns.com/moves/works/nell-ombra/">Nell’ombra · 2017</a>
+              <a class="tag" href="https://parladesigns.com/moves/works/welcome-to-berlin/">Welcome to Berlin · 2016</a>
+              <a class="tag" href="https://parladesigns.com/moves/works/movmt/">MOVMT · 2014</a>
+              <a class="tag" href="https://vimeo.com/89527861" target="_blank" rel="noopener">arrêt · film</a>
+              <a class="tag" href="https://parladesigns.com/moves/works/">All works</a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap">
+      <div class="band">
+        <h2>Links and contact</h2>
+        <p>More choreography, and how to reach me.</p>
+        <span class="count">Parlā</span>
+      </div>
+      <div class="contact">
+        <div>
+          <h3>Instagram</h3>
+          <a href="https://www.instagram.com/parlamotion/" target="_blank" rel="noopener">@parlamotion</a>
+        </div>
+        <div>
+          <h3>Portfolio</h3>
+          <a href="https://parladesigns.com/moves/">parladesigns.com/moves</a>
+        </div>
+        <div>
+          <h3>Email</h3>
+          <a href="mailto:corina.kinnear@gmail.com?subject=Choreographic%20proposal">corina.kinnear@gmail.com</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© Parlā · Corina Kinnear</span>
+    <span>Choreographic Proposal</span>
+  </div>
+</footer>
+
+</body>
+</html>
