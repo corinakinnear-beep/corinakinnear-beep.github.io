@@ -90,6 +90,12 @@ td small{display:block;font-size:14.5px;color:var(--muted);margin-top:6px;max-wi
 .view img{width:100%}
 .view figcaption{margin-top:12px}
 
+.jumps{display:flex;flex-wrap:wrap;gap:10px;margin:40px 0 0}
+.jumps a{text-decoration:none}
+.cat{margin-top:72px;scroll-margin-top:90px}
+.cat-head{display:flex;justify-content:space-between;align-items:baseline;gap:20px;margin-bottom:26px}
+.cat-head h3{font-family:var(--display);font-weight:300;font-size:34px;line-height:1.1;margin:0}
+
 /* references */
 .refs{margin-top:96px}
 .masonry{columns:3;column-gap:34px}
@@ -128,6 +134,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
       <a href="#kitchen">Kitchen</a>
       <a href="#climate">Heating and cooling</a>
       <a href="#living">Living room</a>
+      <a href="#inspiration">Inspiration</a>
     </nav>
   </div>
 </header>
@@ -412,6 +419,56 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
         <span class="tag">Recommended</span>
       </li>
     </ul>
+  </section>
+
+  <section id="inspiration">
+    <div class="band">
+      <h2>Inspiration</h2>
+      <p>Images that show the feeling and the ideas behind these proposals, sorted by room.</p>
+      <span class="label">7 images</span>
+    </div>
+    <div class="jumps">
+      <a class="tag" href="#insp-bedroom">Bedroom</a>
+      <a class="tag" href="#insp-kitchen">Kitchen</a>
+    </div>
+    <div class="cat" id="insp-bedroom">
+      <div class="cat-head"><h3>Bedroom</h3><span class="label">5 images</span></div>
+      <div class="masonry">
+        <figure>
+          <img src="img/insp-bedroom-arch-partition.jpg" alt="Bedroom with a curved plaster partition, a fluted glass arch and a floating wood vanity beside built-in cabinets." width="735" height="977" loading="lazy">
+          <figcaption class="label">Curved partition, fluted glass arch, floating vanity</figcaption>
+        </figure>
+        <figure>
+          <img src="img/insp-bedroom-plaster-wall.jpg" alt="A plaster wall behind a bed with an open wood closet on the other side." width="653" height="1050" loading="lazy">
+          <figcaption class="label">A plaster wall behind the bed, closet beyond</figcaption>
+        </figure>
+        <figure>
+          <img src="img/insp-bedroom-slatted-closet.jpg" alt="Bedroom with slatted wood closet doors, a stone headboard and floating shelves over a long desk." width="1200" height="1437" loading="lazy">
+          <figcaption class="label">Slatted closet doors and a stone headboard</figcaption>
+        </figure>
+        <figure>
+          <img src="img/insp-bedroom-wood-divider.jpg" alt="A freestanding wood wall behind a bed with a passage to the bathroom alongside." width="995" height="1200" loading="lazy">
+          <figcaption class="label">A freestanding wood wall behind the bed</figcaption>
+        </figure>
+        <figure>
+          <img src="img/insp-bedroom-walnut-closet.jpg" alt="A walnut closet wall facing a low dresser that divides off the bed, under exposed beams." width="1122" height="1389" loading="lazy">
+          <figcaption class="label">Walnut closet wall, low dresser as divider</figcaption>
+        </figure>
+      </div>
+    </div>
+    <div class="cat" id="insp-kitchen">
+      <div class="cat-head"><h3>Kitchen</h3><span class="label">2 images</span></div>
+      <div class="masonry">
+        <figure>
+          <img src="img/insp-kitchen-island-table.jpg" alt="Kitchen with a stone-topped island and a lower wood table attached, with three chairs." width="736" height="1104" loading="lazy">
+          <figcaption class="label">Island with a lower wood table attached</figcaption>
+        </figure>
+        <figure>
+          <img src="img/insp-kitchen-round-island.jpg" alt="A long stone kitchen island ending in a round table with two stools." width="1170" height="1386" loading="lazy">
+          <figcaption class="label">Stone island ending in a round table</figcaption>
+        </figure>
+      </div>
+    </div>
   </section>
 
 </main>
