@@ -72,6 +72,12 @@ tbody th{font-weight:400;font-size:12px;letter-spacing:.11em;text-transform:uppe
 tbody tr:last-child td,tbody tr:last-child th{border-bottom:1px solid var(--line)}
 td .price,.changes .price{font-family:var(--display);font-weight:300;font-size:30px;line-height:1.1;display:block;color:var(--ink)}
 td small{display:block;font-size:14.5px;color:var(--muted);margin-top:6px;max-width:44ch}
+.chart{margin-top:64px}
+.chart tbody th{width:20%;font-size:13px;color:var(--ink)}
+.chart tbody th{white-space:nowrap}
+.chart tbody th .tag{display:inline-block;margin:0 0 0 10px;vertical-align:middle;font-size:10.5px}
+.chart td{font-size:16.5px}
+.chart td .price{white-space:nowrap}
 .note{max-width:90ch;margin:18px 0 0;font-size:14.5px;color:var(--muted)}
 
 /* structural list */
@@ -86,9 +92,11 @@ td small{display:block;font-size:14.5px;color:var(--muted);margin-top:6px;max-wi
 .tag{display:inline-block;justify-self:end;border:1px solid var(--line);border-radius:2px;background:var(--surface);padding:5px 10px;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
 .tag:hover{border-color:var(--accent);color:var(--accent)}
 
-.view{margin:72px 0 0}
-.view img{width:100%}
-.view figcaption{margin-top:12px}
+.mockups li{grid-template-columns:minmax(0,1fr) minmax(0,1.9fr);align-items:start}
+.mockups h3{margin-bottom:12px}
+.mockups figure{margin:0;width:100%}
+.mockups img{width:100%}
+.mockups figcaption{margin-top:10px}
 
 .jumps{display:flex;flex-wrap:wrap;gap:10px;margin:40px 0 0}
 .jumps a{text-decoration:none}
@@ -110,7 +118,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 @media (max-width:900px){
   .band{grid-template-columns:1fr;gap:16px}
   .moves{grid-template-columns:1fr;gap:44px;margin-top:56px}
-  .changes li{grid-template-columns:1fr;gap:14px}
+  .changes li,.mockups li{grid-template-columns:1fr;gap:14px}
   .tag{justify-self:start}
   .masonry{columns:2}
 }
@@ -351,94 +359,85 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
       <span class="label">04</span>
     </div>
 
-    <ul class="changes">
-      <li>
-        <div>
-          <div class="label">Version 1</div>
-          <h3>The loft</h3>
-        </div>
-        <div>
-          <span class="price">about $3,000 to $6,000</span>
-          <p>A mini split unit for the loft space. One indoor unit, one outdoor unit.</p>
-        </div>
-        <span class="tag">Proposed</span>
-      </li>
-      <li>
-        <div>
-          <div class="label">Version 2</div>
-          <h3>Loft, kitchen and living room, master bedroom</h3>
-        </div>
-        <div>
-          <span class="price">about $9,000 to $15,000</span>
-          <p>The loft, the master bedroom, and one unit shared by the kitchen and living room. Three indoor units.</p>
-        </div>
-        <span class="tag">Potential</span>
-      </li>
-      <li>
-        <div>
-          <div class="label">Version 3</div>
-          <h3>The whole house</h3>
-        </div>
-        <div>
-          <span class="price">about $12,000 to $18,000</span>
-          <p>Both bedrooms, the loft, and one unit shared by the kitchen and living room. Four indoor units.</p>
-        </div>
-        <span class="tag">Potential</span>
-      </li>
-    </ul>
+    <div class="tablewrap chart">
+      <table>
+        <thead>
+          <tr><th scope="col">Version</th><th scope="col">Rooms</th><th scope="col">Indoor units</th><th scope="col">Ballpark cost, installed</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Version 1 <span class="tag">Proposed</span></th>
+            <td>Loft</td>
+            <td><span class="price">1</span></td>
+            <td><span class="price">$3,000 to $6,000</span></td>
+          </tr>
+          <tr>
+            <th scope="row">Version 2 <span class="tag">Potential</span></th>
+            <td>Loft<br>Kitchen and living room, one shared unit<br>Master bedroom</td>
+            <td><span class="price">3</span></td>
+            <td><span class="price">$9,000 to $15,000</span></td>
+          </tr>
+          <tr>
+            <th scope="row">Version 3 <span class="tag">Potential</span></th>
+            <td>Loft<br>Kitchen and living room, one shared unit<br>Both bedrooms</td>
+            <td><span class="price">4</span></td>
+            <td><span class="price">$12,000 to $18,000</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p class="note">Ballpark figures for a professional installation in Los Angeles, equipment and labor together, from price ranges published in 2026. The real number depends on how many indoor units are needed, the brand, and any electrical work, and comes from an installer's quote. LADWP offers rebates on qualifying heat pump units, which can bring the cost down.</p>
   </section>
 
   <section id="living">
     <div class="band">
       <h2>Living room focal point</h2>
-      <p>The tall wall above the archway, under the ceiling, is where the eye lands in the living room. It needs one focal point. Three choices are recommended.</p>
+      <p>The tall wall above the archway, under the ceiling, is where the eye lands in the living room. It needs one focal point. Three choices are recommended, each mocked up below.</p>
       <span class="label">05</span>
     </div>
 
-    <figure class="view">
-      <img src="img/living-room-view.jpg" alt="View from the living room in the 3D model: a tall plain wall above the archway to the kitchen, with exposed rafters overhead." width="1600" height="1345" loading="lazy">
-      <figcaption class="label">The living room in the model, looking toward the kitchen</figcaption>
-    </figure>
-
-    <ul class="changes">
+    <ul class="changes mockups">
       <li>
         <div>
           <div class="label">Choice 1</div>
           <h3>A lighting fixture</h3>
-        </div>
-        <div>
           <p>A statement light hung in the height of the room, in front of the wall.</p>
         </div>
-        <span class="tag">Recommended</span>
+        <figure>
+          <img src="img/living-choice-light.jpg" alt="Mock-up of the living room with a large woven pendant light hanging in front of the wall above the archway." width="1600" height="1345" loading="lazy">
+          <figcaption class="label">Mock-up, shown with a large woven pendant</figcaption>
+        </figure>
       </li>
       <li>
         <div>
           <div class="label">Choice 2</div>
           <h3>A large piece of art</h3>
-        </div>
-        <div>
           <p>One large piece on the wall above the archway.</p>
         </div>
-        <span class="tag">Recommended</span>
+        <figure>
+          <img src="img/living-choice-art.jpg" alt="Mock-up of the living room with one large artwork on the wall above the archway." width="1600" height="1345" loading="lazy">
+          <figcaption class="label">Mock-up, the artwork is a placeholder</figcaption>
+        </figure>
       </li>
       <li>
         <div>
           <div class="label">Choice 3</div>
           <h3>A textured wall</h3>
-        </div>
-        <div>
           <p>The wall below the ceiling is given a texture of its own, so the surface itself is the feature.</p>
         </div>
-        <span class="tag">Recommended</span>
+        <figure>
+          <img src="img/living-choice-texture.jpg" alt="Mock-up of the living room with a ribbed texture across the wall above the archway." width="1600" height="1345" loading="lazy">
+          <figcaption class="label">Mock-up, shown as ribbed plaster</figcaption>
+        </figure>
       </li>
     </ul>
+    <p class="note">These are quick mock-ups on the model view to compare the three ideas. The fixture, artwork and texture shown are stand-ins, not selections.</p>
   </section>
 
   <section id="bedroom">
     <div class="band">
       <h2>Bedroom</h2>
-      <p>Reference images for the bedroom. Most show a wall behind the bed with the closet on the other side.</p>
+      <p>Reference images for the bedroom. Each shows a wall behind the bed with the closet or dressing area on the other side.</p>
       <span class="label">06</span>
     </div>
     <div class="refs">
@@ -451,14 +450,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
         <figure>
           <img src="img/insp-bedroom-plaster-wall.jpg" alt="A plaster wall behind a bed with an open wood closet on the other side." width="653" height="1050" loading="lazy">
           <figcaption class="label">A plaster wall behind the bed, closet beyond</figcaption>
-        </figure>
-        <figure>
-          <img src="img/insp-bedroom-slatted-closet.jpg" alt="Bedroom with slatted wood closet doors, a stone headboard and floating shelves over a long desk." width="1200" height="1437" loading="lazy">
-          <figcaption class="label">Slatted closet doors and a stone headboard</figcaption>
-        </figure>
-        <figure>
-          <img src="img/insp-bedroom-wood-divider.jpg" alt="A freestanding wood wall behind a bed with a passage to the bathroom alongside." width="995" height="1200" loading="lazy">
-          <figcaption class="label">A freestanding wood wall behind the bed</figcaption>
         </figure>
         <figure>
           <img src="img/insp-bedroom-walnut-closet.jpg" alt="A walnut closet wall facing a low dresser that divides off the bed, under exposed beams." width="1122" height="1389" loading="lazy">
