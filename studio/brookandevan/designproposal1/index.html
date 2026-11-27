@@ -29,25 +29,60 @@ a{color:inherit}
 .wrap{max-width:1320px;margin:0 auto;padding:0 40px}
 .label{font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
 
-/* masthead */
-.mast{position:sticky;top:0;z-index:5;background:rgba(237,232,223,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line-2)}
-.mast .wrap{display:flex;justify-content:space-between;align-items:center;gap:24px;min-height:62px;padding-top:8px;padding-bottom:8px}
-.wordmark{font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink)}
-.mast nav{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px 28px}
-.mast nav a{font-size:12px;letter-spacing:.11em;text-transform:uppercase;text-decoration:none;color:var(--ink-2);padding:6px 0;border-bottom:1px solid transparent}
-.mast nav a:hover,.mast nav a:focus-visible{color:var(--accent);border-bottom-color:var(--accent)}
+/* masthead: banner row, then section bar */
+.mast{position:sticky;top:0;z-index:5;background:rgba(237,232,223,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.banner{display:flex;justify-content:space-between;align-items:center;gap:24px;height:54px;border-bottom:1px solid var(--line-2)}
+.wordmark{font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink);text-decoration:none}
+.wordmark.client{text-align:right}
+.sections{display:flex;flex-wrap:wrap;align-items:center;gap:0 30px;min-height:50px}
+.sections a,.rooms summary{font-size:12px;letter-spacing:.11em;text-transform:uppercase;text-decoration:none;color:var(--ink-2);padding:15px 0 13px;border-bottom:2px solid transparent;cursor:pointer}
+.sections a:hover,.rooms summary:hover{color:var(--accent)}
+.sections a[aria-current],.rooms.on summary{color:var(--ink);border-bottom-color:var(--accent)}
+.rooms{position:relative}
+.rooms summary{list-style:none;display:block}
+.rooms summary::-webkit-details-marker{display:none}
+.rooms summary::after{content:"";display:inline-block;width:6px;height:6px;margin:0 0 3px 9px;border-right:1px solid currentColor;border-bottom:1px solid currentColor;transform:rotate(45deg)}
+.rooms[open] summary::after{transform:rotate(225deg);margin-bottom:-1px}
+.rooms .menu{position:absolute;left:-18px;top:100%;min-width:250px;background:var(--surface);border:1px solid var(--line);border-radius:2px;padding:8px 0;display:flex;flex-direction:column}
+.rooms .menu a{padding:10px 18px;border-bottom:0}
+.rooms .menu a[aria-current]{color:var(--accent);border-bottom:0}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+[hidden]{display:none!important}
 
 /* title */
-.title{padding:104px 0 96px}
+.title{padding:96px 0 64px}
 .title h1{font-family:var(--display);font-weight:300;font-size:clamp(58px,9vw,116px);line-height:.95;letter-spacing:-.01em;margin:14px 0 0;text-wrap:balance}
 .title .lede{font-family:var(--display);font-weight:300;font-size:clamp(22px,2.2vw,29px);line-height:1.32;color:var(--ink-2);max-width:34ch;margin:34px 0 0}
 
 /* section band */
-section{padding-bottom:108px;scroll-margin-top:62px}
-.band{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) auto;gap:40px;align-items:baseline;border-top:1px solid var(--line);padding-top:26px}
+section{padding-bottom:72px}
+section[data-page]:not(#overview){padding-top:72px}
+section[data-page]{scroll-margin-top:140px}
+.band{display:grid;border-top:0!important;padding-top:0!important;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) auto;gap:40px;align-items:baseline;border-top:1px solid var(--line);padding-top:26px}
 .band h2{font-family:var(--display);font-weight:300;font-size:clamp(40px,4.6vw,62px);line-height:1;margin:0}
 .band p{margin:0;max-width:56ch;color:var(--ink-2)}
+
+/* a proposal inside a room page */
+.part{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) auto;gap:40px;align-items:baseline;border-top:1px solid var(--line);padding-top:26px;margin-top:96px}
+.part h3{font-family:var(--display);font-weight:300;font-size:clamp(32px,3.4vw,46px);line-height:1.05;margin:0}
+.part p{margin:0;max-width:56ch;color:var(--ink-2)}
+.band+.part{margin-top:64px}
+.empty{margin:56px 0 0;color:var(--muted)}
+.note a{color:var(--accent)}
+/* overview contents */
+.toc{list-style:none;margin:0;padding:0;columns:2;column-gap:40px;border-top:1px solid var(--line)}
+.toc li{break-inside:avoid;border-bottom:1px solid var(--line)}
+.toc a{display:flex;align-items:baseline;gap:22px;padding:17px 0;text-decoration:none}
+.toc .t{font-family:var(--display);font-weight:300;font-size:27px;line-height:1.15}
+.toc a:hover .t{color:var(--accent)}
+/* previous / next */
+.pager{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;border-top:1px solid var(--line);padding:30px 0 64px}
+.pager a{display:flex;flex-direction:column;gap:4px;text-decoration:none}
+.pager a .t{font-family:var(--display);font-weight:300;font-size:28px;line-height:1.15}
+.pager a:hover .t{color:var(--accent)}
+.pager #next{text-align:right;align-items:flex-end}
+.pager #prev .t::before{content:"\2190\00a0"}
+.pager #next .t::after{content:"\00a0\2192"}
 
 /* the three moves */
 .moves{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px;margin-top:72px}
@@ -119,7 +154,8 @@ footer{border-top:1px solid var(--line);padding:28px 0 56px}
 footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 
 @media (max-width:900px){
-  .band{grid-template-columns:1fr;gap:16px}
+  .band,.part{grid-template-columns:1fr;gap:16px}
+  .toc{columns:1}
   .moves{grid-template-columns:1fr;gap:44px;margin-top:56px}
   .changes li,.mockups li{grid-template-columns:1fr;gap:14px}
   .tag{justify-self:start}
@@ -127,6 +163,10 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 }
 @media (max-width:560px){
   .wrap{padding:0 22px}
+  .wordmark{font-size:11px;letter-spacing:.1em}
+  .mast{position:static}
+  .sections{gap:0 20px}
+  .pager a .t{font-size:21px}
   .title{padding:72px 0 68px}
   .masonry{columns:1}
   .sketch .keys{font-size:10.5px}
@@ -137,34 +177,121 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 <body>
 
 <header class="mast">
+  <div class="wrap banner">
+    <a class="wordmark" href="#overview">Parlā Studio</a>
+    <span class="wordmark client">Brook and Evan's Home</span>
+  </div>
   <div class="wrap">
-    <span class="wordmark">Parlā Studio</span>
-    <nav aria-label="Proposals">
-      <a href="#floor">Floor</a>
+    <nav class="sections" aria-label="Sections">
+      <a href="#overview">Overview</a>
+      <a href="#3d">3D Design</a>
       <a href="#structure">Structural changes</a>
-      <a href="#kitchen">Kitchen</a>
+      <details class="rooms">
+        <summary><span id="roomsLabel">Rooms</span></summary>
+        <div class="menu">
+          <a href="#living">Living room</a>
+          <a href="#kitchen">Kitchen</a>
+          <a href="#outside">Outside space</a>
+          <a href="#master-bedroom">Master bedroom</a>
+          <a href="#master-bath">Master bath</a>
+          <a href="#zoe-bath">Guest and Zoe's bath</a>
+          <a href="#zoe-bedroom">Zoe's bedroom</a>
+          <a href="#loft">Loft</a>
+          <a href="#office">Brook's office</a>
+          <a href="#attic">Attic storage</a>
+        </div>
+      </details>
       <a href="#climate">Heating and cooling</a>
-      <a href="#living">Living room</a>
-      <a href="#bedroom">Bedroom</a>
     </nav>
   </div>
 </header>
 
 <main class="wrap">
 
-  <div class="title">
-    <div class="label">Brook and Evan's Home</div>
-    <h1>Design Proposal 1</h1>
-    <p class="lede">Ideas for the house, one part at a time. I begin with the floor.</p>
-  </div>
-
-  <section id="floor">
+  <section data-page id="overview">
+    <div class="title">
+      <h1>Design Proposal 1</h1>
+      <p class="lede">Ideas for the house, one space at a time. Choose a section, or use the arrows at the bottom of each page to go through in order.</p>
+    </div>
+    <ol class="toc">
+        <li><a href="#3d"><span class="label">01</span><span class="t">3D Design</span></a></li>
+        <li><a href="#structure"><span class="label">02</span><span class="t">Structural changes</span></a></li>
+        <li><a href="#living"><span class="label">03</span><span class="t">Living room</span></a></li>
+        <li><a href="#kitchen"><span class="label">04</span><span class="t">Kitchen</span></a></li>
+        <li><a href="#outside"><span class="label">05</span><span class="t">Outside space</span></a></li>
+        <li><a href="#master-bedroom"><span class="label">06</span><span class="t">Master bedroom</span></a></li>
+        <li><a href="#master-bath"><span class="label">07</span><span class="t">Master bath</span></a></li>
+        <li><a href="#zoe-bath"><span class="label">08</span><span class="t">Guest and Zoe's bath</span></a></li>
+        <li><a href="#zoe-bedroom"><span class="label">09</span><span class="t">Zoe's bedroom</span></a></li>
+        <li><a href="#loft"><span class="label">10</span><span class="t">Loft</span></a></li>
+        <li><a href="#office"><span class="label">11</span><span class="t">Brook's office</span></a></li>
+        <li><a href="#attic"><span class="label">12</span><span class="t">Attic storage</span></a></li>
+        <li><a href="#climate"><span class="label">13</span><span class="t">Heating and cooling</span></a></li>
+    </ol>
+  </section>
+  <section data-page id="3d">
     <div class="band">
-      <h2>Floor</h2>
-      <p>Light, sun-bleached wood in the living room, pale limestone-look tile in the kitchen, and a soft curved line where the two meet under the archway. The tile carries on outside so the kitchen and the outdoors read as one floor.</p>
+      <h2>3D Design</h2>
+      <p>The house as a 3D model, with the changes proposed here drawn in. Look at it from outside, lift the roof off, or step inside each room.</p>
       <span class="label">01</span>
     </div>
+    <div class="refs layouts">
+      <iframe class="live" src="/studio/brookandevan/adjustedplan1/" title="3D model of the house" loading="lazy"></iframe>
+      <p class="note"><a href="/studio/brookandevan/adjustedplan1/">Open the model full screen</a>.</p>
+    </div>
+  </section>
 
+  <section data-page id="structure">
+    <div class="band">
+      <h2>Structural changes</h2>
+      <p>Three places where this proposal differs from the plans the architect has drawn. Each one needs to be noted on the plans and reviewed by the architect and the engineer.</p>
+      <span class="label">02</span>
+    </div>
+    <ul class="changes">
+      <li>
+        <div>
+          <div class="label">Living room</div>
+          <h3>Keep the original living room wall</h3>
+        </div>
+        <div>
+          <p>The hall and the washer and dryer are removed, so the living room wall can stay where it is today instead of moving to the position drawn on the plans.</p>
+          <p>Keeping the wall also keeps the original wood floor in the living room. Because this uses the wall that is already there, I would expect it to be simple on the engineering side.</p>
+        </div>
+        <span class="tag">Wall</span>
+      </li>
+      <li>
+        <div>
+          <div class="label">Kitchen to outside</div>
+          <h3>Add panoramic doors</h3>
+        </div>
+        <div>
+          <p>Panoramic glass doors open the kitchen to the outside, in place of the single door on the plans. This is where the tile floor carries through.</p>
+        </div>
+        <span class="tag">Opening</span>
+      </li>
+      <li>
+        <div>
+          <div class="label">Loft</div>
+          <h3>Add a balcony off the loft</h3>
+        </div>
+        <div>
+          <p>A balcony is added outside the loft, which is not on the current plans.</p>
+        </div>
+        <span class="tag">Addition</span>
+      </li>
+    </ul>
+  </section>
+
+  <section data-page id="living">
+    <div class="band">
+      <h2>Living room</h2>
+      <p>Two proposals for the living room: the floor, and a focal point for the tall wall above the archway.</p>
+      <span class="label">03</span>
+    </div>
+    <div class="part">
+      <h3>Floor</h3>
+      <p>Light, sun-bleached wood in the living room, pale limestone-look tile in the kitchen, and a soft curved line where the two meet under the archway. The tile carries on outside so the kitchen and the outdoors read as one floor.</p>
+    </div>
     <div class="moves">
       <div class="move">
         <div class="label">Living room</div>
@@ -275,130 +402,10 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
         </figure>
       </div>
     </div>
-  </section>
-
-  <section id="structure">
-    <div class="band">
-      <h2>Structural changes</h2>
-      <p>Three places where this proposal differs from the plans the architect has drawn. Each one needs to be noted on the plans and reviewed by the architect and the engineer.</p>
-      <span class="label">02</span>
-    </div>
-
-    <ul class="changes">
-      <li>
-        <div>
-          <div class="label">Living room</div>
-          <h3>Keep the original living room wall</h3>
-        </div>
-        <div>
-          <p>The hall and the washer and dryer are removed, so the living room wall can stay where it is today instead of moving to the position drawn on the plans.</p>
-          <p>Keeping the wall also keeps the original wood floor in the living room. Because this uses the wall that is already there, I would expect it to be simple on the engineering side.</p>
-        </div>
-        <span class="tag">Wall</span>
-      </li>
-      <li>
-        <div>
-          <div class="label">Kitchen to outside</div>
-          <h3>Add panoramic doors</h3>
-        </div>
-        <div>
-          <p>Panoramic glass doors open the kitchen to the outside, in place of the single door on the plans. This is where the tile floor carries through.</p>
-        </div>
-        <span class="tag">Opening</span>
-      </li>
-      <li>
-        <div>
-          <div class="label">Loft</div>
-          <h3>Add a balcony off the loft</h3>
-        </div>
-        <div>
-          <p>A balcony is added outside the loft, which is not on the current plans.</p>
-        </div>
-        <span class="tag">Addition</span>
-      </li>
-    </ul>
-  </section>
-
-  <section id="kitchen">
-    <div class="band">
-      <h2>Kitchen</h2>
-      <p>Notes on the kitchen layout. More will be added here as the kitchen is worked out.</p>
-      <span class="label">03</span>
-    </div>
-
-    <ul class="changes">
-      <li>
-        <div>
-          <div class="label">Island</div>
-          <h3>4' between the island and the counter</h3>
-        </div>
-        <div>
-          <p>The usual distance between an island and the counter is 3' to 4'. This plan uses 4', the generous end of that range.</p>
-          <p>This is not fixed. The gap can come in toward 3' if more room is needed elsewhere in the kitchen.</p>
-        </div>
-        <span class="tag">Can change</span>
-      </li>
-    </ul>
-  
-    <div class="refs">
-      <h3>References</h3>
-      <div class="masonry">
-        <figure>
-          <img src="img/insp-kitchen-island-table.jpg" alt="Kitchen with a stone-topped island and a lower wood table attached, with three chairs." width="736" height="1104" loading="lazy">
-          <figcaption class="label">Island with a lower wood table attached</figcaption>
-        </figure>
-        <figure>
-          <img src="img/insp-kitchen-round-island.jpg" alt="A long stone kitchen island ending in a round table with two stools." width="1170" height="1386" loading="lazy">
-          <figcaption class="label">Stone island ending in a round table</figcaption>
-        </figure>
-      </div>
-    </div>
-  </section>
-
-  <section id="climate">
-    <div class="band">
-      <h2>Heating and cooling</h2>
-      <p>A mini split heats and cools without ducts. Each room it serves gets its own indoor unit and its own control, so it can be added one room at a time or across the house. Three versions, from smallest to largest.</p>
-      <span class="label">04</span>
-    </div>
-
-    <div class="tablewrap chart">
-      <table>
-        <thead>
-          <tr><th scope="col">Version</th><th scope="col">Rooms</th><th scope="col">Indoor units</th><th scope="col">Ballpark cost, installed</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th scope="row">Version 1 <span class="tag">Proposed</span></th>
-            <td>Loft</td>
-            <td><span class="price">1</span></td>
-            <td><span class="price">$3,000 to $6,000</span></td>
-          </tr>
-          <tr>
-            <th scope="row">Version 2 <span class="tag">Potential</span></th>
-            <td>Loft<br>Kitchen and living room, one shared unit<br>Master bedroom</td>
-            <td><span class="price">3</span></td>
-            <td><span class="price">$9,000 to $15,000</span></td>
-          </tr>
-          <tr>
-            <th scope="row">Version 3 <span class="tag">Potential</span></th>
-            <td>Loft<br>Kitchen and living room, one shared unit<br>Both bedrooms</td>
-            <td><span class="price">4</span></td>
-            <td><span class="price">$12,000 to $18,000</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="note">Ballpark figures for a professional installation in Los Angeles, equipment and labor together, from price ranges published in 2026. The real number depends on how many indoor units are needed, the brand, and any electrical work, and comes from an installer's quote. LADWP offers rebates on qualifying heat pump units, which can bring the cost down.</p>
-  </section>
-
-  <section id="living">
-    <div class="band">
-      <h2>Living room focal point</h2>
+    <div class="part">
+      <h3>Focal point</h3>
       <p>The tall wall above the archway, under the ceiling, is where the eye lands in the living room. It needs one focal point. Three choices are recommended, each mocked up below.</p>
-      <span class="label">05</span>
     </div>
-
     <ul class="changes mockups">
       <li>
         <div>
@@ -445,13 +452,58 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
     <p class="note">These are quick mock-ups on the model view to compare the three ideas. They show the idea, not final selections.</p>
   </section>
 
-  <section id="bedroom">
+  <section data-page id="kitchen">
     <div class="band">
-      <h2>Bedroom</h2>
+      <h2>Kitchen</h2>
+      <p>Notes on the kitchen layout. More will be added here as the kitchen is worked out.</p>
+      <span class="label">04</span>
+    </div>
+    <ul class="changes">
+      <li>
+        <div>
+          <div class="label">Island</div>
+          <h3>4' between the island and the counter</h3>
+        </div>
+        <div>
+          <p>The usual distance between an island and the counter is 3' to 4'. This plan uses 4', the generous end of that range.</p>
+          <p>This is not fixed. The gap can come in toward 3' if more room is needed elsewhere in the kitchen.</p>
+        </div>
+        <span class="tag">Can change</span>
+      </li>
+    </ul>
+  
+    <div class="refs">
+      <h3>References</h3>
+      <div class="masonry">
+        <figure>
+          <img src="img/insp-kitchen-island-table.jpg" alt="Kitchen with a stone-topped island and a lower wood table attached, with three chairs." width="736" height="1104" loading="lazy">
+          <figcaption class="label">Island with a lower wood table attached</figcaption>
+        </figure>
+        <figure>
+          <img src="img/insp-kitchen-round-island.jpg" alt="A long stone kitchen island ending in a round table with two stools." width="1170" height="1386" loading="lazy">
+          <figcaption class="label">Stone island ending in a round table</figcaption>
+        </figure>
+      </div>
+    </div>
+    <p class="note">The limestone-look tile floor for the kitchen is described under <a href="#living">Living room</a>, in the floor proposal.</p>
+  </section>
+
+  <section data-page id="outside">
+    <div class="band">
+      <h2>Outside space</h2>
+      <p>The outdoor areas around the house.</p>
+      <span class="label">05</span>
+    </div>
+    <p class="empty">Proposals for this space will be added here.</p>
+    <p class="note">The tile that carries from the kitchen to the outside is described under <a href="#living">Living room</a>, in the floor proposal.</p>
+  </section>
+
+  <section data-page id="master-bedroom">
+    <div class="band">
+      <h2>Master bedroom</h2>
       <p>Reference images for the bedroom. Each shows a wall behind the bed with the closet or dressing area on the other side.</p>
       <span class="label">06</span>
-    </div>
-    <div class="refs">
+    </div>    <div class="refs">
       <h3>References</h3>
       <div class="masonry">
         <figure>
@@ -476,6 +528,102 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
     </div>
   </section>
 
+  <section data-page id="master-bath">
+    <div class="band">
+      <h2>Master bath</h2>
+      <p>The bathroom off the master bedroom.</p>
+      <span class="label">07</span>
+    </div>
+    <p class="empty">Proposals for this space will be added here.</p>
+  </section>
+
+  <section data-page id="zoe-bath">
+    <div class="band">
+      <h2>Guest and Zoe's bath</h2>
+      <p>The bathroom shared by guests and Zoe.</p>
+      <span class="label">08</span>
+    </div>
+    <p class="empty">Proposals for this space will be added here.</p>
+  </section>
+
+  <section data-page id="zoe-bedroom">
+    <div class="band">
+      <h2>Zoe's bedroom</h2>
+      <p>Zoe's room.</p>
+      <span class="label">09</span>
+    </div>
+    <p class="empty">Proposals for this space will be added here.</p>
+  </section>
+
+  <section data-page id="loft">
+    <div class="band">
+      <h2>Loft</h2>
+      <p>The loft on the second floor.</p>
+      <span class="label">10</span>
+    </div>
+    <p class="empty">Proposals for this space will be added here.</p>
+  </section>
+
+  <section data-page id="office">
+    <div class="band">
+      <h2>Brook's office</h2>
+      <p>Brook's office on the second floor.</p>
+      <span class="label">11</span>
+    </div>
+    <p class="empty">Proposals for this space will be added here.</p>
+  </section>
+
+  <section data-page id="attic">
+    <div class="band">
+      <h2>Attic storage</h2>
+      <p>Storage in the attic.</p>
+      <span class="label">12</span>
+    </div>
+    <p class="empty">Proposals for this space will be added here.</p>
+  </section>
+
+  <section data-page id="climate">
+    <div class="band">
+      <h2>Heating and cooling</h2>
+      <p>A mini split heats and cools without ducts. Each room it serves gets its own indoor unit and its own control, so it can be added one room at a time or across the house. Three versions, from smallest to largest.</p>
+      <span class="label">13</span>
+    </div>
+    <div class="tablewrap chart">
+      <table>
+        <thead>
+          <tr><th scope="col">Version</th><th scope="col">Rooms</th><th scope="col">Indoor units</th><th scope="col">Ballpark cost, installed</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Version 1 <span class="tag">Proposed</span></th>
+            <td>Loft</td>
+            <td><span class="price">1</span></td>
+            <td><span class="price">$3,000 to $6,000</span></td>
+          </tr>
+          <tr>
+            <th scope="row">Version 2 <span class="tag">Potential</span></th>
+            <td>Loft<br>Kitchen and living room, one shared unit<br>Master bedroom</td>
+            <td><span class="price">3</span></td>
+            <td><span class="price">$9,000 to $15,000</span></td>
+          </tr>
+          <tr>
+            <th scope="row">Version 3 <span class="tag">Potential</span></th>
+            <td>Loft<br>Kitchen and living room, one shared unit<br>Both bedrooms</td>
+            <td><span class="price">4</span></td>
+            <td><span class="price">$12,000 to $18,000</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Ballpark figures for a professional installation in Los Angeles, equipment and labor together, from price ranges published in 2026. The real number depends on how many indoor units are needed, the brand, and any electrical work, and comes from an installer's quote. LADWP offers rebates on qualifying heat pump units, which can bring the cost down.</p>
+  </section>
+
+  <nav class="pager" aria-label="Previous and next section">
+    <a id="prev" href="#"><span class="label">Previous</span><span class="t"></span></a>
+    <span class="label" id="count"></span>
+    <a id="next" href="#"><span class="label">Next</span><span class="t"></span></a>
+  </nav>
+
 </main>
 
 <footer>
@@ -484,6 +632,32 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
     <span>Design Proposal 1, November 2026</span>
   </div>
 </footer>
+
+<script>
+(function(){
+  var pages=[].slice.call(document.querySelectorAll('[data-page]'));
+  var ids=pages.map(function(p){return p.id});
+  var links=[].slice.call(document.querySelectorAll('.sections a'));
+  var rooms=document.querySelector('.rooms'), roomsLabel=document.getElementById('roomsLabel');
+  var prev=document.getElementById('prev'), next=document.getElementById('next'), count=document.getElementById('count');
+  function name(id){var a=document.querySelector('.sections a[href="#'+id+'"]');return a?a.textContent:''}
+  function show(first){
+    var id=location.hash.slice(1); var i=ids.indexOf(id); if(i<0){i=0;id=ids[0]}
+    pages.forEach(function(p,k){p.hidden=k!==i});
+    var inRooms=false;
+    links.forEach(function(a){var on=a.getAttribute('href')==='#'+id; if(on){a.setAttribute('aria-current','page'); if(a.closest('.rooms'))inRooms=true} else a.removeAttribute('aria-current')});
+    rooms.classList.toggle('on',inRooms); roomsLabel.textContent=inRooms?'Rooms: '+name(id):'Rooms'; rooms.open=false;
+    function set(a,k){ if(k<0||k>=ids.length){a.style.visibility='hidden'} else {a.style.visibility='';a.href='#'+ids[k];a.querySelector('.t').textContent=name(ids[k])} }
+    set(prev,i-1); set(next,i+1);
+    count.textContent=i===0?'':i+' of '+(ids.length-1);
+    window.scrollTo(0,0); if(first) setTimeout(function(){window.scrollTo(0,0)},0);
+  }
+  window.addEventListener('hashchange',function(){show(false)});
+  document.addEventListener('click',function(e){if(rooms.open&&!rooms.contains(e.target))rooms.open=false});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')rooms.open=false});
+  show(true);
+})();
+</script>
 
 </body>
 </html>
