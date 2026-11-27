@@ -52,6 +52,11 @@ works:
     notes: "cast list missing; second photo set (Denise Leitner or SAL — strong images, e.g. untitled 83, 89, 99) left out until the credit is confirmed; music not cleared so no video"
 
   - slug: forgotten-time
+    video:
+      kind: file
+      src: /moves/video/forgotten-time-trailer.mp4
+      poster: /moves/img/video/forgotten-time-trailer.jpg
+      caption: "Forgotten Time — trailer"
     title: Forgotten Time
     subtitle: Temps oublié — a work in progress
     year: 2025
