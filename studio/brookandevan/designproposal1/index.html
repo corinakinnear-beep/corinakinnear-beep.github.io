@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Brook and Evan's Home, Design Proposal 1</title>
+<title>Brook and Evan's Home, Floorplan Design Proposal</title>
 <meta name="description" content="Design proposals for Brook and Evan's home.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,6 +69,10 @@ section[data-page]{scroll-margin-top:140px}
 .band+.part{margin-top:64px}
 .empty{margin:56px 0 0;color:var(--muted)}
 .note a{color:var(--accent)}
+.intro{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px;padding-bottom:88px}
+.intro h2{font-family:var(--display);font-weight:300;font-size:clamp(34px,3.6vw,48px);line-height:1.05;margin:10px 0 16px}
+.intro p{margin:0;max-width:46ch;color:var(--ink-2)}
+.toc-label{padding-bottom:14px}
 /* overview contents */
 .toc{list-style:none;margin:0;padding:0;columns:2;column-gap:40px;border-top:1px solid var(--line)}
 .toc li{break-inside:avoid;border-bottom:1px solid var(--line)}
@@ -156,6 +160,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 @media (max-width:900px){
   .band,.part{grid-template-columns:1fr;gap:16px}
   .toc{columns:1}
+  .intro{grid-template-columns:1fr;gap:48px;padding-bottom:64px}
   .moves{grid-template-columns:1fr;gap:44px;margin-top:56px}
   .changes li,.mockups li{grid-template-columns:1fr;gap:14px}
   .tag{justify-self:start}
@@ -210,9 +215,21 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 
   <section data-page id="overview">
     <div class="title">
-      <h1>Design Proposal 1</h1>
-      <p class="lede">Ideas for the house, one space at a time. Choose a section, or use the arrows at the bottom of each page to go through in order.</p>
+      <h1>Floorplan Design Proposal</h1>
     </div>
+    <div class="intro">
+      <div>
+        <div class="label">Our focus</div>
+        <h2>Movement patterns</h2>
+        <p>How you move through the space now, and how you want to. Your priorities, how your time is spent, what will change in the next ten years.</p>
+      </div>
+      <div>
+        <div class="label">The conversation starts about</div>
+        <h2>Feeling</h2>
+        <p>The goal of each room and of the house as a whole. A retreat, a lively place that welcomes guests, an intimate safe space. Whether work spaces should energize or focus.</p>
+      </div>
+    </div>
+    <div class="label toc-label">Sections</div>
     <ol class="toc">
         <li><a href="#3d"><span class="label">01</span><span class="t">3D Design</span></a></li>
         <li><a href="#structure"><span class="label">02</span><span class="t">Structural changes</span></a></li>
@@ -633,7 +650,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 <footer>
   <div class="wrap label">
     <span>Brook and Evan's Home</span>
-    <span>Design Proposal 1, November 2026</span>
+    <span>Floorplan Design Proposal, November 2026</span>
   </div>
 </footer>
 
