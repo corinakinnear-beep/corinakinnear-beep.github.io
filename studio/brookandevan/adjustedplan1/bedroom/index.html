@@ -57,6 +57,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .facts{margin:0;display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:14.5px;line-height:1.45;font-variant-numeric:tabular-nums}
 .facts dt{color:var(--muted)}
 .facts dd{margin:0;color:var(--ink)}
+.desc{margin:8px 0 2px;font-size:15px;line-height:1.6;color:var(--ink)}
 .spec-h{font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
 .spec{margin:0;padding-left:1.15em;font-size:14.5px;line-height:1.5;color:var(--ink);font-variant-numeric:tabular-nums}
 .fine{font-size:13.5px;line-height:1.5;color:var(--muted);margin:0}
@@ -109,8 +110,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <section aria-labelledby="l-view">
       <p class="label" id="l-view">View</p>
       <div class="row" id="views">
-        <button class="tag" type="button" data-view="outside" aria-pressed="true">Outside</button>
-        <button class="tag" type="button" data-view="first" aria-pressed="false">First floor</button>
+        <button class="tag" type="button" data-view="first" aria-pressed="true">First floor</button>
         <button class="tag" type="button" data-view="plan" aria-pressed="false">Plan</button>
       </div>
     </section>
@@ -118,7 +118,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <section aria-labelledby="l-in">
       <p class="label" id="l-in">Step inside</p>
       <div class="row" id="rooms">
-        <button class="tag" type="button" data-room="sink" aria-pressed="false">Kitchen sink</button>
         <button class="tag" type="button" data-room="bedw" aria-pressed="false">Master bedroom</button>
         <button class="tag" type="button" data-room="closet" aria-pressed="false">Walk-in closet</button>
         <button class="tag" type="button" data-room="alcove" aria-pressed="false">Alcove</button>
@@ -280,7 +279,7 @@ function hD(x){ return RH-(XR-x)*SD; }
   /* south wall: one high ribbon window, 10'-0" x 1'-6" with its sill at 5'-5", in the west bedroom in place of its two windows; a 3'-0" x 2'-6" window over the south bath vanity */
   var sH=[[1.5,11.5,5.4,6.9],[15.5,18.5,4.4,6.9],[25.7,28.7,2.9,6.9],[15.46,18.46,LOFT+2.5,LOFT+6]];   /* the last is the new office window, 3'-0" x 3'-6", under the ridge */
   /* the south bath window by layout: over the vanity as drawn, or, where the bath's west door is closed up and the vanity slides to the west wall, moved 2'-0" west to stay centred over it */
-  [['c,e,cur',sH[1]],['a,b,d',[13.5,16.5,4.4,6.9]]].forEach(function(v){ inS(v[0],function(){
+  [['c,e',sH[1]],['a,b,d',[13.5,16.5,4.4,6.9]],['cur',[13.25,15.75,4.4,6.9]]].forEach(function(v){ inS(v[0],function(){
     shapeWall('x',BD-T,T,[[0,GR],[BW,GR],[BW,he],[XR,RH-.3],[0,hw]],[sH[0],v[1],sH[2],sH[3]],M.ext,G.shell);
     fill('x',BD-T,T,v[1][0],v[1][1],v[1][2],v[1][3],'win'); }); });
   [[1.5,4,5.4,6.9],[4,6.5,5.4,6.9],[6.5,9,5.4,6.9],[9,11.5,5.4,6.9],sH[2],sH[3]].forEach(function(h){ fill('x',BD-T,T,h[0],h[1],h[2],h[3],'win'); });
@@ -625,11 +624,11 @@ function archWall(c,a,b,h,o1,o2,spring,crown){
   inI('a,b,c,d,e',function(){ box(16,20.65,0,7,25.7,28.7,M.glass,G.interior,true); });      /* shower, across the north end */
   inI('c,e',function(){ box(15,19,0,2.8,31.75,I,M.built,G.interior); });
   inI('a,b,d',function(){ box(13,17,0,2.8,31.75,I,M.built,G.interior); });
-  /* F: a different bath layout. A walk-in shower across the whole south end, 3'-0" x 7'-8", open at its west end in line with the door, with a bench at the east end and the window in it;
-     a double vanity, 5'-0" long, on the north wall east of the door; the toilet on the east wall between them, centre 17" from each */
-  inI('cur',function(){ box(15.5,20.7,0,7,30.3,30.36,M.glass,G.interior,true); box(19.3,20.7,0,1.5,30.36,I,M.top,G.interior);
-    box(15.65,20.65,0,2.8,25.7,27.45,M.built,G.interior); box(15.6,20.7,2.8,2.9,25.7,27.5,M.top,G.interior); [16.9,19.4].forEach(function(x){ box(x-.6,x+.6,2.9,2.93,26,27.1,M.white,G.interior,true); });
-    box(18.75,20.65,0,1.4,28.2,29.6,M.white,G.interior); });   /* west door closed up: the vanity slides west to touch the west wall */              /* single vanity, on the south wall */
+  /* F: a different bath layout. A single vanity, 3'-0" wide, on the north wall, centred between the door and the east wall; the toilet on the south wall across from the door,
+     centre 15" from the west wall, under the window; a shower in the south-east corner, 4'-6" x 3'-6" */
+  inI('cur',function(){ box(16.68,19.68,0,2.8,25.7,27.45,M.built,G.interior); box(16.63,19.73,2.8,2.9,25.7,27.5,M.top,G.interior); box(17.58,18.78,2.9,2.93,26,27.1,M.white,G.interior,true);
+    box(13.55,14.95,0,1.4,31.44,I,M.white,G.interior);
+    box(16.2,20.65,0,7,29.84,I-.04,M.glass,G.interior,true); });   /* west door closed up: the vanity slides west to touch the west wall */              /* single vanity, on the south wall */
   /* spiral stair to the loft */
   var cx=17.75,cn=3.2,N=14;
   var pole=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,LOFT+3.2,12),M.steel); pole.position.set(cx,(LOFT+3.2)/2,cn); pole.castShadow=true; G.interior.add(pole);
@@ -732,15 +731,55 @@ function dim(group,a,b,off,text,cond){
 })();
 
 /* ---------- state ---------- */
-var state={open:false,layout:'a',roof:true,upper:true,labels:false,dims:false,bearing:false,measure:false,cut:20,mode:'orbit',view:'outside',room:null};
-var orbit={t:new THREE.Vector3(13,5,16),r:84,theta:-.6,phi:1.05}, goal=null, look={p:new THREE.Vector3(),yaw:0,pitch:0};
+/* a grey veil over the parts of the house this page is not about, in the First floor and Plan views. Left clear: the master bedroom, its closet and alcove,
+   the south bath, the passage from the dining area, and the private garden */
+var veil=new THREE.Group(); scene.add(veil);
+(function(){ var vm=new THREE.MeshBasicMaterial({color:0x9a9993,transparent:true,opacity:.82,depthWrite:false});
+  [[-.3,BW+.3,-.3,15.7],[-.3,12.8,15.7,17.4],[16.2,BW+.3,15.7,20.6],[15.45,BW+.3,20.6,25.47],[20.9,BW+.3,25.47,BD+.3]].forEach(function(r){
+    var m=new THREE.Mesh(new THREE.BoxGeometry(r[1]-r[0],8.5,r[3]-r[2]),vm); m.position.set((r[0]+r[1])/2,4.1,(r[2]+r[3])/2); m.renderOrder=5; veil.add(m); }); })();
+/* master bedroom measurements, by layout: lines on the floor (or on the bed), each labelled with its length read from the model */
+var bdims={g:new THREE.Group(),by:{}}; scene.add(bdims.g);
+function bdim(keys,x1,n1,x2,n2,y,text){
+  keys.split(',').forEach(function(k){ var g=bdims.by[k]; if(!g){ g=bdims.by[k]=new THREE.Group(); bdims.g.add(g); }
+    var A=new THREE.Vector3(x1,y,n1), B=new THREE.Vector3(x2,y,n2), t=x1===x2?new THREE.Vector3(.18,0,0):new THREE.Vector3(0,0,.18);
+    g.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([A,B,A.clone().sub(t),A.clone().add(t),B.clone().sub(t),B.clone().add(t)]),dimMat)); });
+  var el=document.createElement('div'); el.className='site-label dim'; el.textContent=text||ftin(Math.hypot(x2-x1,n2-n1)); labelBox.appendChild(el);
+  labels.push({el:el,x:(x1+x2)/2,y:y+.15,n:(n1+n2)/2,level:5,lay:keys});
+}
+(function(){
+  var F=.07, B2=2.02, E=12.6, I=BD-T;
+  function h(k,x1,x2,n,y,t){ bdim(k,x1,n,x2,n,y||F,t); }
+  function v(k,x,n1,n2,y,t){ bdim(k,x,n1,x,n2,y||F,t); }
+  function chain(k,x,ns){ for(var i=1;i<ns.length;i++) v(k,x,ns[i-1],ns[i]); }
+  /* the alcove, and its opening on the bedroom's east wall */
+  h('a,b,c,d,e,cur',13,15.25,22.2); v('a,b,c,d,e,cur',14.7,20.8,25.27,F,'4\'-6"');
+  v('a',12.25,20.85,25.25); v('b',12.25,20.85,23.6); v('c,d,e',12.25,21,25.1); v('cur',12.25,20.9,23.6);
+  /* beds with the headboard on the south wall (A, C), the north wall (D, E) and the east wall (B, F): size, and the space on each side and at the foot */
+  h('a,d',3.33,9.67,29.6,B2); v('a,d',8.9,26.67,I,B2,'6\'-8"'); h('a,d',T,3.33,29.6); h('a,d',9.67,E,29.6);
+  h('c,e',2.2,8.53,21.4,B2); v('c,e',7.8,17.6,24.27,B2,'6\'-8"'); h('c,e',T,2.2,22.4); h('c,e',8.53,E,22.4);
+  v('b,cur',9.2,25.33,31.67,B2); h('b,cur',5.93,E,26.9,B2,'6\'-8"'); h('b,cur',T,5.86,28.5); v('b,cur',8,31.67,I);
+  /* A */
+  h('a',T,E,25.4); v('a',11.95,24.25,I); v('a',4.5,24.25,26.6); chain('a',10,[17.6,19.6,22.35,23.85]); v('a',12.1,17.6,23.85); h('a',T,9.6,20.3); h('a',9.6,E,17.9);
+  /* B */
+  h('b',T,E,24.2); v('b',1.2,23.2,I); v('b',8,23.2,25.33); chain('b',10,[17.6,19.6,22.8]); h('b',T,9.6,20.3); h('b',9.6,E,17.9); h('b',7.6,E,23); h('b',T,7.6,23.5,F,'Wall 7\'-2"');
+  /* C */
+  h('d',T,E,24.4); v('d',11.95,23.2,I); v('d',4.5,23.2,26.6); chain('d',10,[17.6,19.6,22.1,23.2]); v('d',12.1,17.6,23.2); h('d',T,9.6,20.3); h('d',9.6,E,17.9);
+  /* D */
+  h('c',T,E,25.6); v('c',11.6,17.6,26.69); v('c',3.5,24.34,26.69); chain('c',10,[27.09,28.59,31.34,I]); v('c',12.1,27.09,I); h('c',T,9.6,28.9); h('c',T,E,31); h('c',9.6,E,26.9);
+  /* E */
+  h('e',T,E,26.4); v('e',11.6,17.6,27.74); v('e',3.5,24.34,27.74); chain('e',10,[27.74,28.84,31.34,I]); v('e',12.1,27.74,I); h('e',T,9.6,29.1); h('e',T,E,31); h('e',9.6,E,27.2);
+  /* F */
+  h('cur',T,E,22.4); v('cur',4.5,21.1,I); v('cur',10.6,17.6,I); h('cur',T,8.9,21.5); v('cur',9.4,17.6,21.1); v('cur',8,21.1,25.33);
+})();
+var state={open:false,layout:'a',roof:true,upper:true,labels:false,dims:false,bearing:false,measure:false,cut:20,mode:'orbit',view:'first',room:null};
+var orbit={t:new THREE.Vector3(9.5,0,25),r:40,theta:-.42,phi:.46}, goal=null, look={p:new THREE.Vector3(),yaw:0,pitch:0};
 var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var VIEWS={
   outside:{roof:true,upper:true,cut:20,t:[13,5,16],r:84,theta:-.6,phi:1.05},
   garden:{roof:true,upper:true,cut:20,t:[-9,0,15],r:96,theta:-1.25,phi:.95},
   loft:{roof:false,upper:true,cut:20,t:[15,9,17],r:70,theta:-.5,phi:.62},
-  first:{roof:false,upper:false,cut:8.25,t:[17,0,17.5],r:74,theta:-.42,phi:.66},
-  plan:{roof:false,upper:false,cut:8.25,t:[17,0,17],r:88,theta:0,phi:.02}
+  first:{roof:false,upper:false,cut:8.25,t:[9.5,0,25],r:40,theta:-.42,phi:.46},   /* both views are centred on the master bedroom, closet and bath */
+  plan:{roof:false,upper:false,cut:8.25,t:[9.5,0,24.8],r:40,theta:0,phi:.02}
 };
 var ROOMS={
   living:{p:[27.3,3.8,10.4],yaw:0},
@@ -760,7 +799,7 @@ var ROOMS={
 };
 /* cameras that differ by layout: [x, n, yaw, eye height if not 5'-4"] */
 var ROOMV={doors:{a:[-9,28.8,1.5708,3.8],b:[-9,28.2,1.5708,3.8],c:[-9,23.6,1.5708,3.8],e:[-9,24.7,1.5708,3.8]}, closet:{cur:[10.6,22.6,-.9],b:[11.6,20.85,-1.57],c:[11.6,29.97,-1.57],d:[11.6,20.85,-1.57],e:[11.6,30.09,-1.57]},
-  bedw:{c:[5.37,20.8,3.1416,3.8],e:[5.37,20.8,3.1416,3.8],cur:[9.5,28.5,-1.5708,3.8],b:[9.5,28.5,-1.5708,3.8]}, bath:{c:[13.6,29.9,1.3],e:[13.6,29.9,1.3],cur:[14,26,2.45]}, alcove:{c:[7.6,25.6,1.15],e:[7.6,25.6,1.15],cur:[5,22.6,1.57]}};
+  bedw:{c:[5.37,20.8,3.1416,3.8],e:[5.37,20.8,3.1416,3.8],cur:[9.5,28.5,-1.5708,3.8],b:[9.5,28.5,-1.5708,3.8]}, bath:{c:[13.6,29.9,1.3],e:[13.6,29.9,1.3],cur:[13.5,26,2.45,5.3,-.42]}, alcove:{c:[7.6,25.6,1.15],e:[7.6,25.6,1.15],cur:[5,22.6,1.57]}};
 var el={open:document.getElementById('c-open'),labels:document.getElementById('c-labels'),dims:document.getElementById('c-dims'),
   cut:document.getElementById('cut'),cutv:document.getElementById('cutv'),tape:document.getElementById('b-tape'),tapeClear:document.getElementById('b-tapeclear'),hint:document.getElementById('hint'),pad:document.getElementById('pad')};
 function ftin(h){ var f=Math.floor(h), i=Math.round((h-f)*12); if(i===12){f++;i=0;} return f+"'-"+i+'"'; }
@@ -777,9 +816,16 @@ var LAYINFO={
      o:['Alcove archway 4\'-1" wide','3\'-5" between bed foot and the closet wall']},
   cur:{c:['Closet 3\'-6" deep and about 8\'-5" long'],
      o:['Alcove archway 2\'-8" wide','5\'-5" between bed foot and the doors']}};
+var LAYDESC={
+  a:'This design includes a large walk-in closet with one side 2 feet deep and the other 1.5 feet deep. The entrance to the bathroom is an alcove where you can hang towels and potentially have a laundry bin.',
+  b:'This design includes a vanity area potentially, or this could be more storage and closet space, or a combination. This vanity area could also be integrated into other designs, but I wanted to show that option. This design most notably has the bed facing the glass doors, so when those curtains open, you will see straight to the backyard.',
+  d:'This option includes a walk-in closet with one side for hanging and one side for storage. And because of the depth, there would be room for an electric fireplace and some nooks on the side that faces the bed. In this version, the bed is facing the wall, so you also have the possibility of a television or projector.',
+  c:'This is similar to A in that you have a full walk-in closet. The predominant difference is the walk-in closet is connected to the bathroom. This gives the potential for Evan, after outdoor showering, to walk through straight to the bathroom without tracking a lot of water throughout the room, and dressing and bed preparation to not wake a partner.',
+  e:'This design has the walk-in closet on the south wall connected to the bathroom, but with a smaller storage area in case you would like an electric fireplace or television on the other side of the wall and more space in the sleeping area.',
+  cur:'This option includes a large reach-in closet and has the least amount of built-in storage, but the largest bedroom area. There would be room for additional furniture, such as a chair for indoor reading.'};
 var layShown=null;
 function layInfo(){ if(layShown===state.layout) return; layShown=state.layout;
-  var box=document.getElementById('laytext'), d=LAYINFO[state.layout]; box.textContent='';
+  var box=document.getElementById('laytext'), d=LAYINFO[state.layout]; box.textContent=''; var ds=document.createElement('p'); ds.className='desc'; ds.textContent=LAYDESC[state.layout]; box.appendChild(ds);
   [['Closet',d.c],['Other',d.o]].forEach(function(g){ var h=document.createElement('p'); h.className='spec-h'; h.textContent=g[0]; box.appendChild(h);
     var ul=document.createElement('ul'); ul.className='spec'; g[1].forEach(function(t){ var li=document.createElement('li'); li.textContent=t; ul.appendChild(li); }); box.appendChild(ul); });
 }
@@ -792,7 +838,9 @@ function apply(){
   bearing.forEach(function(m){ m.material=state.bearing?(m.userData.tag==='likely'?M.likely:M.maybe):M.int; });
   doorsShut.forEach(function(g){ g.visible=!state.open; }); doorsOpen.forEach(function(g){ g.visible=state.open; }); el.open.checked=state.open;
   el.labels.checked=state.labels; el.dims.checked=state.dims;
-  var dv=state.dims&&state.mode==='orbit'; G.dimA.visible=dv; G.dimB.visible=dv&&cTop(); G.dimC.visible=dv&&cLoft(); labelBox.classList.toggle('nodims',!state.dims);
+  veil.visible=(state.mode==='orbit');
+  bdims.g.visible=state.dims; for(var bk in bdims.by) bdims.by[bk].visible=(bk===state.layout);
+  var dv=false; G.dimA.visible=dv; G.dimB.visible=dv&&cTop(); G.dimC.visible=dv&&cLoft(); labelBox.classList.toggle('nodims',!state.dims);
   el.cut.value=state.cut; el.cutv.textContent=state.cut>=20?'Off':ftin(state.cut);
   Array.prototype.forEach.call(document.querySelectorAll('#views button'),function(b){ b.setAttribute('aria-pressed',String(state.mode==='orbit'&&b.dataset.view===state.view)); });
   Array.prototype.forEach.call(document.querySelectorAll('#rooms button'),function(b){ b.setAttribute('aria-pressed',String(state.mode==='look'&&b.dataset.room===state.room)); });
@@ -813,8 +861,8 @@ function setView(name){
 }
 function setRoom(name){
   tourStop();
-  var r=ROOMS[name]; var rv=(ROOMV[name]||{})[state.layout]; if(rv) r={p:[rv[0],rv[3]||5.3,rv[1]],yaw:rv[2]}; state.mode='look'; state.room=name; state.roof=true; state.upper=true; state.cut=20; goal=null;
-  look.p.set(r.p[0],r.p[1],r.p[2]); look.yaw=r.yaw; look.pitch=-.04; apply();
+  var r=ROOMS[name]; var rv=(ROOMV[name]||{})[state.layout]; if(rv) r={p:[rv[0],rv[3]||5.3,rv[1]],yaw:rv[2],pitch:rv[4]}; state.mode='look'; state.room=name; state.roof=true; state.upper=true; state.cut=20; goal=null;
+  look.p.set(r.p[0],r.p[1],r.p[2]); look.yaw=r.yaw; look.pitch=r.pitch||-.04; apply();
 }
 /* ---------- walk-through: a played walk through the chosen layout. Each stop is [x, n, look-at x, look-at n, pause in seconds, eye height];
    stops with no look-at are just points on the way, walked facing forward. The bedroom doors are opened for it. ---------- */
@@ -1014,9 +1062,9 @@ function frame(now){
   var ch=state.cut>=20?1000:state.cut, show=state.labels&&state.mode==='orbit';
   var see1=(!state.roof||ch<9)&&(!state.upper||ch<8.3), see2=state.upper&&(!state.roof||ch<16.6)&&ch>9.5;
   for(var i=0;i<labels.length;i++){ var L=labels[i];
-    var ok=L.level===4 ? !L.off : L.level===3 ? (state.mode==='orbit'&&state.dims&&L.cond()) : (show&&(L.level===0||(L.level===1&&see1)||(L.level===2&&see2)));
+    var ok=L.level===4 ? !L.off : L.level===5 ? state.dims : L.level===3 ? false : (show&&(L.level===0||(L.level===1&&see1)||(L.level===2&&see2)));
     if(L.lay&&L.lay.split(',').indexOf(state.layout)<0) ok=false;
-    if(ok&&(L.level===0||L.level===3)){ if(tick%8===0) L.occ=hidden(L); ok=!L.occ; }
+    if(ok&&(L.level===0||L.level===3||L.level===5)){ if(tick%8===0) L.occ=hidden(L); ok=!L.occ; }
     if(ok){ tmp.set(L.x,L.y,L.n).project(camera); ok=tmp.z>-1&&tmp.z<1&&Math.abs(tmp.x)<1.02&&Math.abs(tmp.y)<1.02; }
     L.el.style.display=ok?'':'none';
     if(ok) L.el.style.transform='translate(-50%,-50%) translate('+((tmp.x*.5+.5)*W).toFixed(1)+'px,'+((-tmp.y*.5+.5)*H).toFixed(1)+'px)';
@@ -1024,7 +1072,7 @@ function frame(now){
   tick++;
   requestAnimationFrame(frame);
 }
-apply(); requestAnimationFrame(frame);
+setView('first'); requestAnimationFrame(frame);
 })();
 </script>
 </body>
